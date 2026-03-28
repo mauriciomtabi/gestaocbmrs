@@ -82,22 +82,22 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
     style.innerHTML = `
       @media print {
         @page { size: A4 portrait; margin: 0; }
-        body, html { 
+        body, html, #root, main { 
           background-color: white !important; 
           margin: 0 !important; 
+          padding: 0 !important;
           height: auto !important;
           overflow: visible !important;
+          border: none !important;
         }
         nav { display: none !important; }
         .no-print { display: none !important; }
-        /* Remove barras de rolagem e sombras no print */
         ::-webkit-scrollbar { display: none !important; }
         * { 
           -webkit-print-color-adjust: exact; 
           print-color-adjust: exact; 
           box-shadow: none !important; 
         }
-        /* Força os containers a expandirem no pdf */
         div, main { overflow: visible !important; height: auto !important; }
       }
     `;
@@ -183,7 +183,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
 
       {/* Papel A4 Oficial - Container para o PDF */}
       <div className="w-full pb-12 md:pb-0 overflow-visible print:border-none print:shadow-none print:m-0 print:p-0">
-        <div id="official-document-content" className="min-w-[21cm] max-w-[21cm] mx-auto bg-white p-[1.5cm] md:p-[2cm] text-black shadow-2xl md:shadow-lg animate-in zoom-in-95 duration-700 print:shadow-none print:m-0 print:p-[2cm] print:max-w-none print:w-full" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: '1.5' }}>
+        <div id="official-document-content" className="min-w-[21cm] max-w-[21cm] mx-auto bg-white p-[1.5cm] md:p-[2cm] text-black shadow-2xl md:shadow-lg animate-in zoom-in-95 duration-700 print:shadow-none print:m-0 print:p-[1.5cm] print:max-w-none print:w-full" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: '1.5' }}>
           
           {/* Brasão e Cabeçalho */}
         <div className="text-center mb-10 flex flex-col items-center">
@@ -215,7 +215,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
 
         {/* Número do Ofício */}
         <div className="mb-4">
-          Ofício nº <span contentEditable suppressContentEditableWarning className="outline-none transition-all cursor-text focus:bg-blue-50 border-b-2 border-dashed border-slate-300 hover:border-blue-400 pb-0.5" title="Clique para editar o número do ofício">088/3ºPelBM/1ªCiaBM/8ºBBM/2025</span>.
+          Ofício nº <span contentEditable suppressContentEditableWarning className="outline-none transition-all cursor-text focus:bg-blue-50 border-b-2 border-dashed border-slate-300 hover:border-blue-400 pb-0.5 print:border-none" title="Clique para editar o número do ofício">088/3ºPelBM/1ªCiaBM/8ºBBM/2025</span>.
         </div>
 
         {/* Data - Alinhada à direita */}
