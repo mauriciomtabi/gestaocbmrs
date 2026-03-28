@@ -1,0 +1,23 @@
+{
+  "name": "Gestão CBM - Sapucaia do Sul",
+  "short_name": "Gestão CBM",
+  "description": "Sistema de Gestão de Prestadores de Serviços Comunitários - CBMRS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#1d4ed8",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/T1nny2hc/Brasao-cbmrs.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.postimg.cc/T1nny2hc/Brasao-cbmrs.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
