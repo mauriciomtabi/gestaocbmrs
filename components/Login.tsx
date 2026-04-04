@@ -69,69 +69,47 @@ const Login: React.FC<Props> = ({ onLogin }) => {
     setAuthError(null);
     setIsLoading(true);
 
-    const attemptLogin = async (attempt = 1): Promise<{data: any, error: any}> => {
-      try {
-        return await Promise.race([
-          supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword }),
-          new Promise<{data: any, error: any}>((_, reject) =>
-            // 60 segundos para acomodar cold-start do Supabase no plano gratuito
-            setTimeout(() => reject(new Error(`Timeout (tentativa ${attempt}/3). Servidor demorou para responder.`)), 60000)
-          )
-        ]);
-      } catch (err: any) {
-        if (attempt < 3 && err.message.startsWith('Timeout')) {
-          // Aguarda 3 segundos e tenta novamente
-          await new Promise(r => setTimeout(r, 3000));
-          return attemptLogin(attempt + 1);
-        }
-        throw err;
-      }
-    };
-
     try {
-      const { data, error } = await attemptLogin();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      });
 
       if (error) throw error;
 
-      // Buscar perfil na tabela profiles com timeout
-      const { data: profile } = await Promise.race([
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .maybeSingle(), // maybeSingle: não lança erro se o perfil não existir
-        new Promise<{data: any, error: any}>((resolve) => 
-          setTimeout(() => resolve({ data: null, error: null }), 10000)
-        )
-      ]);
+      // Buscar perfil na tabela profiles
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .maybeSingle();
 
       // Fallback: usa user_metadata se o perfil não existir
       const meta = data.user.user_metadata;
 
-        const userEmail = profile?.email || data.user.email || '';
-        const isMaster = userEmail === 'mtabi.adm@gmail.com';
+      const userEmail = profile?.email || data.user.email || '';
+      const isMaster = userEmail === 'mtabi.adm@gmail.com';
 
-        const loggedInUser = {
-          name: profile?.name || meta?.name || data.user.email?.split('@')[0] || 'Operador',
-          warName: profile?.war_name || meta?.war_name || 'MILITAR',
-          cpf: profile?.cpf || meta?.cpf || '000.000.000-00',
-          email: userEmail,
-          rank: profile?.rank || meta?.rank || 'Operador',
-          profilePhoto: profile?.profile_photo,
-          allowedScreens: isMaster ? ['dashboard', 'providers', 'face-checkin', 'fuel', 'reports', 'settings'] : (profile?.allowed_screens || ['dashboard', 'fuel', 'face-checkin']),
-          isAdmin: isMaster ? true : (profile?.is_admin || false)
-        };
+      const loggedInUser = {
+        name: profile?.name || meta?.name || data.user.email?.split('@')[0] || 'Operador',
+        warName: profile?.war_name || meta?.war_name || 'MILITAR',
+        cpf: profile?.cpf || meta?.cpf || '000.000.000-00',
+        email: userEmail,
+        rank: profile?.rank || meta?.rank || 'Operador',
+        profilePhoto: profile?.profile_photo,
+        allowedScreens: isMaster ? ['dashboard', 'providers', 'face-checkin', 'fuel', 'reports', 'settings'] : (profile?.allowed_screens || ['dashboard', 'fuel', 'face-checkin']),
+        isAdmin: isMaster ? true : (profile?.is_admin || false)
+      };
 
-        // Resync missing data to profile (solves the missing rank/warName bug caused by auth triggers)
-        if (meta && (!profile?.war_name || !profile?.rank)) {
-          supabase.from('profiles').update({
-            war_name: loggedInUser.warName,
-            rank: loggedInUser.rank,
-            cpf: loggedInUser.cpf
-          }).eq('id', data.user.id).then(); // Silent update
-        }
+      if (meta && (!profile?.war_name || !profile?.rank)) {
+        supabase.from('profiles').update({
+          war_name: loggedInUser.warName,
+          rank: loggedInUser.rank,
+          cpf: loggedInUser.cpf
+        }).eq('id', data.user.id).then();
+      }
 
-        onLogin(loggedInUser);
+      onLogin(loggedInUser);
     } catch (err: any) {
       let errorMsg = err.message;
       if (errorMsg === 'Invalid login credentials') {

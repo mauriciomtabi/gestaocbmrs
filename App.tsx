@@ -78,8 +78,8 @@ const App: React.FC = () => {
         setFuelSupplies([]);
         setVehicles([]);
         setView('dashboard');
-      } else if ((event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') && session) {
-        // Tentamos atualizar os dados sempre que a sessão for renovada ou logada
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        // Apenas no refresh do token. Login.tsx já chama onLogin diretamente ao fazer SIGNED_IN.
         try {
           await fetchData();
         } catch (err) {
