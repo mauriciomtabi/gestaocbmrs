@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { X, Share, PlusSquare, Smartphone, Monitor, ArrowUp, MoreVertical, ExternalLink, CheckCircle2, Sparkles } from 'lucide-react';
+import { X, Share, PlusSquare, Smartphone, Monitor, MoreVertical, CheckCircle2 } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
@@ -24,21 +23,6 @@ const InstallGuide: React.FC<Props> = ({ onClose }) => {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  const handleInstallClick = async () => {
-    if (isIOS()) {
-      setShowIOSHint(true);
-      return;
-    }
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') setInstallState('done');
-      setDeferredPrompt(null);
-    } else {
-      window.open(appUrl, '_blank');
-    }
-  };
-
   const copyToClipboard = () => {
     navigator.clipboard.writeText(appUrl);
     alert("Link copiado para a área de transferência!");
@@ -60,6 +44,27 @@ const InstallGuide: React.FC<Props> = ({ onClose }) => {
     }
   };
 
+  const handleAndroidInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') setInstallState('done');
+      setDeferredPrompt(null);
+    } else {
+      window.open(appUrl, '_blank');
+    }
+  };
+
+  const handleIOSInstall = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Gestão CBM', url: appUrl });
+      } catch {}
+    } else {
+      setShowIOSHint(true);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-950/80 z-[3000] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-300">
       <div className="bg-white w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
@@ -77,36 +82,52 @@ const InstallGuide: React.FC<Props> = ({ onClose }) => {
           </button>
         </div>
 
-        {/* Botão de Instalação Direta */}
-        <div className="px-8 pt-6">
+        {/* Content */}
+        <div className="p-8 overflow-y-auto space-y-8">
+
+          {/* Botões de Instalação por Plataforma */}
           {isInStandaloneMode() || installState === 'done' ? (
-            <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
-              <CheckCircle2 className="text-emerald-600 shrink-0" size={24} />
+            <div className="flex items-center gap-3 p-5 bg-emerald-50 border border-emerald-200 rounded-2xl">
+              <CheckCircle2 className="text-emerald-600 shrink-0" size={28} />
               <p className="text-emerald-800 font-black text-sm uppercase">Aplicativo já instalado neste dispositivo!</p>
             </div>
           ) : (
-            <button
-              onClick={handleInstallClick}
-              className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-300/40 transition-all active:scale-95"
-            >
-              <Smartphone size={20} />
-              {isIOS() ? 'Ver instruções para iPhone' : (deferredPrompt ? 'Instalar Aplicativo Agora' : 'Abrir no Navegador')}
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Botão Android */}
+              <button
+                onClick={handleAndroidInstall}
+                className="flex flex-col items-center justify-center gap-3 py-6 px-4 bg-gradient-to-br from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-green-300/40 transition-all active:scale-95"
+              >
+                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/Android_robot.svg" className="w-8 h-8 brightness-0 invert" alt="Android" />
+                <span>{deferredPrompt ? 'Instalar no Android' : 'Abrir no Navegador'}</span>
+                <span className="text-green-200 font-medium normal-case text-[10px]">
+                  {deferredPrompt ? 'Toque para instalar agora' : 'Abrir e instalar pelo Chrome'}
+                </span>
+              </button>
+
+              {/* Botão iOS */}
+              <button
+                onClick={handleIOSInstall}
+                className="flex flex-col items-center justify-center gap-3 py-6 px-4 bg-gradient-to-br from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-400/30 transition-all active:scale-95"
+              >
+                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" className="w-7 h-8 brightness-0 invert" alt="Apple" />
+                <span>Instalar no iPhone</span>
+                <span className="text-slate-400 font-medium normal-case text-[10px]">Abre o menu de compartilhamento</span>
+              </button>
+            </div>
           )}
+
+          {/* Dica iOS após clicar */}
           {showIOSHint && (
-            <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex gap-3 items-start animate-in fade-in slide-in-from-top-2">
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex gap-3 items-start animate-in fade-in slide-in-from-top-2">
               <Share className="text-amber-600 shrink-0 mt-0.5" size={18} />
               <p className="text-amber-800 text-xs font-bold leading-relaxed">
-                No Safari, toque no ícone <span className="bg-amber-200 px-1 rounded">Compartilhar</span> na barra inferior e selecione <span className="bg-amber-200 px-1 rounded">"Adicionar à Tela de Início"</span>.
+                No Safari: toque em <span className="bg-amber-200 px-1 rounded">Compartilhar</span> na barra inferior → selecione <span className="bg-amber-200 px-1 rounded">"Adicionar à Tela de Início"</span> → toque em <span className="bg-amber-200 px-1 rounded">Adicionar</span>.
               </p>
             </div>
           )}
-        </div>
 
-        {/* Content */}
-        <div className="p-8 overflow-y-auto space-y-10">
-          
-          {/* Compartilhar */}
+          {/* Compartilhar link */}
           <section className="space-y-4">
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px] font-black">01</span>
@@ -123,7 +144,6 @@ const InstallGuide: React.FC<Props> = ({ onClose }) => {
                 <button 
                   onClick={copyToClipboard}
                   className="flex-1 sm:flex-none bg-slate-100 text-slate-600 px-4 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 border border-slate-200"
-                  title="Copiar link"
                 >
                   Copiar
                 </button>
@@ -138,7 +158,7 @@ const InstallGuide: React.FC<Props> = ({ onClose }) => {
             </div>
           </section>
 
-          {/* Android / iOS Tabs */}
+          {/* Android / iOS Guide Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* iOS */}
@@ -191,14 +211,6 @@ const InstallGuide: React.FC<Props> = ({ onClose }) => {
 
           </div>
 
-          <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 flex gap-4 items-start">
-            <Sparkles className="text-blue-600 shrink-0" size={24} />
-            <p className="text-blue-800 text-xs font-bold leading-relaxed">
-              <span className="uppercase block mb-1">Dica Pro:</span>
-              Ao instalar como atalho, o sistema abrirá em tela cheia, sem a barra do navegador, proporcionando uma experiência idêntica a um aplicativo nativo.
-            </p>
-          </div>
-
         </div>
 
         {/* Footer */}
@@ -207,7 +219,7 @@ const InstallGuide: React.FC<Props> = ({ onClose }) => {
             onClick={onClose}
             className="px-10 py-4 bg-slate-800 text-white font-black rounded-2xl shadow-xl hover:bg-slate-900 transition-all active:scale-95 uppercase text-[10px] tracking-widest"
           >
-            Entendi, fechar guia
+            Fechar
           </button>
         </div>
 
