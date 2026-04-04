@@ -179,7 +179,7 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
     } catch (error: any) {
       console.error('Erro na API do Gemini:', error);
       const errorMsg = error.message || 'Verifique a conexão ou a chave da API, e tente uma foto mais nítida.';
-      alert(`Erro na leitura da IA: ${errorMsg}`);
+      alert(`Erro na leitura inteligente: ${errorMsg}`);
     } finally {
       setLoading(false);
     }
@@ -307,7 +307,7 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                                 </div>
                               </div>
                               
-                              <h4 className="text-blue-900 font-black uppercase tracking-widest text-sm mb-2">Processamento de IA</h4>
+                              <h4 className="text-blue-900 font-black uppercase tracking-widest text-sm mb-2">Processamento Inteligente</h4>
                               <div className="h-6 flex items-center justify-center">
                                 <p className="text-slate-600 font-bold text-xs animate-in slide-in-from-bottom-2 fade-in">
                                   {processingMessages[msgIndex]}
@@ -321,7 +321,7 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                                 ></div>
                               </div>
                               <p className="text-[10px] text-slate-400 font-black uppercase mt-4 flex items-center gap-1">
-                                <Cpu size={10} /> Gemini 3.0 Flash Engine
+                                <Cpu size={10} /> Motor de Leitura Inteligente
                               </p>
                             </div>
                           </div>

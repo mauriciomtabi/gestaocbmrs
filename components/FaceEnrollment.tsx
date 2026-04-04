@@ -18,7 +18,7 @@ const FaceEnrollment: React.FC<Props> = ({ provider, onClose, onSuccess, hasExis
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [status, setStatus] = useState<Status>('loading-models');
-  const [message, setMessage] = useState('Carregando modelos de IA...');
+  const [message, setMessage] = useState('Preparando processamento...');
   const [faceDetected, setFaceDetected] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const detectionIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -192,11 +192,9 @@ const FaceEnrollment: React.FC<Props> = ({ provider, onClose, onSuccess, hasExis
           </div>
           {/* Status overlay */}
           {status === 'loading-models' && (
-            <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-              <div className="text-center">
-                <Loader2 size={32} className="animate-spin text-blue-400 mx-auto mb-2" />
-                <p className="text-white text-xs font-bold">Carregando IA...</p>
-              </div>
+            <div className="absolute inset-0 bg-slate-900/80 flex flex-col items-center justify-center z-20">
+              <Loader2 size={32} className="text-white animate-spin mb-2" />
+              <p className="text-white text-xs font-bold">Preparando modelos...</p>
             </div>
           )}
           {status === 'success' && (

@@ -396,7 +396,7 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
           </button>
           <button 
             onClick={() => setIsOcrOpen(true)}
-            title="Digitalizar Nota Fiscal (IA)"
+            title="Digitalizar Nota Fiscal"
             className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-blue-600 px-4 md:px-6 py-3 rounded-2xl border border-blue-100 hover:bg-blue-50 transition-all font-black text-xs shadow-sm active:scale-95"
           >
             <Camera size={18} />

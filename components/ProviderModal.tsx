@@ -288,7 +288,7 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
                 {isSubmitting ? <Save size={32} /> : <Sparkles size={32} />}
               </div>
               <h4 className="text-slate-800 font-black uppercase tracking-tight text-lg mb-2">
-                {isSubmitting ? 'Salvando...' : 'IA em Ação'}
+                {isSubmitting ? 'Salvando...' : 'Leitura Inteligente'}
               </h4>
               <p className="text-slate-500 font-bold text-xs h-10 flex items-center justify-center leading-relaxed">
                 {isSubmitting ? 'Persistindo dados no banco de dados...' : currentMessages[msgIndex]}
@@ -351,7 +351,7 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
             </div>
 
             <div>
-              <label className={labelClasses}>Encaminhamento (IA)</label>
+              <label className={labelClasses}>Encaminhamento</label>
               <button 
                 type="button" 
                 onClick={() => referralInputRef.current?.click()}

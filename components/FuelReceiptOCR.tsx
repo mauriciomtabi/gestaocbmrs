@@ -203,8 +203,9 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
                 >
                   {loading ? (
                     <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Processando com IA...
+                      <span className="font-bold text-slate-700">
+                        Processamento Inteligente...
+                      </span>
                     </>
                   ) : (
                     <>
