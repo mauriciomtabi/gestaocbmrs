@@ -16,11 +16,32 @@
   </head>
   <body>
     <script>
-      // Registrar o Service Worker para habilitar instalação PWA
       if ('serviceWorker' in navigator) {
+        // Primeiro, remove SWs antigos para limpar cache corrompido
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          var hadOld = false;
+          registrations.forEach(function(reg) {
+            // Remove SWs antigos (sem o nome correto no cache)
+            if (reg.active && reg.active.scriptURL && !reg.active.scriptURL.includes('sw.js')) {
+              reg.unregister();
+              hadOld = true;
+            }
+          });
+        });
+
+        // Registra o novo SW
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').catch(function(err) {
-            console.warn('Service Worker não pôde ser registrado:', err);
+          navigator.serviceWorker.register('/sw.js').then(function(reg) {
+            console.log('[App] Service Worker registrado:', reg.scope);
+          }).catch(function(err) {
+            console.warn('[App] Service Worker falhou:', err);
+          });
+
+          // Escuta notificação de atualização e recarrega automaticamente
+          navigator.serviceWorker.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'SW_UPDATED') {
+              window.location.reload();
+            }
           });
         });
       }
