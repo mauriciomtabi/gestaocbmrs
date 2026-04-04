@@ -43,7 +43,7 @@ interface Props {
   setNotification: (message: string, type: 'success' | 'error') => void;
 }
 
-type ScreenStatus = 'loading' | 'no-faces-registered' | 'scanning' | 'match-found' | 'no-match' | 'saving' | 'confirmed';
+type ScreenStatus = 'loading' | 'no-faces-registered' | 'idle' | 'scanning' | 'match-found' | 'no-match' | 'saving' | 'confirmed';
 
 const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAttendanceUpdated, setNotification }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -145,7 +145,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         });
         setProviderDescriptors(descriptors);
 
-        await startCamera('user');
+        setStatus('idle');
       } catch (err: any) {
         setLoadingMessage(`Erro: ${err.message}`);
         setStatus('loading');
@@ -327,6 +327,28 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
               >
                 <SwitchCamera size={20} />
               </button>
+            )}
+
+            {/* Idle state - waiting to start camera */}
+            {status === 'idle' && (
+              <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center gap-6 p-6 z-20">
+                <Camera size={64} className="text-blue-500 mb-2" />
+                <div className="text-center">
+                  <p className="text-white font-black uppercase text-xl mb-2">Sistema Pronto</p>
+                  <p className="text-slate-400 text-sm max-w-sm mb-8">
+                    Os modelos de reconhecimento facial foram carregados com sucesso. Clique abaixo para iniciar a câmera.
+                  </p>
+                </div>
+                <button
+                  onClick={async () => {
+                    await startCamera(facingMode);
+                  }}
+                  className="px-8 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-600/30 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-3 uppercase tracking-widest text-sm"
+                >
+                  <Camera size={20} />
+                  Iniciar Câmera
+                </button>
+              </div>
             )}
 
             {/* Scanning overlay */}
