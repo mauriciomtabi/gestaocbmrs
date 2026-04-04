@@ -69,16 +69,27 @@ const Login: React.FC<Props> = ({ onLogin }) => {
     setAuthError(null);
     setIsLoading(true);
 
+    const attemptLogin = async (attempt = 1): Promise<{data: any, error: any}> => {
+      try {
+        return await Promise.race([
+          supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword }),
+          new Promise<{data: any, error: any}>((_, reject) =>
+            // 60 segundos para acomodar cold-start do Supabase no plano gratuito
+            setTimeout(() => reject(new Error(`Timeout (tentativa ${attempt}/3). Servidor demorou para responder.`)), 60000)
+          )
+        ]);
+      } catch (err: any) {
+        if (attempt < 3 && err.message.startsWith('Timeout')) {
+          // Aguarda 3 segundos e tenta novamente
+          await new Promise(r => setTimeout(r, 3000));
+          return attemptLogin(attempt + 1);
+        }
+        throw err;
+      }
+    };
+
     try {
-      const { data, error } = await Promise.race([
-        supabase.auth.signInWithPassword({
-          email: loginEmail,
-          password: loginPassword,
-        }),
-        new Promise<{data: any, error: any}>((_, reject) => 
-          setTimeout(() => reject(new Error("Timeout de conexão com o servidor de autenticação.")), 30000)
-        )
-      ]);
+      const { data, error } = await attemptLogin();
 
       if (error) throw error;
 

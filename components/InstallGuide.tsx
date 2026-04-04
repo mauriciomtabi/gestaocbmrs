@@ -1,13 +1,43 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Share, PlusSquare, Smartphone, Monitor, ArrowUp, MoreVertical, ExternalLink, CheckCircle2, Sparkles } from 'lucide-react';
 
 interface Props {
   onClose: () => void;
 }
 
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator as any).standalone;
+
 const InstallGuide: React.FC<Props> = ({ onClose }) => {
   const appUrl = window.location.origin;
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [installState, setInstallState] = useState<'idle' | 'done'>('idle');
+  const [showIOSHint, setShowIOSHint] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (isIOS()) {
+      setShowIOSHint(true);
+      return;
+    }
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') setInstallState('done');
+      setDeferredPrompt(null);
+    } else {
+      window.open(appUrl, '_blank');
+    }
+  };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(appUrl);
@@ -45,6 +75,32 @@ const InstallGuide: React.FC<Props> = ({ onClose }) => {
           <button onClick={onClose} className="p-2.5 hover:bg-blue-100 text-blue-400 transition-colors rounded-full">
             <X size={20} />
           </button>
+        </div>
+
+        {/* Botão de Instalação Direta */}
+        <div className="px-8 pt-6">
+          {isInStandaloneMode() || installState === 'done' ? (
+            <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
+              <CheckCircle2 className="text-emerald-600 shrink-0" size={24} />
+              <p className="text-emerald-800 font-black text-sm uppercase">Aplicativo já instalado neste dispositivo!</p>
+            </div>
+          ) : (
+            <button
+              onClick={handleInstallClick}
+              className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-300/40 transition-all active:scale-95"
+            >
+              <Smartphone size={20} />
+              {isIOS() ? 'Ver instruções para iPhone' : (deferredPrompt ? 'Instalar Aplicativo Agora' : 'Abrir no Navegador')}
+            </button>
+          )}
+          {showIOSHint && (
+            <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex gap-3 items-start animate-in fade-in slide-in-from-top-2">
+              <Share className="text-amber-600 shrink-0 mt-0.5" size={18} />
+              <p className="text-amber-800 text-xs font-bold leading-relaxed">
+                No Safari, toque no ícone <span className="bg-amber-200 px-1 rounded">Compartilhar</span> na barra inferior e selecione <span className="bg-amber-200 px-1 rounded">"Adicionar à Tela de Início"</span>.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Content */}
