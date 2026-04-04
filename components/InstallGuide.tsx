@@ -85,48 +85,6 @@ const InstallGuide: React.FC<Props> = ({ onClose }) => {
         {/* Content */}
         <div className="p-8 overflow-y-auto space-y-8">
 
-          {/* Botões de Instalação por Plataforma */}
-          {isInStandaloneMode() || installState === 'done' ? (
-            <div className="flex items-center gap-3 p-5 bg-emerald-50 border border-emerald-200 rounded-2xl">
-              <CheckCircle2 className="text-emerald-600 shrink-0" size={28} />
-              <p className="text-emerald-800 font-black text-sm uppercase">Aplicativo já instalado neste dispositivo!</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Botão Android */}
-              <button
-                onClick={handleAndroidInstall}
-                className="flex flex-col items-center justify-center gap-3 py-6 px-4 bg-gradient-to-br from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-green-300/40 transition-all active:scale-95"
-              >
-                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/Android_robot.svg" className="w-8 h-8 brightness-0 invert" alt="Android" />
-                <span>{deferredPrompt ? 'Instalar no Android' : 'Abrir no Navegador'}</span>
-                <span className="text-green-200 font-medium normal-case text-[10px]">
-                  {deferredPrompt ? 'Toque para instalar agora' : 'Abrir e instalar pelo Chrome'}
-                </span>
-              </button>
-
-              {/* Botão iOS */}
-              <button
-                onClick={handleIOSInstall}
-                className="flex flex-col items-center justify-center gap-3 py-6 px-4 bg-gradient-to-br from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-400/30 transition-all active:scale-95"
-              >
-                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" className="w-7 h-8 brightness-0 invert" alt="Apple" />
-                <span>Instalar no iPhone</span>
-                <span className="text-slate-400 font-medium normal-case text-[10px]">Abre o menu de compartilhamento</span>
-              </button>
-            </div>
-          )}
-
-          {/* Dica iOS após clicar */}
-          {showIOSHint && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex gap-3 items-start animate-in fade-in slide-in-from-top-2">
-              <Share className="text-amber-600 shrink-0 mt-0.5" size={18} />
-              <p className="text-amber-800 text-xs font-bold leading-relaxed">
-                No Safari: toque em <span className="bg-amber-200 px-1 rounded">Compartilhar</span> na barra inferior → selecione <span className="bg-amber-200 px-1 rounded">"Adicionar à Tela de Início"</span> → toque em <span className="bg-amber-200 px-1 rounded">Adicionar</span>.
-              </p>
-            </div>
-          )}
-
           {/* Compartilhar link */}
           <section className="space-y-4">
             <div className="flex items-center gap-2">

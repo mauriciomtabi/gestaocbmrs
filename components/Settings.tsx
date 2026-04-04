@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Operator } from '../types';
 import UserProfile from './UserProfile';
 import { Settings as SettingsIcon, Smartphone, UserCircle, ChevronRight, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import packageJson from '../package.json';
 
 interface Props {
   currentUser: Operator;
@@ -86,7 +87,7 @@ const Settings: React.FC<Props> = ({ currentUser, onUpdateProfile, onOpenInstall
               <div className="space-y-3 text-xs font-medium text-slate-600">
                 <div className="flex justify-between items-center py-2">
                   <span>Versão</span>
-                  <span className="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded">2.1.0</span>
+                  <span className="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded">{packageJson.version}</span>
                 </div>
               </div>
             </div>
