@@ -42,7 +42,7 @@ const FaceEnrollment: React.FC<Props> = ({ provider, onClose, onSuccess, hasExis
         await videoRef.current.play();
       }
       setStatus('ready');
-      setMessage('Posicione seu rosto no centro. Clique em "Capturar Rosto" quando estiver pronto.');
+      setMessage('Aponte a câmera para o rosto do prestador e clique em "Capturar Rosto" quando estiver pronto.');
 
       // Continuous detection preview
       detectionIntervalRef.current = setInterval(async () => {
@@ -273,10 +273,10 @@ const FaceEnrollment: React.FC<Props> = ({ provider, onClose, onSuccess, hasExis
                 <AlertCircle size={12} /> Boas Práticas de Captura
               </p>
               <ul className="text-[11px] text-slate-400 space-y-1.5 list-disc list-inside">
-                <li>Esteja em um local <strong>bem iluminado</strong></li>
-                <li>O rosto deve estar <strong>sem máscaras</strong> ou óculos escuros</li>
-                <li>Olhe <strong>diretamente</strong> para a câmera do aparelho</li>
-                <li>Aguarde o indicador verde de "Rosto Detectado"</li>
+                <li>Certifique-se de que o prestador está em um local <strong>bem iluminado</strong></li>
+                <li>O rosto do prestador deve estar <strong>sem máscaras</strong> ou óculos escuros</li>
+                <li>Aponte a câmera <strong>diretamente</strong> para o rosto do prestador</li>
+                <li>Aguarde o indicador verde de "Rosto Detectado" antes de capturar</li>
               </ul>
             </div>
           </div>

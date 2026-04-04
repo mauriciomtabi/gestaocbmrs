@@ -99,6 +99,8 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
   const [hasFaceDescriptor, setHasFaceDescriptor] = useState(false);
 
   useEffect(() => {
+    // Scroll to top when opening a provider
+    window.scrollTo({ top: 0, behavior: 'instant' });
     // Check if this provider already has a face descriptor registered
     import('../services/supabaseService').then(({ getFaceDescriptors }) => {
       getFaceDescriptors().then(descriptors => {
