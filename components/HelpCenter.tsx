@@ -84,12 +84,12 @@ const HELP_DATA: Topic[] = [
     content: (
       <div className="space-y-4">
         <p className="text-slate-600 leading-relaxed">
-          Para que o sistema some as horas automáticas num processo, utilizamos nossa tecnologia de <strong>Processamento Inteligente (OCR avançado)</strong>, responsável por ler o papel físico onde os horários foram manusalmente registrados.
+          Para que o sistema some as horas automáticas num processo, utilizamos nossa tecnologia de <strong>Processamento Inteligente (OCR avançado)</strong>, responsável por ler o papel físico onde os horários foram manualmente registrados.
         </p>
 
         <h3 className="text-lg font-black text-slate-800 mt-4">Como Digitalizar Documentos</h3>
         <ul className="list-decimal pl-5 space-y-2 text-slate-600 mb-6">
-          <li>Aesse a ficha de um <strong>Prestador</strong> na lista.</li>
+          <li>Acesse a ficha de um <strong>Prestador</strong> na lista.</li>
           <li>Desça até a aba <strong>Lançamentos e Horas</strong> e clique em <em>Digitalizar Folha</em>.</li>
           <li>A câmera abrirá (se for no celular) ou um seletor de arquivos aparecerá. Capte a foto da folha em um local <strong>bem iluminado</strong>, priorizando um enquadramento sem fundos irregulares.</li>
           <li>Na segunda tela, utilize as âncoras para <strong>Mapear e Recortar</strong> as bordas isolando apenas a tabela/dados.</li>
