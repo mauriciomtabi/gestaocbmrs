@@ -67,7 +67,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
     }
   }, []);
 
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
 
   const startCamera = useCallback(async (mode: 'user' | 'environment') => {
     try {
