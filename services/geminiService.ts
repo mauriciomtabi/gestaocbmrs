@@ -24,7 +24,7 @@ export const detectFaceInDocument = async (base64Data: string, mimeType: string)
 
   try {
     const response = await getAI().models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.0-flash-001',
       contents: {
         parts: [
           { inlineData: { mimeType: mimeType, data: base64Data } },
@@ -73,7 +73,7 @@ export const extractAttendanceFromFile = async (base64Data: string, mimeType: st
 
   try {
     const response = await getAI().models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.0-flash-001',
       contents: {
         parts: [
           { inlineData: { mimeType: mimeType, data: base64Data } },
@@ -153,7 +153,7 @@ export const extractReferralData = async (base64Data: string, mimeType: string) 
 
   try {
     const response = await getAI().models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.0-flash-001',
       contents: {
         parts: [
           { inlineData: { mimeType: mimeType, data: base64Data } },
