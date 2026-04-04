@@ -59,11 +59,10 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd 
     }
   };
 
-  const filteredProviders = useMemo(() => {
-    let result = providers.filter(p => {
+  const baseFilteredProviders = useMemo(() => {
+    return providers.filter(p => {
       const name = p.name || '';
       const processNumber = p.processNumber || '';
-      const matchesTab = p.status === activeTab || (activeTab === 'active' && p.status === 'suspended');
       const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             processNumber.includes(searchTerm);
       
@@ -71,7 +70,19 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd 
       const matchesYear = selectedYear === 'Todos' || pYear === selectedYear;
       const matchesMonth = selectedMonth === 'Todos' || pMonth === selectedMonth;
 
-      return matchesTab && matchesSearch && matchesYear && matchesMonth;
+      return matchesSearch && matchesYear && matchesMonth;
+    });
+  }, [providers, searchTerm, selectedYear, selectedMonth]);
+
+  const counts = useMemo(() => ({
+    active: baseFilteredProviders.filter(p => p.status === 'active' || p.status === 'suspended').length,
+    completed: baseFilteredProviders.filter(p => p.status === 'completed').length,
+    returned: baseFilteredProviders.filter(p => p.status === 'returned').length
+  }), [baseFilteredProviders]);
+
+  const filteredProviders = useMemo(() => {
+    let result = baseFilteredProviders.filter(p => {
+      return p.status === activeTab || (activeTab === 'active' && p.status === 'suspended');
     });
 
     // Aplicação da Ordenação
@@ -91,7 +102,7 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd 
     });
 
     return result;
-  }, [providers, activeTab, searchTerm, selectedYear, selectedMonth, sortOrder]);
+  }, [baseFilteredProviders, activeTab, sortOrder]);
 
   const totalPages = Math.ceil(filteredProviders.length / ITEMS_PER_PAGE);
   const paginatedProviders = filteredProviders.slice(
@@ -196,9 +207,9 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd 
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="flex border-b border-slate-100">
-          <TabButton id="active" label="Ativos" count={providers.filter(p => p.status === 'active' || p.status === 'suspended').length} />
-          <TabButton id="completed" label="Finalizados" count={providers.filter(p => p.status === 'completed').length} />
-          <TabButton id="returned" label="Devolvidos" count={providers.filter(p => p.status === 'returned').length} />
+          <TabButton id="active" label="Ativos" count={counts.active} />
+          <TabButton id="completed" label="Finalizados" count={counts.completed} />
+          <TabButton id="returned" label="Devolvidos" count={counts.returned} />
         </div>
 
         <div className="divide-y divide-slate-50">
