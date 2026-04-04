@@ -16,12 +16,12 @@
   </head>
   <body>
     <script>
-      // Forçar a desinstalação de qualquer Service Worker antigo ANTES de carregar o app
+      // Registrar o Service Worker para habilitar instalação PWA
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            registration.unregister();
-          }
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').catch(function(err) {
+            console.warn('Service Worker não pôde ser registrado:', err);
+          });
         });
       }
     </script>

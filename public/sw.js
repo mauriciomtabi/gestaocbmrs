@@ -1,9 +1,10 @@
-const CACHE_NAME = 'gestao-cbm-v1';
+const CACHE_NAME = 'gestao-cbm-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  'https://i.postimg.cc/T1nny2hc/Brasao-cbmrs.png'
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -16,12 +17,25 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      );
+    }).then(() => clients.claim())
+  );
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignorar requisições não-GET e requisições para APIs externas (como Supabase)
-  if (event.request.method !== 'GET' || event.request.url.includes('supabase.co')) {
+  // Ignora requisições não-GET e APIs externas (Supabase, Gemini, etc.)
+  if (
+    event.request.method !== 'GET' ||
+    event.request.url.includes('supabase.co') ||
+    event.request.url.includes('googleapis') ||
+    event.request.url.includes('generativelanguage')
+  ) {
     return;
   }
 
