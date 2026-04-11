@@ -248,8 +248,22 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
   const inactivityAlerts = activeProviders.map(p => {
     const pAttendance = attendance.filter(a => a.providerId === p.id);
     const lastDate = getLatestVisit(pAttendance);
-    const days = getDaysInactivity(lastDate);
-    return { provider: p, days, lastDate };
+
+    let days: number;
+    let displayLastDate: string;
+
+    if (lastDate) {
+      // Tem registros: calcula dias desde o último comparecimento
+      days = getDaysInactivity(lastDate);
+      displayLastDate = lastDate;
+    } else {
+      // Sem registros: usa a data de encaminhamento/recebimento como base
+      const baseDate = p.referralDate || p.receiptDate || '';
+      days = baseDate ? getDaysInactivity(baseDate) : 999;
+      displayLastDate = '';
+    }
+
+    return { provider: p, days, lastDate: displayLastDate };
   }).filter(item => item.days >= 1).sort((a, b) => b.days - a.days);
 
   const closeToFinishAlerts = activeProviders.map(p => {
@@ -573,9 +587,10 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                                 <p className={`text-[10px] font-black uppercase truncate leading-none ${nameClass}`}>{item.provider.name}</p>
                               </div>
                               <p className={`text-[9px] font-bold leading-tight ${infoClass}`}>
-                                Ausente há {item.days >= 999 ? 'muito tempo' : `${item.days} dias`}. Última vez em: {item.lastDate
-                                  ? new Date(item.lastDate.includes('T') ? item.lastDate : `${item.lastDate}T12:00:00`).toLocaleDateString('pt-BR')
-                                  : 'Sem registros'}
+                                {item.lastDate
+                                  ? `Ausente há ${item.days >= 999 ? 'muito tempo' : `${item.days} dias`}. Última vez em: ${new Date(item.lastDate.includes('T') ? item.lastDate : `${item.lastDate}T12:00:00`).toLocaleDateString('pt-BR')}`
+                                  : `Sem visitas registradas. Encaminhado há ${item.days} dia${item.days !== 1 ? 's' : ''}.`
+                                }
                               </p>
                             </div>
                           </div>
