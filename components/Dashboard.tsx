@@ -836,10 +836,10 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                     <p className="text-[10px] text-slate-400 italic text-center py-12">Sem dados históricos</p>
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={monthlySpendingData} margin={{ top: 20, left: 10, right: 10, bottom: 0 }}>
+                      <LineChart data={monthlySpendingData} margin={{ top: 20, left: 10, right: 30, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }} tickFormatter={(val) => `R$ ${val}`} />
+                        <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }} padding={{ left: 20, right: 20 }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }} tickFormatter={(val) => val.toString()} width={35} />
                         <Tooltip 
                           contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 800 }}
                           formatter={(val: number) => [`R$ ${val.toLocaleString('pt-BR')}`, 'Gasto']}
