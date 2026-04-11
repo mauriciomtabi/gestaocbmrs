@@ -220,33 +220,33 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
           
           const timestampStr = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR');
           
-          // Gradient Background for Watermark
-          const grad = ctx.createLinearGradient(0, canvas.height - 100, 0, canvas.height);
-          grad.addColorStop(0, 'rgba(0,0,0,0)');
-          grad.addColorStop(0.3, 'rgba(0,0,0,0.6)');
-          grad.addColorStop(1, 'rgba(0,0,0,0.9)');
-          ctx.fillStyle = grad;
-          ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+          // Solid Background for Watermark (Guarantees contrast)
+          ctx.fillStyle = 'rgba(0,0,0,0.85)';
+          ctx.fillRect(0, canvas.height - 110, canvas.width, 110);
           
           ctx.textAlign = 'right';
           ctx.textBaseline = 'middle';
+          ctx.shadowColor = '#000000';
+          ctx.shadowBlur = 4;
+          ctx.shadowOffsetX = 1;
+          ctx.shadowOffsetY = 1;
 
           // Type and Date
-          ctx.font = 'black 16px "Inter", sans-serif';
-          ctx.fillStyle = type === 'entrada' ? '#34d399' : '#f87171';
-          ctx.fillText(`${type === 'entrada' ? 'ENTRADA' : 'SAÍDA'}: ${timestampStr}`, canvas.width - 15, canvas.height - 70);
+          ctx.font = '900 18px "Inter", sans-serif';
+          ctx.fillStyle = type === 'entrada' ? '#4ade80' : '#f87171'; // bright green or red
+          ctx.fillText(`${type === 'entrada' ? 'ENTRADA' : 'SAÍDA'}: ${timestampStr}`, canvas.width - 15, canvas.height - 80);
           
           // Operator
           ctx.font = 'bold 12px "Inter", sans-serif';
-          ctx.fillStyle = '#94a3b8';
-          ctx.fillText(`OPERADOR: ${currentUser.toUpperCase()}`, canvas.width - 15, canvas.height - 45);
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillText(`OPERADOR: ${currentUser.toUpperCase()}`, canvas.width - 15, canvas.height - 50);
           
           // Location + Coords
           ctx.font = 'bold 12px "Inter", sans-serif';
           ctx.fillStyle = '#60a5fa';
           ctx.fillText(`📍 CBM SAPUCAIA DO SUL (Lat: ${lat}, Lng: ${lng})`, canvas.width - 15, canvas.height - 25);
 
-          photoBase64 = canvas.toDataURL('image/jpeg', 0.82);
+          photoBase64 = canvas.toDataURL('image/jpeg', 0.85);
         }
       }
 
@@ -267,7 +267,8 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
           ...record,
           exitTime: time,
           durationMinutes: Math.max(0, exitMinutes - entryMinutes),
-          attachmentData: finalAttachment || record.attachmentData
+          attachmentData: finalAttachment || record.attachmentData,
+          reason: `LOCATION:${lat},${lng}`
         };
         await saveAttendance([updatedRecord]);
       } else if (type === 'entrada') {
@@ -282,7 +283,8 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
           exitTime: '',
           durationMinutes: 0,
           type: 'presence',
-          attachmentData: photoBase64
+          attachmentData: photoBase64,
+          reason: `LOCATION:${lat},${lng}`
         };
         await saveAttendance([newRecord]);
       }

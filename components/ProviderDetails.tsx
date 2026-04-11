@@ -999,7 +999,18 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
               <img src={viewingAttachment.attachmentData} alt="Documento" className="rounded-2xl shadow-2xl border-4 border-white/10 mx-auto h-fit max-w-full"/>
             </div>
           </div>
-          <div className="p-6 bg-black/20 backdrop-blur-md border-t border-white/10 flex justify-center gap-4">
+          <div className="p-6 bg-black/20 backdrop-blur-md border-t border-white/10 flex flex-wrap justify-center gap-4">
+             {viewingAttachment.reason?.startsWith('LOCATION:') && (
+               <a 
+                 href={`https://www.google.com/maps/search/?api=1&query=${viewingAttachment.reason.split(':')[1]}`}
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 className="px-8 py-3 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center gap-2"
+               >
+                 <MapPin size={16} />
+                 Abrir no Google Maps
+               </a>
+             )}
              <button 
               onClick={() => handleDownload(viewingAttachment.attachmentData!, `frequencia_${viewingAttachment.date}.png`)}
               className="px-8 py-3 bg-emerald-600 text-white font-black rounded-2xl shadow-xl hover:bg-emerald-700 transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center gap-2"
