@@ -194,18 +194,10 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         .filter(a => a.providerId === matchedProvider.providerId && a.date === today && !a.exitTime)
         .sort((a, b) => a.entryTime.localeCompare(b.entryTime));
 
-      // Attempt to get Geolocation
-      let lat = "-29.8315"; // Fallback: Sapucaia do Sul CBM proxy
-      let lng = "-51.1511";
-      try {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000, enableHighAccuracy: true });
-        });
-        lat = position.coords.latitude.toFixed(4);
-        lng = position.coords.longitude.toFixed(4);
-      } catch (e) {
-        console.warn("GPS indisponível, usando fallback calibrado.", e);
-      }
+      // Local fixo calibrado do Quartel CBM Sapucaia do Sul
+      // (Conforme ajuste de precisão solicitado)
+      const lat = "-29.819878";
+      const lng = "-51.161518";
 
       // Capture frame for proof
       let photoBase64 = '';
