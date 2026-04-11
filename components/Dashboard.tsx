@@ -96,9 +96,11 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
     // Precisamos contar prestadores únicos (por dia) para a métrica "Comparecem por dia da semana"
     // Ou seja, quantas assinaturas acontecem naquele dia.
     attendancesInMonth.forEach(a => {
-      // a.date é YYYY-MM-DD
-      const d = new Date(`${a.date}T12:00:00`);
-      data[d.getDay()].prestadores += 1;
+      const datePart = a.date.split('T')[0];
+      const d = new Date(`${datePart}T12:00:00`);
+      if (!isNaN(d.getDay())) {
+        data[d.getDay()].prestadores += 1;
+      }
     });
 
     // Reordenar para começar na Segunda-Feira e remover o Domingo (se ficar muito lixo, mas o ideal é deixar).
