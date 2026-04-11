@@ -440,58 +440,130 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
         {/* ======================= ABA VISÃO GERAL ======================= */}
         {activeTab === 'geral' && (
           <div className="space-y-8 animate-in slide-in-from-bottom-8 fade-in duration-500">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="flex flex-col gap-10">
               
-              <div className="lg:col-span-8 space-y-6">
-                {/* Histórico Recente */}
-                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden h-full">
-                  <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                      <Clock size={16} className="text-blue-600" />
-                      Fluxo de Atividade Recente
-                    </h3>
+              {/* === ROW 1: ALERTAS (4 COLUNAS) === */}
+              {(() => {
+                const redAlerts = inactivityAlerts.filter(item => item.days > 30);
+                const yellowAlerts = inactivityAlerts.filter(item => item.days > 7 && item.days <= 30);
+                const greenAlerts = inactivityAlerts.filter(item => item.days <= 7);
+                const totalAlerts = inactivityAlerts.length + closeToFinishAlerts.length;
+
+                const AlertColumn = ({ title, icon: Icon, color, bgHeader, bgMain, borderCls, textTitle, items, isProgress = false }: any) => (
+                  <div className="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col h-[380px] overflow-hidden">
+                    <div className={`px-4 py-3 border-b border-slate-100 flex flex-col justify-center bg-slate-50`}>
+                       <div className="flex items-center justify-between">
+                         <h4 className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ${textTitle}`}>
+                           <div className={`p-1.5 rounded-lg ${bgHeader}`}><Icon size={14} className={color} /></div>
+                           {title}
+                         </h4>
+                         <span className="bg-white text-slate-500 text-[10px] font-black px-2 py-0.5 rounded-full border border-slate-200 shadow-sm">{items.length}</span>
+                       </div>
+                    </div>
+                    <div className="p-3 flex-1 overflow-y-auto no-scrollbar space-y-2 bg-slate-50/50">
+                      {items.length === 0 ? (
+                        <div className="h-full flex items-center justify-center opacity-50">
+                          <p className={`text-[10px] font-black uppercase tracking-widest italic text-center text-slate-400`}>Vazio</p>
+                        </div>
+                      ) : items.map((item: any) => (
+                        <div 
+                          key={item.provider.id} 
+                          className={`flex gap-3 p-3.5 rounded-2xl border transition-all hover:shadow-md hover:-translate-y-0.5 cursor-pointer ${bgMain} ${borderCls}`}
+                          onClick={() => onNavigateProvider(item.provider)}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              {color.includes('red') && <div className="w-1.5 h-1.5 rounded-full animate-pulse bg-red-500 shrink-0" />}
+                              <p className={`text-[10px] font-black uppercase truncate leading-none ${textTitle}`}>{item.provider.name}</p>
+                            </div>
+                            <p className={`text-[9px] font-bold leading-relaxed ${color}`}>
+                              {!isProgress ? (
+                                item.lastDate
+                                  ? `Ausente há ${item.days >= 999 ? 'muito tempo' : `${item.days} dias`}. Última vez: ${new Date(item.lastDate.includes('T') ? item.lastDate : `${item.lastDate}T12:00:00`).toLocaleDateString('pt-BR')}`
+                                  : `Nenhuma visita. Encaminhado há ${item.days} dia${item.days !== 1 ? 's' : ''}.`
+                              ) : (
+                                `Prestes a terminar: ${Math.round(item.progress)}% da carga concluída.`
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="p-4 grid grid-cols-1 gap-2">
+                );
+
+                return (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                       <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                         <ShieldAlert size={18} className="text-red-500" />
+                         Quadro de Alertas
+                       </h3>
+                       {totalAlerts > 0 && <span className="bg-red-50 text-red-600 text-[10px] font-black px-3 py-1.5 rounded-full border border-red-200">{totalAlerts} PENDÊNCIAS</span>}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+                       <AlertColumn title="Crítico (>30d)" icon={AlertCircle} color="text-red-600" bgHeader="bg-red-100" bgMain="bg-red-50/50 hover:bg-red-50" borderCls="border-red-200" textTitle="text-red-900" items={redAlerts} />
+                       <AlertColumn title="Atenção (>7d)" icon={AlertCircle} color="text-amber-600" bgHeader="bg-amber-100" bgMain="bg-amber-50/50 hover:bg-amber-50" borderCls="border-amber-200" textTitle="text-amber-900" items={yellowAlerts} />
+                       <AlertColumn title="Ativos (<=7d)" icon={CheckCircle} color="text-emerald-600" bgHeader="bg-emerald-100" bgMain="bg-emerald-50/50 hover:bg-emerald-50" borderCls="border-emerald-200" textTitle="text-emerald-900" items={greenAlerts} />
+                       <AlertColumn title="A Concluir" icon={CheckCircle} color="text-blue-600" bgHeader="bg-blue-100" bgMain="bg-blue-50/50 hover:bg-blue-50" borderCls="border-blue-200" textTitle="text-blue-900" items={closeToFinishAlerts} isProgress={true} />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* === ROW 2: ATIVIDADES RECENTES === */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                   <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                     <Clock size={18} className="text-blue-600" />
+                     Fluxo de Atividade Recente
+                   </h3>
+                </div>
+                
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-6 grid grid-cols-1 lg:grid-cols-2 xlg:grid-cols-3 xl:grid-cols-4 gap-4 bg-slate-50/30">
                     {(() => {
                       const activities = [
                         ...attendance.map(a => ({ type: 'attendance' as const, data: a, date: new Date(a.date.includes('T') ? a.date : `${a.date}T12:00:00`) })),
                         ...fuelSupplies.map(f => ({ type: 'fuel' as const, data: f, date: new Date(f.date.includes('T') ? f.date : `${f.date}T12:00:00`) }))
-                      ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 6);
+                      ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 12); // Mostra 12 itens agora pra preencher a grid
 
                       if (activities.length === 0) {
                         return (
-                          <div className="py-12 text-center">
-                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest italic">Sem lançamentos recentes</p>
+                          <div className="col-span-full py-16 text-center">
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest italic">Sem lançamentos recentes no sistema</p>
                           </div>
                         );
                       }
 
-                      return activities.map(activity => {
+                      return activities.map((activity, idx) => {
                         if (activity.type === 'attendance') {
                           const record = activity.data as AttendanceRecord;
                           const p = providers.find(prov => prov.id === record.providerId);
                           return (
-                            <div key={record.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-slate-50 transition-all rounded-2xl group gap-3 border border-transparent hover:border-slate-100">
-                              <div className="flex items-center gap-3 w-full sm:w-auto">
-                                <div className="w-10 h-10 bg-blue-50/50 rounded-xl flex items-center justify-center font-black text-blue-600 shadow-sm border border-blue-100 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                  {(p?.name || '?').charAt(0)}
+                            <div key={`att-${record.id}-${idx}`} className="flex flex-col justify-between p-4 bg-white hover:bg-slate-50 transition-all rounded-3xl border border-slate-200 hover:border-blue-200 shadow-sm group gap-4">
+                              <div className="flex items-start gap-3 w-full">
+                                <div className="w-10 h-10 bg-blue-50/80 rounded-2xl flex items-center justify-center font-black text-blue-600 shadow-sm border border-blue-100 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all text-[15px]">
+                                  {(p?.name || '?').charAt(0).toUpperCase()}
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="font-black text-slate-800 text-[11px] uppercase truncate">{p?.name || 'Desconhecido'}</p>
-                                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{new Date(record.date.includes('T') ? record.date : `${record.date}T12:00:00`).toLocaleDateString('pt-BR')}</span>
-                                    <span className="text-[8px] font-black text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded uppercase">
+                                <div className="min-w-0 flex-1 pt-0.5">
+                                  <p className="font-black text-slate-800 text-[11px] uppercase truncate" title={p?.name}>{p?.name || 'Desconhecido'}</p>
+                                  <div className="flex items-center gap-1.5 mt-1.5 opacity-70">
+                                    <span className="text-[9px] text-slate-500 font-black tracking-widest">{new Date(record.date.includes('T') ? record.date : `${record.date}T12:00:00`).toLocaleDateString('pt-BR')}</span>
+                                    <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase">
                                       {record.entryTime || '--:--'} às {record.exitTime || '--:--'}
                                     </span>
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                                <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-3 py-1 rounded-xl text-[10px] font-black">
-                                  +{formatMinutesToHHMM(record.durationMinutes)}
+                              <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto">
+                                <span className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wide">
+                                  +{formatMinutesToHHMM(record.durationMinutes)} HR
                                 </span>
-                                <button onClick={() => p && onNavigateProvider(p)} className="p-2 bg-slate-50 hover:bg-blue-50 focus:bg-blue-100 rounded-xl text-slate-400 group-hover:text-blue-600 transition-all">
-                                  <ArrowUpRight size={16} />
+                                <button onClick={() => p && onNavigateProvider(p)} className="p-2 bg-slate-100 hover:bg-blue-100 focus:bg-blue-200 rounded-xl text-slate-500 group-hover:text-blue-700 transition-all shadow-sm">
+                                  <ArrowUpRight size={14} />
                                 </button>
                               </div>
                             </div>
@@ -500,27 +572,28 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                           const supply = activity.data as FuelSupply;
                           const vehicle = vehicles.find(v => v.plate === supply.plate);
                           return (
-                            <div key={supply.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-slate-50 transition-all rounded-2xl group gap-3 border border-transparent hover:border-slate-100">
-                              <div className="flex items-center gap-3 w-full sm:w-auto">
-                                <div className="w-12 h-10 bg-emerald-50/50 rounded-xl overflow-hidden border border-emerald-100 shrink-0 flex items-center justify-center shadow-sm group-hover:border-emerald-200 transition-all">
-                                  {vehicle?.photo ? <img src={vehicle.photo} alt={supply.plate} className="w-full h-full object-contain p-0.5" /> : <Car size={16} className="text-emerald-300" />}
+                            <div key={`fuel-${supply.id}-${idx}`} className="flex flex-col justify-between p-4 bg-white hover:bg-slate-50 transition-all rounded-3xl border border-slate-200 hover:border-emerald-200 shadow-sm group gap-4">
+                              <div className="flex items-start gap-3 w-full">
+                                <div className="w-12 h-10 bg-emerald-50/80 rounded-2xl overflow-hidden border border-emerald-100 shrink-0 flex items-center justify-center shadow-sm relative">
+                                  {vehicle?.photo ? <img src={vehicle.photo} alt={supply.plate} className="absolute inset-0 w-full h-full object-cover" /> : <Car size={16} className="text-emerald-400" />}
                                 </div>
-                                <div className="min-w-0 flex-1">
+                                <div className="min-w-0 flex-1 pt-0.5">
                                   <p className="font-black text-slate-800 text-[11px] uppercase truncate">
                                     {supply.plate.replace(/\s/g, '').length === 7 ? `${supply.plate.replace(/\s/g, '').slice(0, 3)} ${supply.plate.replace(/\s/g, '').slice(3)}` : supply.plate} 
                                   </p>
-                                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{new Date(supply.date.includes('T') ? supply.date : `${supply.date}T12:00:00`).toLocaleDateString('pt-BR')}</span>
-                                    <span className="text-[8px] bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">Abastecimento</span>
+                                  <div className="flex items-center gap-1.5 mt-1.5 opacity-70">
+                                    <span className="text-[9px] text-slate-500 font-black tracking-widest">{new Date(supply.date.includes('T') ? supply.date : `${supply.date}T12:00:00`).toLocaleDateString('pt-BR')}</span>
+                                    <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase">Abastecimento</span>
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                                <span className="text-slate-800 px-3 py-1 text-[11px] font-black">
+                              <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto">
+                                <span className="text-slate-700 px-2 py-1 text-[11px] font-black">
                                   R$ {supply.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                 </span>
-                                <button onClick={onNavigateFuel} className="p-2 bg-slate-50 hover:bg-blue-50 focus:bg-blue-100 rounded-xl text-slate-400 group-hover:text-blue-600 transition-all">
-                                  <ArrowUpRight size={16} />
+                                <button onClick={onNavigateFuel} className="p-2 bg-slate-100 hover:bg-emerald-100 focus:bg-emerald-200 rounded-xl text-slate-500 group-hover:text-emerald-700 transition-all shadow-sm">
+                                  <ArrowUpRight size={14} />
                                 </button>
                               </div>
                             </div>
@@ -531,87 +604,7 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                   </div>
                 </div>
               </div>
-
-              {/* COLUNA DIREITA: Alertas */}
-              <div className="lg:col-span-4 bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                    <ShieldAlert size={16} className="text-red-500" />
-                    Alertas (Prestadores)
-                  </h4>
-                  {inactivityAlerts.length + closeToFinishAlerts.length > 0 && (
-                    <span className="bg-red-100 text-red-600 text-[9px] font-black px-2.5 py-1 rounded-full border border-red-200">
-                      {inactivityAlerts.length + closeToFinishAlerts.length} AVISOS
-                    </span>
-                  )}
-                </div>
-                <div className="p-4 flex-1 overflow-y-auto no-scrollbar space-y-3">
-                  {inactivityAlerts.length === 0 && closeToFinishAlerts.length === 0 ? (
-                    <div className="py-16 text-center flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center shadow-sm">
-                        <CheckCircle className="text-emerald-500" size={20} />
-                      </div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nenhuma Pendência</p>
-                    </div>
-                  ) : (
-                    <>
-                      {inactivityAlerts.map(item => {
-                        const isRed = item.days > 30;
-                        const isYellow = item.days > 7 && item.days <= 30;
-                        // isGreen = item.days <= 7
-                        const cardClass = isRed
-                          ? 'bg-red-50 border-red-300 ring-1 ring-red-200 shadow-sm'
-                          : isYellow
-                          ? 'bg-amber-50 border-amber-200'
-                          : 'bg-emerald-50/60 border-emerald-200';
-                        const iconClass = isRed
-                          ? 'bg-red-600 shadow-red-200'
-                          : isYellow
-                          ? 'bg-amber-500 shadow-amber-200'
-                          : 'bg-emerald-500 shadow-emerald-200';
-                        const nameClass = isRed ? 'text-red-900' : isYellow ? 'text-amber-900' : 'text-emerald-900';
-                        const infoClass = isRed ? 'text-red-600' : isYellow ? 'text-amber-600' : 'text-emerald-600';
-                        const dotColor = isRed ? 'bg-red-500' : isYellow ? 'bg-amber-500' : 'bg-emerald-500';
-                        return (
-                          <div
-                            key={item.provider.id}
-                            className={`flex gap-3 p-4 rounded-2xl border group transition-all hover:shadow-md cursor-pointer ${cardClass}`}
-                            onClick={() => onNavigateProvider(item.provider)}
-                          >
-                            <div className={`${iconClass} shadow-sm p-2.5 rounded-xl text-white shrink-0 h-fit`}>
-                              <AlertCircle size={16} />
-                            </div>
-                            <div className="min-w-0 py-0.5 flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                {isRed && <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${dotColor}`} />}
-                                <p className={`text-[10px] font-black uppercase truncate leading-none ${nameClass}`}>{item.provider.name}</p>
-                              </div>
-                              <p className={`text-[9px] font-bold leading-tight ${infoClass}`}>
-                                {item.lastDate
-                                  ? `Ausente há ${item.days >= 999 ? 'muito tempo' : `${item.days} dias`}. Última vez em: ${new Date(item.lastDate.includes('T') ? item.lastDate : `${item.lastDate}T12:00:00`).toLocaleDateString('pt-BR')}`
-                                  : `Sem visitas registradas. Encaminhado há ${item.days} dia${item.days !== 1 ? 's' : ''}.`
-                                }
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {closeToFinishAlerts.map(item => (
-                        <div key={item.provider.id} className="flex gap-3 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 group transition-all hover:bg-blue-50 hover:shadow-md cursor-pointer" onClick={() => onNavigateProvider(item.provider)}>
-                          <div className="bg-blue-600 shadow-sm shadow-blue-200 p-2.5 rounded-xl text-white shrink-0 h-fit">
-                            <CheckCircle size={16} />
-                          </div>
-                          <div className="min-w-0 py-0.5">
-                            <p className="text-[10px] font-black text-blue-900 uppercase truncate leading-none mb-1">{item.provider.name}</p>
-                            <p className="text-[9px] text-blue-600 font-bold leading-tight">Prestes a terminar: {Math.round(item.progress)}% da pena cumprida.</p>
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </div>
-
+              
             </div>
           </div>
         )}
