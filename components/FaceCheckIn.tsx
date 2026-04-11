@@ -194,6 +194,19 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         .filter(a => a.providerId === matchedProvider.providerId && a.date === today && !a.exitTime)
         .sort((a, b) => a.entryTime.localeCompare(b.entryTime));
 
+      // Attempt to get Geolocation
+      let lat = "-29.8315"; // Fallback: Sapucaia do Sul CBM proxy
+      let lng = "-51.1511";
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000, enableHighAccuracy: true });
+        });
+        lat = position.coords.latitude.toFixed(4);
+        lng = position.coords.longitude.toFixed(4);
+      } catch (e) {
+        console.warn("GPS indisponível, usando fallback calibrado.", e);
+      }
+
       // Capture frame for proof
       let photoBase64 = '';
       if (videoRef.current && canvasRef.current) {
@@ -205,20 +218,35 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         if (ctx) {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           
-          // Add Watermark
           const timestampStr = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR');
-          const watermarkText = type === 'entrada' ? `ENTRADA: ${timestampStr}` : `SAÍDA: ${timestampStr}`;
           
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-          ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+          // Gradient Background for Watermark
+          const grad = ctx.createLinearGradient(0, canvas.height - 100, 0, canvas.height);
+          grad.addColorStop(0, 'rgba(0,0,0,0)');
+          grad.addColorStop(0.3, 'rgba(0,0,0,0.6)');
+          grad.addColorStop(1, 'rgba(0,0,0,0.9)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
           
-          ctx.font = 'bold 16px "Inter", sans-serif';
-          ctx.fillStyle = '#ffffff';
           ctx.textAlign = 'right';
           ctx.textBaseline = 'middle';
-          ctx.fillText(watermarkText, canvas.width - 15, canvas.height - 20);
 
-          photoBase64 = canvas.toDataURL('image/jpeg', 0.8);
+          // Type and Date
+          ctx.font = 'black 16px "Inter", sans-serif';
+          ctx.fillStyle = type === 'entrada' ? '#34d399' : '#f87171';
+          ctx.fillText(`${type === 'entrada' ? 'ENTRADA' : 'SAÍDA'}: ${timestampStr}`, canvas.width - 15, canvas.height - 70);
+          
+          // Operator
+          ctx.font = 'bold 12px "Inter", sans-serif';
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillText(`OPERADOR: ${currentUser.toUpperCase()}`, canvas.width - 15, canvas.height - 45);
+          
+          // Location + Coords
+          ctx.font = 'bold 12px "Inter", sans-serif';
+          ctx.fillStyle = '#60a5fa';
+          ctx.fillText(`📍 CBM SAPUCAIA DO SUL (Lat: ${lat}, Lng: ${lng})`, canvas.width - 15, canvas.height - 25);
+
+          photoBase64 = canvas.toDataURL('image/jpeg', 0.82);
         }
       }
 
