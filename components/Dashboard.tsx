@@ -854,7 +854,7 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                           <LabelList 
                             dataKey="value" 
                             position="top" 
-                            formatter={(val: number) => `R$ ${val}`}
+                            formatter={(val: number) => `R$ ${val.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}
                             style={{ fontSize: '9px', fontWeight: 900, fill: '#64748b' }}
                             offset={10}
                           />
