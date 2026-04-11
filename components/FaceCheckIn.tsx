@@ -74,7 +74,6 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(t => t.stop());
       }
-      setLoadingMessage('Abrindo câmera...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: mode, width: { ideal: 640 }, height: { ideal: 480 } }
       });
@@ -85,7 +84,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
       }
       setStatus('scanning');
     } catch (err: any) {
-      setLoadingMessage(`Erro: ${err.message}`);
+      setLoadingMessage(`Erro ao abrir a câmera: ${err.message}`);
       setStatus('loading');
     }
   }, []);
@@ -122,11 +121,14 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
   useEffect(() => {
     const init = async () => {
       try {
-        setLoadingMessage('Carregando modelos de reconhecimento facial...');
-        await loadFaceModels();
+        // Dispara a câmera imediatamente para melhorar a responsividade
+        startCamera(facingMode).catch(console.error);
 
-        setLoadingMessage('Buscando rostos cadastrados...');
-        const rawDescriptors = await getFaceDescriptors();
+        // Paraleliza os uploads pesados (modelos TensorFlow e Supabase)
+        const [_, rawDescriptors] = await Promise.all([
+          loadFaceModels(),
+          getFaceDescriptors()
+        ]);
 
         if (rawDescriptors.length === 0) {
           setStatus('no-faces-registered');
@@ -145,9 +147,11 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         });
         setProviderDescriptors(descriptors);
 
-        setStatus('idle');
+        // Se a câmera já iniciou com sucesso antes da IA carregar, status já é 'scanning'.
+        // Se ela falhou ou demorou muito, garantimos que continuará tentando escanear (que tentará carregar câmera novamente se não houver).
+        setStatus(prev => prev === 'loading' ? 'scanning' : prev);
       } catch (err: any) {
-        setLoadingMessage(`Erro: ${err.message}`);
+        setLoadingMessage(`Erro ao configurar IA: ${err.message}`);
         setStatus('loading');
       }
     };
@@ -355,13 +359,15 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
             {status === 'scanning' && (
               <div className="absolute inset-0 pointer-events-none">
                 {/* Corner markers */}
-                <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+                <div className={`absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 transition-opacity ${providerDescriptors.length > 0 ? 'opacity-100' : 'opacity-30'}`}>
                   <div className="border-2 border-blue-400/50 rounded-full w-44 h-44" />
                 </div>
                 <div className="absolute bottom-4 left-0 right-0 flex justify-center">
                   <div className="bg-black/60 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-                    <span className="text-blue-300 text-[11px] font-black uppercase tracking-widest">Escaneando Rostos...</span>
+                    <span className="text-blue-300 text-[11px] font-black uppercase tracking-widest">
+                      {providerDescriptors.length > 0 ? "Escaneando Rostos..." : "Configurando I.A..."}
+                    </span>
                   </div>
                 </div>
               </div>
