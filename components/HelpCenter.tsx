@@ -21,39 +21,57 @@ const HELP_DATA: Topic[] = [
   {
     id: 'intro-painel',
     category: 'Visão Geral',
-    title: 'Painel Principal (Dashboard)',
+    title: 'Painel de Controle (Dashboard)',
     icon: MonitorPlay,
-    tags: ['painel', 'dashboard', 'início', 'gráficos', 'resumo', 'abastecimento', 'combustível', 'indicadores'],
+    tags: ['painel', 'dashboard', 'início', 'gráficos', 'resumo', 'abastecimento', 'combustível', 'indicadores', 'abas'],
     content: (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <p className="text-slate-600 leading-relaxed">
-          O <strong>Painel Principal</strong> (Dashboard) é a central de comando do Sistema de Gestão CBM.
-          Aqui você encontra um resumo panorâmico de todas as operações ativas.
+          O <strong>Painel de Controle</strong> (Dashboard) é a central de comando do Sistema de Gestão CBM.
+          Ele foi remodelado em <strong>três abas principais</strong> para organizar melhor as informações vitais e operacionais.
         </p>
 
-        <Screenshot src="/docs/painel.png" caption="Painel Principal — visão geral com indicadores e alertas do sistema" />
+        <div className="space-y-8 mt-6">
+          <div className="border border-slate-200 rounded-3xl p-6 bg-white shadow-sm hover:shadow-md transition-all">
+            <h3 className="text-lg font-black text-slate-800 mb-2 flex items-center gap-2">
+              <span className="bg-slate-900 text-white w-6 h-6 flex items-center justify-center rounded-lg text-xs">1</span>
+              Aba: Visão Geral
+            </h3>
+            <p className="text-sm text-slate-600 mb-4">
+              Nesta aba você tem acesso imediato ao <strong>Quadro de Alertas</strong> (dividido em colunas de urgência: Crítico, Atenção, Ativos e A Concluir), 
+              além de um grid completo listando o <strong>Fluxo de Atividade Recente</strong>. Ela é sua triagem rápida de pendências do dia.
+            </p>
+            <Screenshot src="/docs/painel-visao-geral.png" caption="Aba Visão Geral — Quadro de alertas com color-coding e fluxo recente" />
+          </div>
 
-        <h3 className="text-lg font-black text-slate-800 mt-6">O que você encontra aqui:</h3>
+          <div className="border border-slate-200 rounded-3xl p-6 bg-white shadow-sm hover:shadow-md transition-all">
+            <h3 className="text-lg font-black text-blue-800 mb-2 flex items-center gap-2">
+              <span className="bg-blue-600 text-white w-6 h-6 flex items-center justify-center rounded-lg text-xs">2</span>
+              Aba: Prestadores
+            </h3>
+            <p className="text-sm text-slate-600 mb-4">
+               Focada em estatísticas. Aqui você monitora os <strong>Indicadores de Desempenho</strong> gerais ou específicos de um prestador, 
+               visualizando o fluxo semanal de comparecimentos e a evolução histórica (força de trabalho convertida em horas e presenças).
+            </p>
+            <Screenshot src="/docs/painel-prestadores.png" caption="Aba Prestadores — Gráficos detalhados e evolução histórica do serviço comunitário" />
+          </div>
 
-        <h4 className="font-black text-slate-700 mt-4">📋 Indicadores de Prestadores</h4>
-        <ul className="list-disc pl-5 space-y-2 text-slate-600">
-          <li><strong>Prestadores Ativos:</strong> Quantidade total de prestadores com pena em andamento na unidade.</li>
-          <li><strong>Horas Totais a Cumprir:</strong> Somatório consolidado de todas as horas pendentes.</li>
-          <li><strong>Alertas de Inatividade:</strong> O sistema emite alertas visuais em vermelho para prestadores que estão há mais de 7 dias sem lançar nenhum registro de frequência.</li>
-          <li><strong>Atalhos Rápidos:</strong> Botões que levam diretamente ao perfil dos prestadores em alerta.</li>
-        </ul>
-
-        <h4 className="font-black text-slate-700 mt-6">⛽ Indicadores de Abastecimento</h4>
-        <ul className="list-disc pl-5 space-y-2 text-slate-600">
-          <li><strong>Abastecimentos Pendentes:</strong> Quantidade de notas fiscais registradas que ainda aguardam conferência e validação por um responsável.</li>
-          <li><strong>Consumo Recente:</strong> Visão rápida dos últimos abastecimentos, com viatura, litros e valor.</li>
-          <li><strong>Atalho para Gestão de Frotas:</strong> Clique direto no indicador para ir à tela de conferência e aprovação dos abastecimentos.</li>
-        </ul>
+          <div className="border border-slate-200 rounded-3xl p-6 bg-white shadow-sm hover:shadow-md transition-all">
+            <h3 className="text-lg font-black text-emerald-800 mb-2 flex items-center gap-2">
+              <span className="bg-emerald-600 text-white w-6 h-6 flex items-center justify-center rounded-lg text-xs">3</span>
+              Aba: Abastecimento
+            </h3>
+            <p className="text-sm text-slate-600 mb-4">
+              Visão focada na <strong>Análise de Frota</strong>. Traz gráficos de gasto histórico em (R$), métricas quantitativas e identifica também "Viatura Eficiente" com base na média KM/L.
+            </p>
+            <Screenshot src="/docs/painel-abastecimento.png" caption="Aba Abastecimento — Controle financeiro e estatístico de combustíveis" />
+          </div>
+        </div>
 
         <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mt-4 flex items-start gap-3">
           <CheckCircle2 className="text-blue-600 shrink-0 mt-0.5" size={20} />
           <p className="text-sm text-blue-900 font-medium">
-            <strong>Dica de Produtividade:</strong> Use o painel diariamente como sua triagem. Resolva os alertas em vermelho primeiro antes de iniciar novas tarefas ou cadastros.
+            <strong>Dica de Produtividade:</strong> Use a aba "Visão Geral" diariamente como sua triagem. Resolva os alertas vermelhos e amarelos primeiro antes de iniciar novas tarefas.
           </p>
         </div>
       </div>
