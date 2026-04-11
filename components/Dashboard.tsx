@@ -114,9 +114,12 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
     });
 
     // Agrega por dia da semana, contando prestadores únicos em cada data
+    const weekDayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
     presencasPorDia.forEach((providerSet, datePart) => {
       const d = new Date(`${datePart}T12:00:00`);
       const item = data[d.getDay()];
+      // DEBUG: log para identificar registros problemáticos
+      console.log(`[DEBUG FluxoSemanal] date="${datePart}" dow=${weekDayNames[d.getDay()]} providers=[${[...providerSet].map(id => providers.find(p => p.id === id)?.name || id).join(', ')}]`);
       providerSet.forEach(providerId => {
         const pName = providers.find(p => p.id === providerId)?.name || 'Desconhecido';
         if (!item.provedores.includes(pName)) {
