@@ -114,14 +114,19 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
   const selectClasses = "bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all cursor-pointer";
 
   return (
-    <div className="space-y-8 bg-slate-100 p-4 md:p-10 rounded-xl shadow-inner border border-slate-200 min-h-screen print:bg-white print:p-0 print:border-none print:shadow-none">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 md:pb-0 print:bg-white print:p-0 print:border-none print:shadow-none">
       
       {/* Barra de Filtros (no-print) */}
-      <div className="no-print space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Relatório Oficial</h2>
-            <p className="text-sm text-slate-500 font-medium">Exportação em PDF com formatação institucional.</p>
+      <div className="no-print space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-600/30">
+              <FileText size={24} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Ofícios</h1>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Exportação em PDF institucional.</p>
+            </div>
           </div>
           <button 
             onClick={handleGeneratePDF}

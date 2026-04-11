@@ -16,7 +16,7 @@ const Settings: React.FC<Props> = ({ currentUser, onUpdateProfile, onOpenInstall
       {/* Header */}
       <div className="mb-6 shrink-0">
         <div className="flex items-center gap-4 mb-1">
-          <div className="bg-slate-800 p-3 rounded-2xl shadow-lg shadow-slate-900/20">
+          <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-600/30">
             <SettingsIcon size={24} className="text-white" />
           </div>
           <div>
@@ -120,7 +120,7 @@ const UserAccessControl: React.FC = () => {
     { id: 'providers', label: 'Prestadores' },
     { id: 'face-checkin', label: 'Check-in Facial' },
     { id: 'fuel', label: 'Abastecimento' },
-    { id: 'reports', label: 'Relatórios' },
+    { id: 'reports', label: 'Ofícios' },
     { id: 'settings', label: 'Configurações (Admin)' }
   ];
 

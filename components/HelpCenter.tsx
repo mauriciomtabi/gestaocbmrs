@@ -314,14 +314,14 @@ const HelpCenter: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col pt-2 animate-in fade-in zoom-in-95 duration-500">
-      <div className="mb-8">
-        <h2 className="text-2xl md:text-3xl font-black text-slate-800 flex items-center gap-3">
-          <Book className="text-blue-600" size={32} />
-          Central de Ajuda e Documentação
-        </h2>
-        <p className="text-sm text-slate-500 font-medium mt-1 ml-11">
-          Base de conhecimento oficial e suporte passo a passo do sistema.
-        </p>
+      <div className="mb-8 flex items-center gap-4">
+        <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-600/30">
+          <Book size={24} className="text-white" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Ajuda e Documentação</h1>
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Base de conhecimento oficial e suporte do sistema.</p>
+        </div>
       </div>
 
       <div className="relative mb-6">

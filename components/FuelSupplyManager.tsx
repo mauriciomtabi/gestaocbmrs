@@ -370,12 +370,14 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 md:pb-0">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h2 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
-            <Fuel className="text-blue-600" />
-            Gestão de Abastecimento
-          </h2>
-          <p className="text-slate-500 font-medium">Controle de combustível e manutenção de frota.</p>
+        <div className="flex items-center gap-4 mb-2">
+          <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-600/30">
+            <Fuel size={24} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Gestão de Abastecimento</h1>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Controle de combustível e manutenção de frota.</p>
+          </div>
         </div>
         <div className="flex gap-3">
           <button 

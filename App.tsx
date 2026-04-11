@@ -436,7 +436,7 @@ const App: React.FC = () => {
             <NavItem icon={Fuel} label="Abastecimento" target="fuel" active={view === 'fuel'} />
           )}
           {currentUser.allowedScreens?.includes('reports') && (
-            <NavItem icon={FileText} label="Relatórios" target="reports" active={view === 'reports'} />
+            <NavItem icon={FileText} label="Ofícios" target="reports" active={view === 'reports'} />
           )}
           {currentUser.allowedScreens?.includes('settings') && (
             <NavItem icon={SettingsIcon} label="Configurações" target="settings" active={view === 'settings'} />
