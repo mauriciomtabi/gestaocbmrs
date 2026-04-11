@@ -427,9 +427,9 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         </div>
 
         {/* Match panel */}
-        <div className="lg:w-80">
+        <div className={`lg:w-80 ${status === 'match-found' && matchedProvider ? 'fixed inset-0 z-50 p-6 pb-24 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm lg:static lg:p-0 lg:pb-0 lg:bg-transparent lg:block lg:z-auto' : ''}`}>
           {status === 'match-found' && matchedProvider ? (
-            <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 animate-in zoom-in-95 duration-300">
+            <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 w-full max-w-sm lg:max-w-none animate-in zoom-in-95 duration-300">
               {/* Provider photo / avatar */}
               <div className="flex flex-col items-center mb-6">
                 {matchedProvider.providerPhoto ? (
@@ -449,15 +449,15 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
               {/* Context message */}
               {todayState?.hasOpenEntry ? (
                 <div className="flex items-center gap-2 p-3 rounded-xl mb-4 text-xs font-bold bg-amber-50 text-amber-700">
-                  <Clock size={14} /> Entrada aberta às {todayState.lastRecord?.entryTime}. Registrar Saída?
+                  <Clock size={14} className="shrink-0" /> Entrada aberta às {todayState.lastRecord?.entryTime}. Registrar Saída?
                 </div>
               ) : todayState?.lastRecord ? (
                 <div className="flex items-center gap-2 p-3 rounded-xl mb-4 text-xs font-bold bg-slate-50 text-slate-500">
-                  <Clock size={14} /> Último registro foi uma saída às {todayState.lastRecord.exitTime}. Registrar nova Entrada?
+                  <Clock size={14} className="shrink-0" /> Último registro foi saída às {todayState.lastRecord.exitTime}. Nova Entrada?
                 </div>
               ) : (
                 <div className="flex items-center gap-2 p-3 rounded-xl mb-4 text-xs font-bold bg-blue-50 text-blue-700">
-                  <Clock size={14} /> Nenhum registro hoje. Registrar Entrada?
+                  <Clock size={14} className="shrink-0" /> Nenhum registro hoje. Registrar Entrada?
                 </div>
               )}
 
@@ -483,8 +483,8 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                   </button>
                 )}
                 <button
-                  onClick={() => { setMatchedProvider(null); setStatus('scanning'); }}
-                  className="text-slate-400 hover:text-slate-600 text-[10px] font-black uppercase py-2"
+                  onClick={() => { setMatchedProvider(null); setStatus('scanning'); startScanning(); }}
+                  className="text-slate-400 hover:text-slate-600 text-[10px] font-black uppercase py-4 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all border border-slate-100"
                 >
                   Cancelar — Escanear novamente
                 </button>
