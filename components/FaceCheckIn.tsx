@@ -452,8 +452,12 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                   <Clock size={14} className="shrink-0" /> Entrada aberta às {todayState.lastRecord?.entryTime}. Registrar Saída?
                 </div>
               ) : todayState?.lastRecord ? (
-                <div className="flex items-center gap-2 p-3 rounded-xl mb-4 text-xs font-bold bg-slate-50 text-slate-500">
-                  <Clock size={14} className="shrink-0" /> Último registro foi saída às {todayState.lastRecord.exitTime}. Nova Entrada?
+                <div className="flex flex-col p-3 rounded-xl mb-4 text-[11px] font-bold bg-blue-50 border border-blue-100 text-blue-800 gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={14} className="text-blue-600 shrink-0" /> 
+                    <span>Saída já registrada hoje às {todayState.lastRecord.exitTime}.</span>
+                  </div>
+                  <p className="pl-5 text-blue-600/80">Deseja registrar uma nova entrada neste mesmo dia?</p>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 p-3 rounded-xl mb-4 text-xs font-bold bg-blue-50 text-blue-700">
