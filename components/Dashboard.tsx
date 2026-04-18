@@ -713,7 +713,7 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                            className="cursor-pointer"
                         >
                           {attendanceByDayOfWeek.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.prestadores > 0 ? (drillDayOfWeek === entry.name ? '#1d4ed8' : '#3b82f6') : '#cbd5e1'} style={{ transition: 'all .3s ease' }} />
+                            <Cell key={`cell-${index}`} fill={entry.prestadores > 0 ? (drillDayOfWeek === entry.name ? '#1d4ed8' : '#3b82f6') : '#cbd5e1'} style={{ transition: 'all .3s ease', outline: 'none' }} />
                           ))}
                           <LabelList dataKey="prestadores" position="top" style={{ fontSize: '9px', fontWeight: 900, fill: '#64748b' }} />
                         </Bar>
@@ -754,7 +754,7 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                           className="cursor-pointer"
                         >
                           {attendancesPerDay.map((entry, index) => (
-                            <Cell key={`cell2-${index}`} fill={entry.comparecimentos > 0 ? (drillDayOfMonth === entry.day ? '#059669' : '#10b981') : '#cbd5e1'} style={{ transition: 'all .3s ease' }} />
+                            <Cell key={`cell2-${index}`} fill={entry.comparecimentos > 0 ? (drillDayOfMonth === entry.day ? '#059669' : '#10b981') : '#cbd5e1'} style={{ transition: 'all .3s ease', outline: 'none' }} />
                           ))}
                         </Bar>
                       </BarChart>
