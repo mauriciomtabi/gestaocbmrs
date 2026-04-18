@@ -65,6 +65,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
   const noMatchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showMobileHistory, setShowMobileHistory] = useState(false);
   const [gpsError, setGpsError] = useState<'permission' | 'unavailable' | null>(null);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const pendingRegisterType = useRef<'entrada' | 'saida' | null>(null);
 
   const stopCamera = useCallback(() => {
@@ -227,71 +228,48 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         throw new Error("PERMISSION_DENIED");
       }
 
-      // Verifica permissão antecipadamente para feedback imediato
-      try {
-        const perm = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
-        if (perm.state === 'denied') throw new Error("PERMISSION_DENIED");
-      } catch (e: any) {
-        if (e.message === 'PERMISSION_DENIED') throw e;
-        // permissions API não disponível: continua normalmente
-      }
-
-      // watchPosition aguarda o chip GPS real, igual ao Google Maps:
-      // - Aceita imediatamente ao atingir precisão ≤ 100m (GPS satélite)
-      // - Timeout de 5s: usa melhor leitura obtida se ≤ 500m
-      // - Se > 500m, rejeita com mensagem clara ao usuário
+      // Usa rede/Wi-Fi (enableHighAccuracy: false) — retorna em ~0.2s
+      // Precisão suficiente para comprovação de presença (±50-200m)
+      setGpsAccuracy(null);
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         let watchId: number;
         let timeoutHandle: ReturnType<typeof setTimeout>;
-        let bestPos: GeolocationPosition | null = null;
-        let settled = false;
+        let resolved = false;
 
         const cleanup = () => {
           clearTimeout(timeoutHandle);
           navigator.geolocation.clearWatch(watchId);
-        };
-
-        const succeed = (pos: GeolocationPosition) => {
-          if (settled) return;
-          settled = true;
-          cleanup();
-          resolve(pos);
-        };
-
-        const fail = (msg: string) => {
-          if (settled) return;
-          settled = true;
-          cleanup();
-          reject(new Error(msg));
+          setGpsAccuracy(null);
         };
 
         watchId = navigator.geolocation.watchPosition(
           (pos) => {
-            if (!bestPos || pos.coords.accuracy < bestPos.coords.accuracy) {
-              bestPos = pos;
-            }
-            // Aceita imediatamente se GPS satélite travar (≤ 100m)
-            if (pos.coords.accuracy <= 100) {
-              succeed(pos);
+            if (!resolved) {
+              resolved = true;
+              cleanup();
+              resolve(pos);
             }
           },
           (err) => {
-            if (err.code === 1) { // PERMISSION_DENIED
-              fail("PERMISSION_DENIED");
+            if (!resolved) {
+              resolved = true;
+              cleanup();
+              if (err.code === 1) {
+                reject(new Error("PERMISSION_DENIED"));
+              } else {
+                reject(new Error("GPS_UNAVAILABLE"));
+              }
             }
-            // Outros erros: transitório, mantém watching
           },
-          { enableHighAccuracy: true, maximumAge: 0, timeout: 7000 }
+          { enableHighAccuracy: false, maximumAge: 30000, timeout: 10000 }
         );
 
-        // Timeout de 5s: aceita melhor leitura se razoável
+        // Fallback: se nada retornar em 5s, falha
         timeoutHandle = setTimeout(() => {
-          if (!bestPos) {
-            fail("GPS_UNAVAILABLE");
-          } else if (bestPos.coords.accuracy <= 500) {
-            succeed(bestPos);
-          } else {
-            fail("GPS_UNAVAILABLE");
+          if (!resolved) {
+            resolved = true;
+            cleanup();
+            reject(new Error("GPS_UNAVAILABLE"));
           }
         }, 5000);
       });
@@ -687,7 +665,11 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                     className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95 disabled:opacity-50"
                   >
                     {status === 'saving' ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
-                    {status === 'saving' ? 'AGUARDE... (CAPTURANDO GPS)' : 'Registrar Entrada'}
+                    {status === 'saving'
+                      ? gpsAccuracy !== null
+                        ? `GPS TRAVANDO... ±${gpsAccuracy}m`
+                        : 'AGUARDANDO GPS...'
+                      : 'Registrar Entrada'}
                   </button>
                 ) : (
                   <button
@@ -696,7 +678,11 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                     className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 transition-all active:scale-95 disabled:opacity-50"
                   >
                     {status === 'saving' ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} />}
-                    {status === 'saving' ? 'AGUARDE... (CAPTURANDO GPS)' : 'Registrar Saída'}
+                    {status === 'saving'
+                      ? gpsAccuracy !== null
+                        ? `GPS TRAVANDO... ±${gpsAccuracy}m`
+                        : 'AGUARDANDO GPS...'
+                      : 'Registrar Saída'}
                   </button>
                 )}
                 <button
