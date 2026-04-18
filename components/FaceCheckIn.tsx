@@ -222,48 +222,54 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
       let accuracyUsed = 0;
 
       if (!navigator.geolocation) {
-        throw new Error("Geolocalização não suportada. Use um celular/navegador c/ permissão de GPS.");
+        throw new Error("Geolocalização não suportada neste dispositivo/navegador.");
       }
 
-      try {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          let watchId: number;
-          let timeoutId: NodeJS.Timeout;
-          let bestPos: GeolocationPosition | null = null;
+      // Captura a localização real do dispositivo em duas camadas:
+      // Camada 1 - Alta precisão (GPS satélite): timeout 10s
+      // Camada 2 - Baixa precisão (Wi-Fi/Rede/IP): timeout 10s (fallback confiável)
+      // Aceita QUALQUER localização real retornada, sem barreira de precisão mínima.
+      const getPosition = (): Promise<GeolocationPosition> =>
+        new Promise((resolve, reject) => {
+          let settled = false;
 
-          const finish = () => {
-            clearTimeout(timeoutId);
-            if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
-            if (bestPos) resolve(bestPos);
-            else reject(new Error("Timeout atingido sem captação de satélite."));
+          const settle = (pos: GeolocationPosition) => {
+            if (!settled) { settled = true; resolve(pos); }
           };
 
-          watchId = navigator.geolocation.watchPosition(
-            (pos) => {
-              if (!bestPos || pos.coords.accuracy < bestPos.coords.accuracy) {
-                 bestPos = pos;
+          const failFinal = (err: GeolocationPositionError) => {
+            if (!settled) {
+              settled = true;
+              if (err.code === 1) {
+                reject(new Error("Permissão de localização negada. Abra as configurações do navegador e permita o acesso à localização."));
+              } else {
+                reject(new Error("Não foi possível obter a localização. Verifique se o GPS/Localização está ativado no dispositivo."));
               }
-              if (pos.coords.accuracy <= 40) {
-                 finish();
-              }
-            },
-            (err) => console.warn(err),
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
-          );
+            }
+          };
 
-          // Aguarda até 15s para garantir que os satélites conectem no chip GPS
-          timeoutId = setTimeout(finish, 15000);
+          // Camada 1: tenta alta precisão (chip GPS)
+          navigator.geolocation.getCurrentPosition(
+            settle,
+            () => {
+              // Camada 2: fallback para rede (Wi-Fi/IP) — sempre disponível
+              navigator.geolocation.getCurrentPosition(settle, failFinal, {
+                enableHighAccuracy: false,
+                timeout: 10000,
+                maximumAge: 30000,
+              });
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          );
         });
 
-        if (position.coords.accuracy > 150) {
-           throw new Error(`Sinal muito fraco/impreciso (margem de erro de ±${Math.round(position.coords.accuracy)}m). Vá para um local desobstruído a céu aberto para registrar.`);
-        }
-
+      try {
+        const position = await getPosition();
         lat = position.coords.latitude.toFixed(6);
         lng = position.coords.longitude.toFixed(6);
         accuracyUsed = Math.round(position.coords.accuracy);
       } catch (e: any) {
-        throw new Error(`Falha no GPS: ${e.message}. Verifique se o Local está ATIVADO no aparelho e com permissão no navegador.`);
+        throw new Error(e.message);
       }
 
       // Capture frame for proof
