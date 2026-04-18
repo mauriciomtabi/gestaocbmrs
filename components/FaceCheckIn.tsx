@@ -52,11 +52,17 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [status, setStatus] = useState<ScreenStatus>('loading');
+  const statusRef = useRef<ScreenStatus>(status);
+  
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
   const [loadingMessage, setLoadingMessage] = useState('Inicializando câmera...');
   const [providerDescriptors, setProviderDescriptors] = useState<ProviderDescriptor[]>([]);
   const [matchedProvider, setMatchedProvider] = useState<{ providerId: string; providerName: string; providerPhoto?: string; distance: number } | null>(null);
   const [matchScore, setMatchScore] = useState(0);
-  const [noMatchTimeout, setNoMatchTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const noMatchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showMobileHistory, setShowMobileHistory] = useState(false);
 
   const stopCamera = useCallback(() => {
@@ -90,14 +96,26 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
   }, []);
 
   const startScanning = useCallback(() => {
+    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+
     scanIntervalRef.current = setInterval(async () => {
       if (!videoRef.current || providerDescriptors.length === 0) return;
-      if (['match-found', 'saving', 'confirmed'].includes(status)) return;
+      if (['match-found', 'saving', 'confirmed'].includes(statusRef.current)) {
+        clearInterval(scanIntervalRef.current!);
+        return;
+      }
 
       try {
         const detections = await detectAllFaces(videoRef.current);
+        
+        // Bloqueia redefinições assíncronas caso já tenhamos encontrado um rosto!
+        if (['match-found', 'saving', 'confirmed'].includes(statusRef.current)) {
+          clearInterval(scanIntervalRef.current!);
+          return;
+        }
+
         if (detections.length === 0) {
-          setStatus('scanning');
+          setStatus(prev => (prev === 'scanning' || prev === 'no-match') ? 'scanning' : prev);
           return;
         }
 
@@ -111,12 +129,15 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
             return;
           }
         }
-        setStatus('no-match');
-        if (noMatchTimeout) clearTimeout(noMatchTimeout);
-        setNoMatchTimeout(setTimeout(() => setStatus('scanning'), 3000));
+        
+        setStatus(prev => prev === 'scanning' ? 'no-match' : prev);
+        if (noMatchTimeoutRef.current) clearTimeout(noMatchTimeoutRef.current);
+        noMatchTimeoutRef.current = setTimeout(() => {
+          setStatus(prev => prev === 'no-match' ? 'scanning' : prev);
+        }, 3000);
       } catch { /* silently continue */ }
     }, 400);
-  }, [providerDescriptors, status, noMatchTimeout]);
+  }, [providerDescriptors]);
 
   useEffect(() => {
     const init = async () => {
@@ -159,7 +180,8 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
     init();
     return () => {
       stopCamera();
-      if (noMatchTimeout) clearTimeout(noMatchTimeout);
+      if (noMatchTimeoutRef.current) clearTimeout(noMatchTimeoutRef.current);
+      if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
     };
   }, []);
 
