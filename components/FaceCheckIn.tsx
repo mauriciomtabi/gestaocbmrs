@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, CheckCircle2, AlertCircle, Loader2, Clock, LogIn, LogOut, ScanFace, X, Users, SwitchCamera } from 'lucide-react';
+import { Camera, CheckCircle2, AlertCircle, Loader2, Clock, LogIn, LogOut, ScanFace, X, Users, SwitchCamera, MapPin, MapPinOff, RefreshCw } from 'lucide-react';
 import { loadFaceModels, detectAllFaces, findBestMatch, arrayToDescriptor, ProviderDescriptor } from '../services/faceService';
 import { getFaceDescriptors, saveAttendance, saveAuditLog } from '../services/supabaseService';
 import { Provider, AttendanceRecord, AuditLog } from '../types';
@@ -64,6 +64,8 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
   const [matchScore, setMatchScore] = useState(0);
   const noMatchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showMobileHistory, setShowMobileHistory] = useState(false);
+  const [gpsError, setGpsError] = useState<'permission' | 'unavailable' | null>(null);
+  const pendingRegisterType = useRef<'entrada' | 'saida' | null>(null);
 
   const stopCamera = useCallback(() => {
     if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
@@ -222,13 +224,22 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
       let accuracyUsed = 0;
 
       if (!navigator.geolocation) {
-        throw new Error("Geolocalização não suportada neste dispositivo/navegador.");
+        throw new Error("PERMISSION_DENIED");
       }
 
-      // watchPosition aguarda o chip GPS aquecer e travar nos satélites corretos,
-      // da mesma forma que o Google Maps faz internamente.
-      // getCurrentPosition retorna na primeira leitura disponível (antena/Wi-Fi = imprecisa).
-      // watchPosition mantém o GPS ativo e recebe atualizações até obter precisão de satélite.
+      // Verifica permissão antecipadamente para feedback imediato
+      try {
+        const perm = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+        if (perm.state === 'denied') throw new Error("PERMISSION_DENIED");
+      } catch (e: any) {
+        if (e.message === 'PERMISSION_DENIED') throw e;
+        // permissions API não disponível: continua normalmente
+      }
+
+      // watchPosition aguarda o chip GPS real, igual ao Google Maps:
+      // - Aceita imediatamente ao atingir precisão ≤ 100m (GPS satélite)
+      // - Timeout de 5s: usa melhor leitura obtida se ≤ 500m
+      // - Se > 500m, rejeita com mensagem clara ao usuário
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         let watchId: number;
         let timeoutHandle: ReturnType<typeof setTimeout>;
@@ -256,40 +267,35 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
 
         watchId = navigator.geolocation.watchPosition(
           (pos) => {
-            // Mantém sempre a leitura mais precisa recebida até agora
             if (!bestPos || pos.coords.accuracy < bestPos.coords.accuracy) {
               bestPos = pos;
             }
-            // Aceita imediatamente se o satélite travar com boa precisão (≤ 50m)
-            if (pos.coords.accuracy <= 50) {
+            // Aceita imediatamente se GPS satélite travar (≤ 100m)
+            if (pos.coords.accuracy <= 100) {
               succeed(pos);
             }
           },
           (err) => {
-            // PERMISSION_DENIED (1): usuário negou localização — falha definitiva
-            if (err.code === 1) {
-              fail("Permissão de localização negada. Abra as configurações do navegador, permita o acesso à localização e tente novamente.");
+            if (err.code === 1) { // PERMISSION_DENIED
+              fail("PERMISSION_DENIED");
             }
-            // POSITION_UNAVAILABLE (2) e TIMEOUT (3): pode ser transitório — mantém watching
+            // Outros erros: transitório, mantém watching
           },
-          { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 7000 }
         );
 
-        // Se após 25s não tiver lock de satélite (< 50m), usa o melhor disponível:
-        // Até 500m de precisão = GPS triangulado (aceitável)
-        // Acima de 500m = localização de antena/IP (não aceitável)
+        // Timeout de 5s: aceita melhor leitura se razoável
         timeoutHandle = setTimeout(() => {
           if (!bestPos) {
-            fail("GPS não respondeu. Verifique se a Localização está ativada nas configurações do dispositivo.");
+            fail("GPS_UNAVAILABLE");
           } else if (bestPos.coords.accuracy <= 500) {
             succeed(bestPos);
           } else {
-            fail(`Sinal GPS impreciso (±${Math.round(bestPos.coords.accuracy)}m). Certifique-se de que o GPS está ativado no celular (não apenas Wi-Fi) e tente novamente.`);
+            fail("GPS_UNAVAILABLE");
           }
-        }, 25000);
+        }, 5000);
       });
 
-      if (!position) throw new Error("Não foi possível obter a localização.");
       lat = position.coords.latitude.toFixed(6);
       lng = position.coords.longitude.toFixed(6);
       accuracyUsed = Math.round(position.coords.accuracy);
@@ -404,9 +410,19 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
       );
       onAttendanceUpdated();
     } catch (err: any) {
-      setNotification(`Erro ao registrar: ${err.message}`, 'error');
-      setStatus('scanning');
-      if (videoRef.current) videoRef.current.play();
+      // Erros de GPS: mantém popup aberto e mostra guia de ativação
+      if (err.message === 'PERMISSION_DENIED') {
+        setGpsError('permission');
+        setStatus('match-found');
+      } else if (err.message === 'GPS_UNAVAILABLE') {
+        setGpsError('unavailable');
+        setStatus('match-found');
+      } else {
+        // Outros erros (DB, etc): notifica e volta a escanear
+        setNotification(`Erro ao registrar: ${err.message}`, 'error');
+        setStatus('scanning');
+        if (videoRef.current) videoRef.current.play();
+      }
     }
   };
 
@@ -560,7 +576,73 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         {/* Match panel */}
         <div className={`lg:w-80 ${(status === 'match-found' || status === 'saving') && matchedProvider ? 'fixed inset-0 z-50 p-6 pb-24 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm lg:static lg:p-0 lg:pb-0 lg:bg-transparent lg:block lg:z-auto' : ''}`}>
           {(status === 'match-found' || status === 'saving') && matchedProvider ? (
-            <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 w-full max-w-sm lg:max-w-none animate-in zoom-in-95 duration-300">
+            <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 w-full max-w-sm lg:max-w-none animate-in zoom-in-95 duration-300 relative overflow-hidden">
+
+              {/* GPS Error Overlay */}
+              {gpsError && (
+                <div className="absolute inset-0 bg-white rounded-3xl z-10 flex flex-col p-6">
+                  <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
+                    <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+                      <MapPinOff size={32} className="text-red-500" />
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-900 uppercase text-sm mb-1">
+                        {gpsError === 'permission' ? 'Permissão de Localização Negada' : 'GPS Não Encontrado'}
+                      </p>
+                      <p className="text-slate-500 text-xs leading-relaxed">
+                        {gpsError === 'permission'
+                          ? 'O navegador bloqueou o acesso à sua localização.'
+                          : 'O sistema não conseguiu capturar sua localização em 5 segundos.'}
+                      </p>
+                    </div>
+
+                    <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left">
+                      <p className="text-amber-800 font-black text-[10px] uppercase tracking-widest mb-2">Como ativar:</p>
+                      {gpsError === 'permission' ? (
+                        <ol className="text-amber-700 text-xs space-y-1 list-decimal list-inside">
+                          <li>Toque no ícone 🔒 na barra de endereço do navegador</li>
+                          <li>Selecione <strong>"Permissões do site"</strong></li>
+                          <li>Em <strong>"Localização"</strong>, selecione <strong>"Permitir"</strong></li>
+                          <li>Recarregue a página e tente novamente</li>
+                        </ol>
+                      ) : (
+                        <ol className="text-amber-700 text-xs space-y-1 list-decimal list-inside">
+                          <li>Abra as <strong>Configurações</strong> do celular</li>
+                          <li>Vá em <strong>Localização</strong> (ou Privacidade → Localização)</li>
+                          <li>Certifique-se de que está <strong>ATIVADO</strong></li>
+                          <li>Verifique se o modo é <strong>"Alta precisão"</strong> (não "Economia de bateria")</li>
+                          <li>Volte aqui e clique em <strong>Tentar Novamente</strong></li>
+                        </ol>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2 mt-4">
+                    <button
+                      onClick={() => {
+                        setGpsError(null);
+                        if (pendingRegisterType.current) handleRegister(pendingRegisterType.current);
+                      }}
+                      className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95"
+                    >
+                      <RefreshCw size={16} />
+                      Tentar Novamente
+                    </button>
+                    <button
+                      onClick={() => {
+                        setGpsError(null);
+                        setMatchedProvider(null);
+                        setStatus('scanning');
+                        if (videoRef.current) videoRef.current.play();
+                        startScanning();
+                      }}
+                      className="text-slate-400 text-[10px] font-black uppercase py-3 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all border border-slate-100"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
               {/* Provider photo / avatar */}
               <div className="flex flex-col items-center mb-6">
                 {matchedProvider.providerPhoto ? (
@@ -600,7 +682,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
               <div className="flex flex-col gap-3">
                 {!todayState?.hasOpenEntry ? (
                   <button
-                    onClick={() => handleRegister('entrada')}
+                    onClick={() => { pendingRegisterType.current = 'entrada'; handleRegister('entrada'); }}
                     disabled={status === 'saving'}
                     className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95 disabled:opacity-50"
                   >
@@ -609,7 +691,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleRegister('saida')}
+                    onClick={() => { pendingRegisterType.current = 'saida'; handleRegister('saida'); }}
                     disabled={status === 'saving'}
                     className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 transition-all active:scale-95 disabled:opacity-50"
                   >
