@@ -665,23 +665,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                   </button>
                 )}
 
-                {/* GPS accuracy badge */}
-                {gpsAccuracy !== null && (
-                  <div className={`flex flex-col gap-1.5 px-3 py-2.5 rounded-xl text-[10px] font-bold ${
-                    gpsAccuracy <= 200 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'
-                  }`}>
-                    <div className="flex items-center gap-1.5">
-                      <MapPin size={11} />
-                      <span>GPS: {gpsAccuracy <= 200 ? `±${gpsAccuracy}m — precisão OK` : `±${gpsAccuracy}m — precisão baixa`}</span>
-                    </div>
-                    {gpsAccuracy > 200 && (
-                      <div className="pl-4 leading-relaxed space-y-1">
-                        <p className="opacity-90 font-black">Para corrigir no Chrome Android:</p>
-                        <p className="opacity-80">Toque no ícone 🔒 na barra de endereço → <strong>Permissões</strong> → <strong>Localização</strong> → mude de <strong>"Aproximada"</strong> para <strong>"Precisa"</strong> → recarregue a página.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+
 
                 <button
                   disabled={status === 'saving'}
