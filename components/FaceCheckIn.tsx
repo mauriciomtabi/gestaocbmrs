@@ -652,11 +652,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                     className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95 disabled:opacity-50"
                   >
                     {status === 'saving' ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
-                    {status === 'saving'
-                      ? gpsAccuracy !== null
-                        ? `GPS TRAVANDO... ±${gpsAccuracy}m`
-                        : 'AGUARDANDO GPS...'
-                      : 'Registrar Entrada'}
+                    {status === 'saving' ? 'SALVANDO...' : 'Registrar Entrada'}
                   </button>
                 ) : (
                   <button
@@ -665,13 +661,27 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                     className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 transition-all active:scale-95 disabled:opacity-50"
                   >
                     {status === 'saving' ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} />}
-                    {status === 'saving'
-                      ? gpsAccuracy !== null
-                        ? `GPS TRAVANDO... ±${gpsAccuracy}m`
-                        : 'AGUARDANDO GPS...'
-                      : 'Registrar Saída'}
+                    {status === 'saving' ? 'SALVANDO...' : 'Registrar Saída'}
                   </button>
                 )}
+
+                {/* GPS accuracy badge */}
+                {gpsAccuracy !== null && (
+                  <div className={`flex flex-col gap-1 px-3 py-2 rounded-xl text-[10px] font-bold ${
+                    gpsAccuracy <= 200 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                  }`}>
+                    <div className="flex items-center gap-1.5">
+                      <MapPin size={11} />
+                      <span>GPS: {gpsAccuracy <= 200 ? `±${gpsAccuracy}m — boa precisão` : `±${gpsAccuracy}m — precisão baixa`}</span>
+                    </div>
+                    {gpsAccuracy > 200 && (
+                      <span className="pl-4 leading-relaxed opacity-80">
+                        Para melhorar: Configurações → Localização → Modo → <strong>Alta precisão</strong>
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 <button
                   disabled={status === 'saving'}
                   onClick={() => { 
@@ -685,6 +695,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                   Cancelar — Escanear novamente
                 </button>
               </div>
+
             </div>
           ) : (
             <div className="bg-white rounded-3xl border border-slate-100 p-6 h-full flex flex-col">
