@@ -534,8 +534,8 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         </div>
 
         {/* Match panel */}
-        <div className={`lg:w-80 ${status === 'match-found' && matchedProvider ? 'fixed inset-0 z-50 p-6 pb-24 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm lg:static lg:p-0 lg:pb-0 lg:bg-transparent lg:block lg:z-auto' : ''}`}>
-          {status === 'match-found' && matchedProvider ? (
+        <div className={`lg:w-80 ${(status === 'match-found' || status === 'saving') && matchedProvider ? 'fixed inset-0 z-50 p-6 pb-24 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm lg:static lg:p-0 lg:pb-0 lg:bg-transparent lg:block lg:z-auto' : ''}`}>
+          {(status === 'match-found' || status === 'saving') && matchedProvider ? (
             <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 w-full max-w-sm lg:max-w-none animate-in zoom-in-95 duration-300">
               {/* Provider photo / avatar */}
               <div className="flex flex-col items-center mb-6">
@@ -578,29 +578,30 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                   <button
                     onClick={() => handleRegister('entrada')}
                     disabled={status === 'saving'}
-                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95"
+                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95 disabled:opacity-50"
                   >
-                    <LogIn size={18} />
-                    Registrar Entrada
+                    {status === 'saving' ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
+                    {status === 'saving' ? 'AGUARDE...' : 'Registrar Entrada'}
                   </button>
                 ) : (
                   <button
                     onClick={() => handleRegister('saida')}
                     disabled={status === 'saving'}
-                    className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 transition-all active:scale-95"
+                    className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 transition-all active:scale-95 disabled:opacity-50"
                   >
-                    <LogOut size={18} />
-                    Registrar Saída
+                    {status === 'saving' ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} />}
+                    {status === 'saving' ? 'AGUARDE...' : 'Registrar Saída'}
                   </button>
                 )}
                 <button
+                  disabled={status === 'saving'}
                   onClick={() => { 
                     setMatchedProvider(null); 
                     setStatus('scanning'); 
                     if (videoRef.current) videoRef.current.play(); 
                     startScanning(); 
                   }}
-                  className="text-slate-400 hover:text-slate-600 text-[10px] font-black uppercase py-4 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all border border-slate-100"
+                  className="text-slate-400 hover:text-slate-600 text-[10px] font-black uppercase py-4 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all border border-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancelar — Escanear novamente
                 </button>
