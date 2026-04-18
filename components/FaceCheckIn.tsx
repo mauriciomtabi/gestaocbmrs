@@ -66,7 +66,60 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
   const [showMobileHistory, setShowMobileHistory] = useState(false);
   const [gpsError, setGpsError] = useState<'permission' | 'unavailable' | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const gpsPositionRef = useRef<GeolocationPosition | null>(null);
+  const gpsWatchIdsRef = useRef<number[]>([]);
   const pendingRegisterType = useRef<'entrada' | 'saida' | null>(null);
+
+  // Inicia GPS assim que o popup abre (rosto detectado).
+  // Quando o usuário clicar em Registrar (1-5s depois), a posição já está pronta.
+  // Isso evita qualquer conflito com câmera/TensorFlow que atrasa o GPS.
+  useEffect(() => {
+    const stopGps = () => {
+      gpsWatchIdsRef.current.forEach(id => navigator.geolocation.clearWatch(id));
+      gpsWatchIdsRef.current = [];
+    };
+
+    if (status === 'match-found' && navigator.geolocation) {
+      stopGps();
+      gpsPositionRef.current = null;
+      setGpsAccuracy(null);
+
+      const onPos = (pos: GeolocationPosition) => {
+        // Atualiza sempre com a leitura mais precisa
+        if (!gpsPositionRef.current || pos.coords.accuracy < gpsPositionRef.current.coords.accuracy) {
+          gpsPositionRef.current = pos;
+          setGpsAccuracy(Math.round(pos.coords.accuracy));
+        }
+      };
+
+      const onErr = (err: GeolocationPositionError) => {
+        if (err.code === 1) {
+          stopGps();
+          setGpsError('permission');
+        }
+      };
+
+      // Método rápido (Wi-Fi/rede) — retorna em ~0.2s
+      gpsWatchIdsRef.current.push(
+        navigator.geolocation.watchPosition(onPos, onErr,
+          { enableHighAccuracy: false, maximumAge: 0, timeout: 15000 })
+      );
+      // Método preciso (GPS chip) — refina a posição em paralelo
+      gpsWatchIdsRef.current.push(
+        navigator.geolocation.watchPosition(onPos, onErr,
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 })
+      );
+      // getCurrentPosition como terceira via
+      navigator.geolocation.getCurrentPosition(onPos, onErr,
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+    } else {
+      stopGps();
+      gpsPositionRef.current = null;
+      setGpsAccuracy(null);
+    }
+
+    return stopGps;
+  }, [status]);
 
   const stopCamera = useCallback(() => {
     if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
@@ -224,73 +277,32 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
       let lng = "";
       let accuracyUsed = 0;
 
-      if (!navigator.geolocation) {
-        throw new Error("PERMISSION_DENIED");
-      }
-
-      // 3 métodos em paralelo: o PRIMEIRO resultado fresco vence.
-      // maximumAge: 0 em TODOS — NUNCA usa posição cacheada/antiga.
-      setGpsAccuracy(null);
-      const watchIds: number[] = [];
-
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        let resolved = false;
-
-        const cleanup = () => {
-          watchIds.forEach(id => navigator.geolocation.clearWatch(id));
-          setGpsAccuracy(null);
-        };
-
-        const onSuccess = (pos: GeolocationPosition) => {
-          if (resolved) return;
-          resolved = true;
-          cleanup();
-          resolve(pos);
-        };
-
-        const onError = (err: GeolocationPositionError) => {
-          if (resolved) return;
-          if (err.code === 1) {
-            resolved = true;
-            cleanup();
-            reject(new Error("PERMISSION_DENIED"));
+      // Usa a posição já capturada em background desde que o popup abriu.
+      // Se ainda não tiver (popup abriu há menos de 0.2s), aguarda até 5s.
+      const getPos = (): Promise<GeolocationPosition> =>
+        new Promise((resolve, reject) => {
+          if (gpsPositionRef.current) {
+            resolve(gpsPositionRef.current);
+            return;
           }
-          // Códigos 2 e 3: transitórios, deixa os outros métodos tentarem
-        };
-
-        // Método 1: getCurrentPosition alta precisão (GPS chip)
-        navigator.geolocation.getCurrentPosition(onSuccess, onError, {
-          enableHighAccuracy: true, maximumAge: 0, timeout: 10000
+          let waited = 0;
+          const poll = setInterval(() => {
+            waited += 200;
+            if (gpsPositionRef.current) {
+              clearInterval(poll);
+              resolve(gpsPositionRef.current);
+            } else if (waited >= 8000) {
+              clearInterval(poll);
+              reject(new Error('GPS_UNAVAILABLE'));
+            }
+          }, 200);
         });
 
-        // Método 2: watchPosition alta precisão
-        watchIds.push(navigator.geolocation.watchPosition(
-          (pos) => { setGpsAccuracy(Math.round(pos.coords.accuracy)); onSuccess(pos); },
-          onError,
-          { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
-        ));
-
-        // Método 3: watchPosition baixa precisão (Wi-Fi/rede) — muito rápido
-        // maximumAge: 0 OBRIGATÓRIO — sem cache, posição sempre do momento atual
-        watchIds.push(navigator.geolocation.watchPosition(
-          onSuccess,
-          onError,
-          { enableHighAccuracy: false, maximumAge: 0, timeout: 10000 }
-        ));
-
-        // Timeout geral: 8s
-        setTimeout(() => {
-          if (!resolved) {
-            resolved = true;
-            cleanup();
-            reject(new Error("GPS_UNAVAILABLE"));
-          }
-        }, 8000);
-      });
-
+      const position = await getPos();
       lat = position.coords.latitude.toFixed(6);
       lng = position.coords.longitude.toFixed(6);
       accuracyUsed = Math.round(position.coords.accuracy);
+      setGpsAccuracy(null);
 
       // Capture frame for proof
       let photoBase64 = '';
