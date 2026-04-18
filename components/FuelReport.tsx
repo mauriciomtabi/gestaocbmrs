@@ -189,96 +189,107 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-          <FileText size={48} className="text-slate-300 mb-4" />
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-6">
-            Visualizar ou Exportar Relatório ({filteredSupplies.length} registros no período)
-          </p>
-          <button
-            onClick={handleGeneratePDF}
-            disabled={isGenerating || filteredSupplies.length === 0}
-            className="flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-xl shadow-blue-600/30 font-black text-sm uppercase tracking-wider disabled:bg-slate-300 disabled:shadow-none"
-          >
-            {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <FileDown size={20} />}
-            {isGenerating ? 'Gerando Relatório...' : 'Gerar PDF Oficial'}
-          </button>
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+              <FileText size={18} className="text-blue-600" />
+              Visualização ({filteredSupplies.length} registros)
+            </h3>
+            <button
+              onClick={handleGeneratePDF}
+              disabled={isGenerating || filteredSupplies.length === 0}
+              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-md shadow-blue-600/30 font-black text-xs uppercase tracking-wider disabled:bg-slate-300 disabled:shadow-none"
+            >
+              {isGenerating ? <Loader2 className="animate-spin" size={16} /> : <FileDown size={16} />}
+              {isGenerating ? 'Gerando...' : 'Gerar PDF Oficial'}
+            </button>
+          </div>
           
           {filteredSupplies.length === 0 && (
-            <div className="mt-6 flex items-center gap-2 text-amber-600 bg-amber-50 px-4 py-2 rounded-lg text-xs font-bold">
+            <div className="mb-4 flex items-center gap-2 text-amber-600 bg-amber-50 px-4 py-3 rounded-xl text-xs font-bold border border-amber-100">
               <AlertCircle size={16} />
               Nenhum abastecimento encontrado para este período.
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Relatório Visível em Tela (Preview real do PDF) */}
-      <div className="w-full overflow-x-auto bg-slate-100 rounded-3xl border border-slate-200 p-4 md:p-8 flex justify-center">
-        {/* Usamos A4 Horizontal: 297mm x 210mm. Adicionamos largura de tela para garantir formato */}
-        <div id="print-container" className="bg-white p-10 font-sans text-black shadow-xl shrink-0" style={{ width: '1122px', minHeight: '793px' }}>
-          
-          {/* Cabeçalho */}
-          <div className="flex justify-between items-start mb-6 w-full">
-            <div className="text-[12px] font-bold leading-[1.3] uppercase" style={{ width: '35%' }}>
-              <p>CORPO DE BOMBEIROS MILITAR</p>
-              <p>8º BATALHÃO DE BOMBEIRO MILITAR</p>
-              <p>1ª CiaBM / {opmName}</p>
-              <p className="mt-1">
-                <span className="font-bold">De: </span> 
-                {dateRange.startDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})}
-                <span className="font-bold"> à </span>
-                {dateRange.endDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})}
-              </p>
-            </div>
+          {/* Relatório Visível em Tela (Preview real do PDF) */}
+          <div className="w-full overflow-x-auto bg-slate-100 rounded-3xl border border-slate-200 p-4 md:p-8 flex justify-center shadow-inner relative">
             
-            <div className="text-center w-full mt-2" style={{ width: '65%' }}>
-              <p className="text-[14px] font-bold">Planilha de Controle de Consumo de Combustível e Lubrificantes</p>
-              <p className="text-[14px] font-bold mt-1">{quinzena}ª Quinzena - {monthLabel}</p>
-            </div>
-          </div>
-
-          {/* Tabela */}
-          <table className="w-full text-center border-collapse text-[12px] font-sans" style={{ border: '1px solid black' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid black' }}>
-                <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '22%' }}>OPM</th>
-                <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '10%' }}>Vtr</th>
-                <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '10%' }}>Data</th>
-                <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '16%' }}>Posto Combustível</th>
-                <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '12%' }}>Motorista</th>
-                <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '8%' }}>Qtde Litros</th>
-                <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '10%' }}>Tipo Combustível</th>
-                <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '8%' }}>Valor Unitário</th>
-                <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '12%' }}>Valor Abastecido</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSupplies.map((s, idx) => {
-                const supplyDate = new Date(s.date);
+            {/* O container interno do print tem tamanho fixo A4 horizontal */}
+            <div id="print-container" className="bg-white p-10 font-sans text-black shadow-xl shrink-0 border border-slate-200" style={{ width: '1122px', minHeight: '793px' }}>
+              
+              {/* Cabeçalho */}
+              <div className="flex justify-between items-start mb-6 w-full">
+                <div className="text-[12px] font-bold leading-[1.3] uppercase" style={{ width: '35%' }}>
+                  <p>CORPO DE BOMBEIROS MILITAR</p>
+                  <p>8º BATALHÃO DE BOMBEIRO MILITAR</p>
+                  <p>1ª CiaBM / {opmName}</p>
+                  <p className="mt-1">
+                    <span className="font-bold">De: </span> 
+                    {dateRange.startDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})}
+                    <span className="font-bold"> à </span>
+                    {dateRange.endDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})}
+                  </p>
+                </div>
                 
-                return (
-                  <tr key={s.id || idx}>
-                    <td className="py-1 px-2 border" style={{ border: '1px solid black', textAlign: 'center' }}>
-                      {opmName}
-                    </td>
-                    <td className="py-1 px-2 border font-bold" style={{ border: '1px solid black', textAlign: 'center' }}>
-                      {formatPlate(s.plate)}
-                    </td>
-                    <td className="py-1 px-2 border" style={{ border: '1px solid black', textAlign: 'center' }}>
-                      {supplyDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})}
-                    </td>
-                    <td className="py-1 px-2 border uppercase" style={{ border: '1px solid black', textAlign: 'center' }}>
-                      {getStationDisplayName(s.location, nicknameMap)}
-                    </td>
-                    <td className="py-1 px-2 border uppercase font-bold text-[11px]" style={{ border: '1px solid black', textAlign: 'center' }}>
-                      {s.driver}
-                    </td>
-                    <td className="py-1 px-2 border font-bold" style={{ border: '1px solid black', textAlign: 'center' }}>
-                      {s.liters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-1 px-2 border uppercase" style={{ border: '1px solid black', textAlign: 'center' }}>
-                      {s.fuelType}
-                    </td>
+                <div className="text-center w-full mt-2" style={{ width: '65%' }}>
+                  <p className="text-[14px] font-bold">Planilha de Controle de Consumo de Combustível e Lubrificantes</p>
+                  <p className="text-[14px] font-bold mt-1">{quinzena}ª Quinzena - {monthLabel}</p>
+                </div>
+              </div>
+
+              {/* Tabela */}
+              <table className="w-full text-center border-collapse text-[12px] font-sans" style={{ border: '1px solid black' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid black' }}>
+                    <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '22%' }}>OPM</th>
+                    <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '10%' }}>Vtr</th>
+                    <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '10%' }}>Data</th>
+                    <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '16%' }}>Posto Combustível</th>
+                    <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '12%' }}>Motorista</th>
+                    <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '8%' }}>Qtde Litros</th>
+                    <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '10%' }}>Tipo Combustível</th>
+                    <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '8%' }}>Valor Unitário</th>
+                    <th className="py-2 px-2 border" style={{ border: '1px solid black', width: '12%' }}>Valor Abastecido</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSupplies.map((s, idx) => {
+                    const supplyDate = new Date(s.date);
+                    
+                    const getShortenedFuelType = (type: string) => {
+                      if (!type) return '';
+                      const upperType = type.toUpperCase();
+                      if (upperType.includes('DIESEL')) return 'DIESEL';
+                      if (upperType.includes('GASOLINA')) return 'GASOLINA';
+                      if (upperType.includes('ARLA')) return 'ARLA';
+                      if (upperType.includes('ETANOL')) return 'ETANOL';
+                      return upperType;
+                    };
+                    
+                    return (
+                      <tr key={s.id || idx}>
+                        <td className="py-1 px-2 border" style={{ border: '1px solid black', textAlign: 'center' }}>
+                          {opmName}
+                        </td>
+                        <td className="py-1 px-2 border font-bold" style={{ border: '1px solid black', textAlign: 'center' }}>
+                          {formatPlate(s.plate)}
+                        </td>
+                        <td className="py-1 px-2 border" style={{ border: '1px solid black', textAlign: 'center' }}>
+                          {supplyDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})}
+                        </td>
+                        <td className="py-1 px-2 border uppercase" style={{ border: '1px solid black', textAlign: 'center' }}>
+                          {getStationDisplayName(s.location, nicknameMap)}
+                        </td>
+                        <td className="py-1 px-2 border uppercase font-bold text-[11px]" style={{ border: '1px solid black', textAlign: 'center' }}>
+                          {s.driver}
+                        </td>
+                        <td className="py-1 px-2 border font-bold" style={{ border: '1px solid black', textAlign: 'center' }}>
+                          {s.liters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-1 px-2 border uppercase" style={{ border: '1px solid black', textAlign: 'center' }}>
+                          {getShortenedFuelType(s.fuelType)}
+                        </td>
                     <td className="py-1 px-2 border" style={{ border: '1px solid black', textAlign: 'center' }}>
                       R$ {s.pricePerLiter.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
