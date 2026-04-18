@@ -700,7 +700,7 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748b' }} />
                         <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748b' }} domain={[0, (dataMax: number) => dataMax === 0 ? 5 : Math.ceil(dataMax * 1.25)]} />
-                        <Tooltip content={<CustomListTooltip />} cursor={{fill: '#f8fafc', opacity: 0.7 }} trigger="click" />
+                        <Tooltip content={<CustomListTooltip />} cursor={{fill: '#f8fafc', opacity: 0.7 }} />
                         <Bar 
                            dataKey="prestadores" 
                            radius={[6, 6, 0, 0]} 
@@ -740,7 +740,7 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 800, fill: '#64748b' }} interval="preserveStartEnd" minTickGap={10} />
                         <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748b' }} domain={[0, (dataMax: number) => dataMax === 0 ? 5 : Math.ceil(dataMax * 1.25)]} />
-                        <Tooltip content={<CustomListTooltip />} cursor={{fill: '#f8fafc', opacity: 0.7 }} trigger="click" />
+                        <Tooltip content={<CustomListTooltip />} cursor={{fill: '#f8fafc', opacity: 0.7 }} />
                         <Bar 
                           dataKey="comparecimentos" 
                           fill="#10b981" 
