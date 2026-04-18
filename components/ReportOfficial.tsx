@@ -27,8 +27,8 @@ const months = [
 ];
 
 const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
-  const [selectedYear, setSelectedYear] = useState('Todos');
-  const [selectedMonth, setSelectedMonth] = useState('Todos');
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'));
   const [isGenerating, setIsGenerating] = useState(false);
 
   const today = new Date().toLocaleDateString('pt-BR', {
@@ -42,6 +42,8 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
     const years = attendance
       .map(a => a.date.split('-')[0])
       .filter((y): y is string => !!y);
+    const currYear = new Date().getFullYear().toString();
+    years.push(currYear);
     return Array.from(new Set(years)).sort((a: string, b: string) => b.localeCompare(a));
   }, [attendance]);
 
