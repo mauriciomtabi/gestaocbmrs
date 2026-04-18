@@ -228,17 +228,13 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         throw new Error("PERMISSION_DENIED");
       }
 
-      // Dispara os 3 métodos em paralelo e usa o primeiro que responder.
-      // Teste confirmou: todos retornam em < 2.5s no quartel.
-      // - getCurrentPosition HIGH: ~2.5s, alta precisão GPS
-      // - watchPosition HIGH: ~2.5s, alta precisão GPS  
-      // - watchPosition LOW (rede/Wi-Fi): ~0.2s, precisão suficiente
+      // 3 métodos em paralelo: o PRIMEIRO resultado fresco vence.
+      // maximumAge: 0 em TODOS — NUNCA usa posição cacheada/antiga.
       setGpsAccuracy(null);
       const watchIds: number[] = [];
 
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         let resolved = false;
-        let permDenied = false;
 
         const cleanup = () => {
           watchIds.forEach(id => navigator.geolocation.clearWatch(id));
@@ -255,34 +251,34 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         const onError = (err: GeolocationPositionError) => {
           if (resolved) return;
           if (err.code === 1) {
-            permDenied = true;
             resolved = true;
             cleanup();
             reject(new Error("PERMISSION_DENIED"));
           }
-          // Outros erros: deixa os outros métodos tentarem
+          // Códigos 2 e 3: transitórios, deixa os outros métodos tentarem
         };
 
-        // Método 1: getCurrentPosition alta precisão
+        // Método 1: getCurrentPosition alta precisão (GPS chip)
         navigator.geolocation.getCurrentPosition(onSuccess, onError, {
           enableHighAccuracy: true, maximumAge: 0, timeout: 10000
         });
 
-        // Método 2: watchPosition alta precisão (GPS satélite)
+        // Método 2: watchPosition alta precisão
         watchIds.push(navigator.geolocation.watchPosition(
           (pos) => { setGpsAccuracy(Math.round(pos.coords.accuracy)); onSuccess(pos); },
           onError,
-          { enableHighAccuracy: true, maximumAge: 0 }
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
         ));
 
-        // Método 3: watchPosition baixa precisão (Wi-Fi/rede — retorna em ~0.2s)
+        // Método 3: watchPosition baixa precisão (Wi-Fi/rede) — muito rápido
+        // maximumAge: 0 OBRIGATÓRIO — sem cache, posição sempre do momento atual
         watchIds.push(navigator.geolocation.watchPosition(
           onSuccess,
           onError,
-          { enableHighAccuracy: false, maximumAge: 30000, timeout: 10000 }
+          { enableHighAccuracy: false, maximumAge: 0, timeout: 10000 }
         ));
 
-        // Timeout de segurança: 8s
+        // Timeout geral: 8s
         setTimeout(() => {
           if (!resolved) {
             resolved = true;
