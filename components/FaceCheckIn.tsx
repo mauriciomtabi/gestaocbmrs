@@ -581,7 +581,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                     className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95 disabled:opacity-50"
                   >
                     {status === 'saving' ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
-                    {status === 'saving' ? 'AGUARDE...' : 'Registrar Entrada'}
+                    {status === 'saving' ? 'AGUARDE... (CAPTURANDO GPS)' : 'Registrar Entrada'}
                   </button>
                 ) : (
                   <button
@@ -590,7 +590,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                     className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 transition-all active:scale-95 disabled:opacity-50"
                   >
                     {status === 'saving' ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} />}
-                    {status === 'saving' ? 'AGUARDE...' : 'Registrar Saída'}
+                    {status === 'saving' ? 'AGUARDE... (CAPTURANDO GPS)' : 'Registrar Saída'}
                   </button>
                 )}
                 <button
