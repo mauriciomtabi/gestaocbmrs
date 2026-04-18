@@ -383,7 +383,7 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
           <p className="text-[11px] font-black text-slate-800 mb-2 uppercase border-b border-slate-100 pb-2">{label}</p>
           <p className="text-[10px] font-bold text-slate-500 mb-2">{payload[0].value} presenças</p>
           {items.length > 0 && (
-            <div className="flex flex-col gap-1 max-h-32 overflow-y-auto no-scrollbar pt-1">
+            <div className="flex flex-col gap-1 max-h-32 overflow-y-auto pr-1 pt-1">
               {items.map((name: string, i: number) => (
                 <span key={i} className="text-[9px] font-bold text-slate-600 bg-slate-50 px-2 py-1.5 rounded truncate uppercase border border-slate-100 break-words line-clamp-2">{name}</span>
               ))}
@@ -700,7 +700,7 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748b' }} />
                         <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748b' }} domain={[0, (dataMax: number) => dataMax === 0 ? 5 : Math.ceil(dataMax * 1.25)]} />
-                        <Tooltip content={<CustomListTooltip />} cursor={{fill: '#f8fafc', opacity: 0.7 }} />
+                        <Tooltip content={<CustomListTooltip />} cursor={{fill: '#f8fafc', opacity: 0.7 }} trigger="click" />
                         <Bar 
                            dataKey="prestadores" 
                            radius={[6, 6, 0, 0]} 
@@ -740,7 +740,7 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 800, fill: '#64748b' }} interval="preserveStartEnd" minTickGap={10} />
                         <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748b' }} domain={[0, (dataMax: number) => dataMax === 0 ? 5 : Math.ceil(dataMax * 1.25)]} />
-                        <Tooltip content={<CustomListTooltip />} cursor={{fill: '#f8fafc', opacity: 0.7 }} />
+                        <Tooltip content={<CustomListTooltip />} cursor={{fill: '#f8fafc', opacity: 0.7 }} trigger="click" />
                         <Bar 
                           dataKey="comparecimentos" 
                           fill="#10b981" 
@@ -795,7 +795,7 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                           contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 800 }}
                           formatter={(val: number) => [`${val} pessoas`, 'Força Base Ativa']}
                         />
-                        <Area type="monotone" dataKey="ativos" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorAtivos)" />
+                        <Area type="monotone" dataKey="ativos" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorAtivos)" activeDot={{ r: 6, strokeWidth: 0, fill: '#4f46e5' }} dot={{ r: 4, strokeWidth: 2, fill: "#fff", stroke: "#4f46e5" }} />
                       </AreaChart>
                     </ResponsiveContainer>
                   )}
