@@ -87,7 +87,7 @@ const Settings: React.FC<Props> = ({ currentUser, onUpdateProfile, onOpenInstall
               <div className="space-y-3 text-xs font-medium text-slate-600">
                 <div className="flex justify-between items-center py-2">
                   <span>Versão</span>
-                  <span className="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded">{packageJson.version}</span>
+                  <span className="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded">{__APP_VERSION__}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-t border-slate-100">
                   <span>Última atualização</span>
