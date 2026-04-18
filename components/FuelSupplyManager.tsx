@@ -5,6 +5,7 @@ import { getFuelSupplies, saveFuelSupply, deleteFuelSupply, saveFuelAuditLog, sa
 import { Plus, Search, Filter, Calendar, MapPin, Fuel, User, Car, Hash, DollarSign, Eye, Trash2, X, Save, Loader2, Camera, FileText, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, History, Edit3, Clock, Download, ZoomIn, ZoomOut, RotateCcw, Upload, Image as ImageIcon, Tag } from 'lucide-react';
 import { normalizeFuelType, getStationDisplayName } from '../utils/fuelUtils';
 import FuelReceiptOCR from './FuelReceiptOCR';
+import FuelReport from './FuelReport';
 
 interface Props {
   currentUser: string;
@@ -29,6 +30,7 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
   const [savingVehicle, setSavingVehicle] = useState(false);
   const [savingNickname, setSavingNickname] = useState(false);
   const [activeTab, setActiveTab] = useState<'form' | 'history'>('form');
+  const [mainTab, setMainTab] = useState<'records' | 'reports'>('records');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -415,7 +417,36 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
         </div>
       </header>
 
-      <div className="bg-white p-4 rounded-[2.5rem] shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center">
+      {/* Main Navigation Tabs */}
+      <div className="flex gap-2 border-b border-slate-200">
+        <button
+          onClick={() => setMainTab('records')}
+          className={`px-6 py-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
+            mainTab === 'records' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          Registros e Frota
+        </button>
+        <button
+          onClick={() => setMainTab('reports')}
+          className={`px-6 py-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 flex items-center gap-2 ${
+            mainTab === 'reports' ? 'border-amber-600 text-amber-700' : 'border-transparent text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <FileText size={16} />
+          Relatórios PDF
+        </button>
+      </div>
+
+      {mainTab === 'reports' ? (
+        <FuelReport 
+          supplies={supplies} 
+          vehicles={vehicles} 
+          stationNicknames={stationNicknames} 
+        />
+      ) : (
+        <>
+          <div className="bg-white p-4 rounded-[2.5rem] shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center mt-6">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
@@ -628,6 +659,8 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
           ))
         )}
       </div>
+      </>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-950/80 z-[2000] flex items-center justify-center p-2 md:p-4 backdrop-blur-md">
