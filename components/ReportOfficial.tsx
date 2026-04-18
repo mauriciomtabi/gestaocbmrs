@@ -37,23 +37,34 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
     year: 'numeric'
   });
 
-  // Extrair anos únicos dos prestadores para o filtro
+  // Extrair anos únicos baseados na data de prestação de serviço
   const availableYears = useMemo(() => {
-    const years = providers
-      .map(p => p.referralDate?.split('-')[0])
+    const years = attendance
+      .map(a => a.date.split('-')[0])
       .filter((y): y is string => !!y);
     return Array.from(new Set(years)).sort((a: string, b: string) => b.localeCompare(a));
-  }, [providers]);
+  }, [attendance]);
 
   const filteredProviders = useMemo(() => {
+    if (selectedYear === 'Todos' && selectedMonth === 'Todos') {
+      return providers;
+    }
+    
     return providers.filter(p => {
-      const [pYear, pMonth] = p.referralDate ? p.referralDate.split('-') : [null, null];
-      const matchesYear = selectedYear === 'Todos' || pYear === selectedYear;
-      const matchesMonth = selectedMonth === 'Todos' || pMonth === selectedMonth;
-
-      return matchesYear && matchesMonth;
+      const pAttendance = attendance.filter(a => a.providerId === p.id);
+      
+      return pAttendance.some(a => {
+        const dateParts = a.date.split('T')[0].split('-');
+        const aYear = dateParts[0];
+        const aMonth = dateParts[1];
+        
+        const matchesYear = selectedYear === 'Todos' || aYear === selectedYear;
+        const matchesMonth = selectedMonth === 'Todos' || aMonth === selectedMonth;
+        
+        return matchesYear && matchesMonth;
+      });
     });
-  }, [providers, selectedYear, selectedMonth]);
+  }, [providers, attendance, selectedYear, selectedMonth]);
 
   const consolidatedData: MonthlySummary[] = filteredProviders.map(p => {
     const pAttendance = attendance.filter(a => a.providerId === p.id);
