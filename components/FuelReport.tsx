@@ -212,10 +212,10 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
         </div>
       </div>
 
-      {/* Relatório Oculto para Impressão */}
-      <div className="opacity-0 absolute -z-50 pointer-events-none" style={{ left: '-9999px', top: 0 }}>
+      {/* Relatório Visível em Tela (Preview real do PDF) */}
+      <div className="w-full overflow-x-auto bg-slate-100 rounded-3xl border border-slate-200 p-4 md:p-8 flex justify-center">
         {/* Usamos A4 Horizontal: 297mm x 210mm. Adicionamos largura de tela para garantir formato */}
-        <div id="print-container" className="bg-white p-10 font-sans text-black" style={{ width: '1122px', minHeight: '793px' }}>
+        <div id="print-container" className="bg-white p-10 font-sans text-black shadow-xl shrink-0" style={{ width: '1122px', minHeight: '793px' }}>
           
           {/* Cabeçalho */}
           <div className="flex justify-between items-start mb-6 w-full">
@@ -255,8 +255,6 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
             <tbody>
               {filteredSupplies.map((s, idx) => {
                 const supplyDate = new Date(s.date);
-                // Extrair 1º nome do motorista para o padrão (SGT OLIVEIRA, SGT KAISEKAMP, etc.)
-                // No sistema eles cadastram algo livre. Mostramos o que foi digitado de forma direta.
                 
                 return (
                   <tr key={s.id || idx}>
