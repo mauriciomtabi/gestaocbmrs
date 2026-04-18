@@ -67,7 +67,31 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
   }, [providers, attendance, selectedYear, selectedMonth]);
 
   const consolidatedData: MonthlySummary[] = filteredProviders.map(p => {
-    const pAttendance = attendance.filter(a => a.providerId === p.id);
+    let pAttendance = attendance.filter(a => a.providerId === p.id);
+
+    // Se houver um filtro de tempo, ignora presenças futuras para o cálculo do total de horas e do último comparecimento daquele relatório
+    if (selectedYear !== 'Todos' && selectedMonth !== 'Todos') {
+      const limitMonth = parseInt(selectedMonth);
+      const limitYear = parseInt(selectedYear);
+      
+      pAttendance = pAttendance.filter(a => {
+        const dateParts = a.date.split('T')[0].split('-');
+        const aYear = parseInt(dateParts[0]);
+        const aMonth = parseInt(dateParts[1]);
+        
+        if (aYear < limitYear) return true;
+        if (aYear === limitYear && aMonth <= limitMonth) return true;
+        return false;
+      });
+    } else if (selectedYear !== 'Todos' && selectedMonth === 'Todos') {
+      const limitYear = parseInt(selectedYear);
+      pAttendance = pAttendance.filter(a => {
+        const dateParts = a.date.split('T')[0].split('-');
+        const aYear = parseInt(dateParts[0]);
+        return aYear <= limitYear;
+      });
+    }
+
     const totalWorked = pAttendance.reduce((acc, curr) => acc + curr.durationMinutes, 0);
     const totalRequired = p.totalHoursToFulfill * 60;
     
