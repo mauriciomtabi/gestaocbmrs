@@ -119,6 +119,14 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
     try {
       const element = document.getElementById('official-document-content');
       
+      const originalBodyBg = document.body.style.backgroundColor;
+      const originalBodyColor = document.body.style.color;
+      const originalDocBg = document.documentElement.style.backgroundColor;
+      
+      document.documentElement.style.backgroundColor = '#ffffff';
+      document.body.style.backgroundColor = '#ffffff';
+      document.body.style.color = '#000000';
+
       const opt = {
         margin: [5, 5, 5, 5],
         filename: `Oficio_${selectedYear}_${selectedMonth}.pdf`,
@@ -126,12 +134,18 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
         html2canvas: { 
           scale: 2, 
           useCORS: true,
-          logging: false
+          logging: false,
+          backgroundColor: '#ffffff'
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
       await html2pdf().set(opt).from(element).save();
+
+      document.documentElement.style.backgroundColor = originalDocBg;
+      document.body.style.backgroundColor = originalBodyBg;
+      document.body.style.color = originalBodyColor;
+      
     } catch (err) {
       console.error("Erro ao gerar PDF:", err);
       alert("Houve um erro ao gerar o PDF. Tente novamente.");
