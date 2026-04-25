@@ -77,6 +77,9 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
     if (!navigator.geolocation) return;
 
     const onPos = (pos: GeolocationPosition) => {
+      // Ignora triangulação grosseira de antena de celular que gera erros > 1km
+      if (pos.coords.accuracy > 500) return;
+
       if (!gpsPositionRef.current || pos.coords.accuracy < gpsPositionRef.current.coords.accuracy) {
         gpsPositionRef.current = pos;
         setGpsAccuracy(Math.round(pos.coords.accuracy));
@@ -86,19 +89,13 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
       if (err.code === 1) setGpsError('permission');
     };
 
-    // Método 1: Wi-Fi/rede — capta em ~0.2s
+    // Apenas habilitamos requisições de alta precisão do chip GPS (sem cache)
     gpsWatchIdsRef.current.push(
       navigator.geolocation.watchPosition(onPos, onErr,
-        { enableHighAccuracy: false, maximumAge: 0, timeout: 15000 })
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 })
     );
-    // Método 2: GPS chip — refina precisão continuamente
-    gpsWatchIdsRef.current.push(
-      navigator.geolocation.watchPosition(onPos, onErr,
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 })
-    );
-    // Método 3: getCurrentPosition como terceira via
     navigator.geolocation.getCurrentPosition(onPos, onErr,
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
 
     return () => {
       gpsWatchIdsRef.current.forEach(id => navigator.geolocation.clearWatch(id));
@@ -270,9 +267,9 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         lat = pos.coords.latitude.toFixed(6);
         lng = pos.coords.longitude.toFixed(6);
         accuracyUsed = Math.round(pos.coords.accuracy);
+      } else {
+        throw new Error('Aguardando sinal GPS de alta precisão. Aguarde uns segundos ou vá para um local aberto externo.');
       }
-      // Se por algum motivo não houver posição (GPS bloqueado pelo SO),
-      // o registro continua sem coordenadas — nunca bloqueia o operador.
 
 
       // Capture frame for proof

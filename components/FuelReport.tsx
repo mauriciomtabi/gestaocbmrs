@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { FuelSupply, Vehicle, StationNickname } from '../types';
 import { FileDown, Calendar as CalendarIcon, Loader2, AlertCircle, FileText, Filter } from 'lucide-react';
 // @ts-ignore
@@ -14,7 +14,7 @@ interface Props {
 const months = [
   { value: '01', label: 'Janeiro' },
   { value: '02', label: 'Fevereiro' },
-  { value: '03', label: 'Março' },
+  { value: '03', label: 'MarÃ§o' },
   { value: '04', label: 'Abril' },
   { value: '05', label: 'Maio' },
   { value: '06', label: 'Junho' },
@@ -33,7 +33,7 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [quinzena, setQuinzena] = useState<1 | 2>(1);
-  const [opmName, setOpmName] = useState('3º PelBM Sapucaia do Sul');
+  const [opmName, setOpmName] = useState('3Âº PelBM Sapucaia do Sul');
   const [isGenerating, setIsGenerating] = useState(false);
 
   const nicknameMap = useMemo(() => {
@@ -92,7 +92,7 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
     if (!plate) return '';
     const clean = plate.replace(/[^A-Z0-9]/gi, '').toUpperCase();
     if (clean.length === 7) {
-      return `${clean.slice(0, 3)}${clean.slice(3)}`; // Formato exibido no print parece não ter hífen e usar direto, ex: JCO7I25
+      return `${clean.slice(0, 3)}${clean.slice(3)}`; // Formato exibido no print parece nÃ£o ter hÃ­fen e usar direto, ex: JCO7I25
     }
     return plate;
   };
@@ -105,7 +105,7 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
       
       // WORKAROUND: Tailwind v4 insere cores oklch() globais.
       // html2canvas trava ao tentar ler o background/color do document.body se forem oklch.
-      // Por 1 segundo, forçamos o body a usar HEX absoluto puro.
+      // Por 1 segundo, forÃ§amos o body a usar HEX absoluto puro.
       const originalBodyBg = document.body.style.backgroundColor;
       const originalBodyColor = document.body.style.color;
       const originalDocBg = document.documentElement.style.backgroundColor;
@@ -122,14 +122,14 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
           scale: 3, 
           useCORS: true,
           logging: false,
-          backgroundColor: '#ffffff' // Força background do canvas
+          backgroundColor: '#ffffff' // ForÃ§a background do canvas
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
       };
 
       await html2pdf().set(opt).from(element).save();
       
-      // Restaura estilos originais assim que PDF é gerado
+      // Restaura estilos originais assim que PDF Ã© gerado
       document.documentElement.style.backgroundColor = originalDocBg;
       document.body.style.backgroundColor = originalBodyBg;
       document.body.style.color = originalBodyColor;
@@ -149,7 +149,7 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
         <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
           <Filter size={18} className="text-blue-600" />
-          Filtros do Relatório
+          Filtros do RelatÃ³rio
         </h2>
         <button
           onClick={handleGeneratePDF}
@@ -175,7 +175,7 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
           </select>
         </div>
         <div>
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Mês Referência</label>
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">MÃªs ReferÃªncia</label>
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
@@ -193,23 +193,23 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
               onClick={() => setQuinzena(1)}
               className={`py-2 text-[11px] font-black uppercase rounded-lg transition-all ${quinzena === 1 ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
-              1ª Quinzena
+              1Âª Quinzena
             </button>
             <button 
               onClick={() => setQuinzena(2)}
               className={`py-2 text-[11px] font-black uppercase rounded-lg transition-all ${quinzena === 2 ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
-              2ª Quinzena
+              2Âª Quinzena
             </button>
           </div>
         </div>
         <div>
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Definir OPM Padrão</label>
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Definir OPM PadrÃ£o</label>
           <input 
             type="text" 
             value={opmName} 
             onChange={e => setOpmName(e.target.value)} 
-            placeholder="Ex: 3º PelBM Sapucaia do Sul"
+            placeholder="Ex: 3Âº PelBM Sapucaia do Sul"
             className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-sm font-bold text-slate-700 outline-none uppercase"
           />
         </div>
@@ -218,52 +218,52 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
       {filteredSupplies.length === 0 && (
         <div className="mb-6 flex items-center gap-2 text-amber-600 bg-amber-50 px-4 py-3 rounded-xl text-xs font-bold border border-amber-100">
           <AlertCircle size={16} />
-          Nenhum abastecimento encontrado para este período.
+          Nenhum abastecimento encontrado para este perÃ­odo.
         </div>
       )}
 
-      {/* Relatório Visível em Tela (Preview real do PDF) */}
+      {/* RelatÃ³rio VisÃ­vel em Tela (Preview real do PDF) */}
       <div className="w-full overflow-x-auto bg-slate-100 rounded-3xl border border-slate-200 p-4 md:p-8 flex justify-center shadow-inner relative">
         
         {/* Wrapper visual da folha (isola classes oklch de shadow/border do Tailwind v4 que quebram o html2canvas) */}
         <div className="shadow-xl shrink-0 border border-slate-200 bg-white" style={{ width: '1122px', minHeight: '793px' }}>
           
-          {/* O container que será efetivamente capturado (APENAS ESTILOS INLINE EM HEX/RGB PARA EVITAR OKLCH) */}
+          {/* O container que serÃ¡ efetivamente capturado (APENAS ESTILOS INLINE EM HEX/RGB PARA EVITAR OKLCH) */}
           <div id="print-container" className="p-10 font-sans w-full h-full" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
             
-            {/* Cabeçalho */}
+            {/* CabeÃ§alho */}
             <div className="flex justify-between items-start mb-6 w-full">
               <div className="text-[12px] font-bold leading-[1.3] uppercase" style={{ width: '35%' }}>
                 <p>CORPO DE BOMBEIROS MILITAR</p>
-                <p>8º BATALHÃO DE BOMBEIRO MILITAR</p>
-                <p>1ª CiaBM / {opmName}</p>
+                <p>8Âº BATALHÃƒO DE BOMBEIRO MILITAR</p>
+                <p>1Âª CiaBM / {opmName}</p>
                 <p className="mt-1">
                   <span className="font-bold">De: </span> 
                   {dateRange.startDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})}
-                  <span className="font-bold"> à </span>
+                  <span className="font-bold"> Ã  </span>
                   {dateRange.endDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})}
                 </p>
               </div>
               
               <div className="text-center w-full mt-2" style={{ width: '65%' }}>
-                <p className="text-[14px] font-bold">Planilha de Controle de Consumo de Combustível e Lubrificantes</p>
-                <p className="text-[14px] font-bold mt-1">{quinzena}ª Quinzena - {monthLabel}</p>
+                <p className="text-[14px] font-bold">Relatório de Controle de Consumo de CombustÃ­vel e Lubrificantes</p>
+                <p className="text-[14px] font-bold mt-1">{quinzena}Âª Quinzena - {monthLabel}</p>
               </div>
             </div>
 
             {/* Tabela */}
-            <table className="w-full text-center border-collapse text-[12px] font-sans" style={{ border: '1px solid black' }}>
+            <table className="w-full text-center border-collapse text-[12px] font-sans" style={{ border: '1px solid #cbd5e1' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid black' }}>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '22%' }}>OPM</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '10%' }}>Vtr</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '10%' }}>Data</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '16%' }}>Posto Combustível</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '12%' }}>Motorista</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '8%' }}>Qtde Litros</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '10%' }}>Tipo Combustível</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '8%' }}>Valor Unitário</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '12%' }}>Valor Abastecido</th>
+                <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                  <th className="py-2 px-2" style={{ border: '1px solid #cbd5e1', width: '22%' }}>OPM</th>
+                  <th className="py-2 px-2" style={{ border: '1px solid #cbd5e1', width: '10%' }}>Vtr</th>
+                  <th className="py-2 px-2" style={{ border: '1px solid #cbd5e1', width: '10%' }}>Data</th>
+                  <th className="py-2 px-2" style={{ border: '1px solid #cbd5e1', width: '16%' }}>Posto CombustÃ­vel</th>
+                  <th className="py-2 px-2" style={{ border: '1px solid #cbd5e1', width: '12%' }}>Motorista</th>
+                  <th className="py-2 px-2" style={{ border: '1px solid #cbd5e1', width: '8%' }}>Qtde Litros</th>
+                  <th className="py-2 px-2" style={{ border: '1px solid #cbd5e1', width: '10%' }}>Tipo CombustÃ­vel</th>
+                  <th className="py-2 px-2" style={{ border: '1px solid #cbd5e1', width: '8%' }}>Valor UnitÃ¡rio</th>
+                  <th className="py-2 px-2" style={{ border: '1px solid #cbd5e1', width: '12%' }}>Valor Abastecido</th>
                 </tr>
               </thead>
               <tbody>
@@ -282,64 +282,64 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
                   
                   return (
                     <tr key={s.id || idx}>
-                      <td className="py-1 px-2" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2" style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>
                         {opmName}
                       </td>
-                      <td className="py-1 px-2 font-bold" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2 font-bold" style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>
                         {formatPlate(s.plate)}
                       </td>
-                      <td className="py-1 px-2" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2" style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>
                         {supplyDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})}
                       </td>
-                      <td className="py-1 px-2 uppercase" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2 uppercase" style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>
                         {getStationDisplayName(s.location, nicknameMap)}
                       </td>
-                      <td className="py-1 px-2 uppercase font-bold text-[11px]" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2 uppercase font-bold text-[11px]" style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>
                         {s.driver}
                       </td>
-                      <td className="py-1 px-2 font-bold" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2 font-bold" style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>
                         {s.liters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className="py-1 px-2 uppercase" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2 uppercase" style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>
                         {getShortenedFuelType(s.fuelType)}
                       </td>
-                      <td className="py-1 px-2" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2" style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>
                         R$ {s.pricePerLiter.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className="py-1 px-2 font-bold" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2 font-bold" style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>
                         R$ {s.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
                   );
                 })}
                 
-                {/* Espaços em branco para manter a estética de tabela Excel caso haja poucos itens */}
+                {/* EspaÃ§os em branco para manter a estÃ©tica de tabela Excel caso haja poucos itens */}
                 {Array.from({ length: Math.max(0, 10 - filteredSupplies.length) }).map((_, i) => (
                   <tr key={`empty-${i}`} style={{ height: '28px' }}>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
+                    <td style={{ border: '1px solid #cbd5e1' }}></td>
+                    <td style={{ border: '1px solid #cbd5e1' }}></td>
+                    <td style={{ border: '1px solid #cbd5e1' }}></td>
+                    <td style={{ border: '1px solid #cbd5e1' }}></td>
+                    <td style={{ border: '1px solid #cbd5e1' }}></td>
+                    <td style={{ border: '1px solid #cbd5e1' }}></td>
+                    <td style={{ border: '1px solid #cbd5e1' }}></td>
+                    <td style={{ border: '1px solid #cbd5e1' }}></td>
+                    <td style={{ border: '1px solid #cbd5e1' }}></td>
                   </tr>
                 ))}
                 
                 {/* Linha de Total */}
                 <tr>
-                  <td colSpan={5} className="py-1.5 px-2 font-bold" style={{ borderTop: '1px solid black', textAlign: 'right' }}>
+                  <td colSpan={5} className="py-1.5 px-2 font-bold" style={{ borderTop: '1px solid #cbd5e1', textAlign: 'right' }}>
                     
                   </td>
-                  <td className="py-1.5 px-2 font-bold" style={{ border: '1px solid black', textAlign: 'center', backgroundColor: '#f3f4f6' }}>
+                  <td className="py-1.5 px-2 font-bold" style={{ border: '1px solid #cbd5e1', textAlign: 'center', backgroundColor: '#f3f4f6' }}>
                     {totalLiters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
-                  <td colSpan={2} className="py-1.5 px-2 font-bold" style={{ borderTop: '1px solid black', borderBottom: '1px solid black', textAlign: 'right' }}>
+                  <td colSpan={2} className="py-1.5 px-2 font-bold" style={{ borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', textAlign: 'right' }}>
                     
                   </td>
-                  <td className="py-1.5 px-2 font-bold" style={{ border: '1px solid black', textAlign: 'center', backgroundColor: '#f3f4f6' }}>
+                  <td className="py-1.5 px-2 font-bold" style={{ border: '1px solid #cbd5e1', textAlign: 'center', backgroundColor: '#f3f4f6' }}>
                     R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                 </tr>
