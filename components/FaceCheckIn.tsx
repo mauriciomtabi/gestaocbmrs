@@ -582,20 +582,44 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         <div className={`lg:w-80 ${status === 'match-found' && matchedProvider ? 'fixed inset-0 z-50 p-6 pb-24 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm lg:static lg:p-0 lg:pb-0 lg:bg-transparent lg:block lg:z-auto' : ''}`}>
           {status === 'match-found' && matchedProvider ? (
             <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 w-full max-w-sm lg:max-w-none animate-in zoom-in-95 duration-300">
-              {/* Provider photo / avatar */}
+              {/* Provider photo / avatar with playful recognition animation */}
               <div className="flex flex-col items-center mb-6">
-                {matchedProvider.providerPhoto ? (
-                  <img src={matchedProvider.providerPhoto} alt={matchedProvider.providerName} className="w-24 h-24 rounded-full object-cover border-4 border-blue-100 mb-3 shadow-lg" />
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center mb-3 text-3xl font-black text-blue-600">
-                    {matchedProvider.providerName.charAt(0).toUpperCase()}
+                <div className="relative mb-5 mt-2">
+                  {/* Outer pulsing ring */}
+                  <div className="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-20" style={{ animationDuration: '2s' }} />
+                  
+                  {/* Rotating dashed border effect */}
+                  <div className="absolute -inset-3 rounded-full border-2 border-dashed border-emerald-400/60 animate-[spin_4s_linear_infinite]" />
+                  
+                  {/* Inner glow */}
+                  <div className="absolute -inset-1 bg-emerald-100 rounded-full blur-sm opacity-50" />
+                  
+                  {/* Avatar Container */}
+                  <div className="relative z-10 rounded-full border-4 border-white shadow-2xl shadow-emerald-900/30 bg-white overflow-hidden w-28 h-28 transform transition-transform animate-in zoom-in-50 duration-500 ease-out">
+                    {matchedProvider.providerPhoto ? (
+                      <img src={matchedProvider.providerPhoto} alt={matchedProvider.providerName} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-slate-100 flex items-center justify-center text-4xl font-black text-slate-400">
+                        {matchedProvider.providerName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    {/* Scanning line overlay that sweeps down once */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-400/40 to-transparent h-[200%] w-full animate-[scan-down_1s_ease-out_forwards]" style={{ animationName: 'scan-down' }} />
                   </div>
-                )}
-                <div className="flex items-center gap-1.5 bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black uppercase mb-2">
-                  <CheckCircle2 size={12} />
-                  Prestador Reconhecido
+                  
+                  {/* Floating success checkmark */}
+                  <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-2 rounded-full border-[3px] border-white shadow-lg animate-in zoom-in duration-300 delay-300 z-20">
+                    <Check size={20} className="stroke-[3]" />
+                  </div>
                 </div>
-                <h3 className="font-black text-slate-900 text-center uppercase text-sm leading-tight">{matchedProvider.providerName}</h3>
+                
+                <div className="flex items-center gap-1.5 bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-[10px] font-black uppercase mb-3 animate-in slide-in-from-bottom-2 duration-300 delay-300 fill-mode-both">
+                  <CheckCircle2 size={14} className="text-emerald-600" />
+                  Identidade Confirmada
+                </div>
+                <h3 className="font-black text-slate-800 text-center uppercase text-lg leading-tight tracking-tight animate-in slide-in-from-bottom-2 duration-300 delay-500 fill-mode-both">
+                  {matchedProvider.providerName}
+                </h3>
               </div>
 
               {/* Context message */}
