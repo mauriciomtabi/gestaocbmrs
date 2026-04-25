@@ -1020,24 +1020,26 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                  <div className="flex gap-2">
                    {locs?.entry && (
                      <a 
-                       href={`https://www.google.com/maps/search/?api=1&query=${locs.entry.lat},${locs.entry.lng}`}
+                       href={locs.perimeter ? `https://www.google.com/maps/dir/${locs.perimeter.lat},${locs.perimeter.lng}/${locs.entry.lat},${locs.entry.lng}` : `https://www.google.com/maps/search/?api=1&query=${locs.entry.lat},${locs.entry.lng}`}
                        target="_blank"
                        rel="noopener noreferrer"
                        className="px-6 py-3 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center gap-2"
+                       title={locs.perimeter ? `Distância até o centro do perímetro de ${locs.perimeter.radius}m` : ''}
                      >
                        <MapPin size={16} />
-                       Loc. Entrada
+                       Loc. Entrada {locs.perimeter && '(Mapa x Perímetro)'}
                      </a>
                    )}
                    {locs?.exit && (
                      <a 
-                       href={`https://www.google.com/maps/search/?api=1&query=${locs.exit.lat},${locs.exit.lng}`}
+                       href={locs.perimeter ? `https://www.google.com/maps/dir/${locs.perimeter.lat},${locs.perimeter.lng}/${locs.exit.lat},${locs.exit.lng}` : `https://www.google.com/maps/search/?api=1&query=${locs.exit.lat},${locs.exit.lng}`}
                        target="_blank"
                        rel="noopener noreferrer"
                        className="px-6 py-3 bg-indigo-600 text-white font-black rounded-2xl shadow-xl hover:bg-indigo-700 transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center gap-2"
+                       title={locs.perimeter ? `Distância até o centro do perímetro de ${locs.perimeter.radius}m` : ''}
                      >
                        <MapPin size={16} />
-                       Loc. Saída
+                       Loc. Saída {locs.perimeter && '(Mapa x Perímetro)'}
                      </a>
                    )}
                  </div>

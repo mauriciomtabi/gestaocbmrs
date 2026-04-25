@@ -263,15 +263,47 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
           // Add Watermark
           const timestampStr = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR');
           const watermarkText = type === 'entrada' ? `ENTRADA: ${timestampStr}` : `SAÍDA: ${timestampStr}`;
+          const operatorText = `OPERADOR: ${currentUser || 'SISTEMA'}`;
           
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-          ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+          let locationText = 'LOCALIZAÇÃO: Não obtida';
+          let perimeterStatusText = '';
           
-          ctx.font = 'bold 16px "Inter", sans-serif';
-          ctx.fillStyle = '#ffffff';
+          if (gpsPosition) {
+            locationText = `LAT: ${gpsPosition.lat.toFixed(6)}, LNG: ${gpsPosition.lng.toFixed(6)}`;
+            
+            if (perimeterConfig && perimeterDistance !== null) {
+              const inside = perimeterDistance <= perimeterConfig.radius;
+              perimeterStatusText = inside 
+                ? `(DENTRO DO PERÍMETRO: ${perimeterDistance}m)` 
+                : `(FORA DO PERÍMETRO: ${perimeterDistance}m)`;
+            }
+          }
+
+          // Draw gradient overlay at bottom for better readability
+          const gradient = ctx.createLinearGradient(0, canvas.height - 100, 0, canvas.height);
+          gradient.addColorStop(0, 'rgba(0,0,0,0)');
+          gradient.addColorStop(0.3, 'rgba(0,0,0,0.6)');
+          gradient.addColorStop(1, 'rgba(0,0,0,0.9)');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+          
           ctx.textAlign = 'right';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(watermarkText, canvas.width - 15, canvas.height - 20);
+          ctx.textBaseline = 'bottom';
+          
+          // 1st Line: Type and Date
+          ctx.font = 'bold 18px "Inter", sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(watermarkText, canvas.width - 15, canvas.height - 65);
+          
+          // 2nd Line: Operator
+          ctx.font = 'bold 14px "Inter", sans-serif';
+          ctx.fillStyle = '#cbd5e1'; // slate-300
+          ctx.fillText(operatorText, canvas.width - 15, canvas.height - 40);
+          
+          // 3rd Line: Location
+          ctx.font = 'bold 12px "Inter", sans-serif';
+          ctx.fillStyle = perimeterDistance !== null && perimeterConfig && perimeterDistance <= perimeterConfig.radius ? '#4ade80' : (gpsPosition ? '#f87171' : '#facc15');
+          ctx.fillText(`${locationText} ${perimeterStatusText}`, canvas.width - 15, canvas.height - 15);
 
           photoBase64 = canvas.toDataURL('image/jpeg', 0.8);
         }
@@ -290,17 +322,32 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
           finalAttachment = await mergeImages(record.attachmentData, photoBase64);
         }
 
+        let reasonObj: any = {};
+        try { reasonObj = record.reason ? JSON.parse(record.reason) : {}; } catch(e){}
+        if (gpsPosition) {
+          reasonObj.exit = { lat: gpsPosition.lat, lng: gpsPosition.lng };
+          if (perimeterConfig) reasonObj.perimeter = { lat: perimeterConfig.lat, lng: perimeterConfig.lng, radius: perimeterConfig.radius };
+        }
+
         const updatedRecord: AttendanceRecord = {
           ...record,
           exitTime: time,
           durationMinutes: Math.max(0, exitMinutes - entryMinutes),
-          attachmentData: finalAttachment || record.attachmentData
+          attachmentData: finalAttachment || record.attachmentData,
+          reason: Object.keys(reasonObj).length > 0 ? JSON.stringify(reasonObj) : record.reason
         };
         await saveAttendance([updatedRecord]);
       } else if (type === 'entrada') {
         if (todayRecords.length) {
           throw new Error('Já existe uma entrada aberta para este prestador hoje.');
         }
+
+        let reasonObj: any = {};
+        if (gpsPosition) {
+          reasonObj.entry = { lat: gpsPosition.lat, lng: gpsPosition.lng };
+          if (perimeterConfig) reasonObj.perimeter = { lat: perimeterConfig.lat, lng: perimeterConfig.lng, radius: perimeterConfig.radius };
+        }
+
         const newRecord: AttendanceRecord = {
           id: `face-${Date.now()}`,
           providerId: matchedProvider.providerId,
@@ -309,7 +356,8 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
           exitTime: '',
           durationMinutes: 0,
           type: 'presence',
-          attachmentData: photoBase64
+          attachmentData: photoBase64,
+          reason: Object.keys(reasonObj).length > 0 ? JSON.stringify(reasonObj) : undefined
         };
         await saveAttendance([newRecord]);
       }
