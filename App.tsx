@@ -562,6 +562,7 @@ const App: React.FC = () => {
             currentUser={currentUser} 
             onUpdateProfile={handleUpdateProfile} 
             onOpenInstallGuide={() => setIsInstallGuideOpen(true)}
+            setNotification={(msg: string, type: 'success' | 'error') => setNotification({ message: msg, type })}
           />
         )}
         {view === 'help' && (

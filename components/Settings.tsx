@@ -10,9 +10,10 @@ interface Props {
   currentUser: Operator;
   onUpdateProfile: (user: Operator) => void;
   onOpenInstallGuide: () => void;
+  setNotification?: (message: string, type: 'success' | 'error') => void;
 }
 
-const Settings: React.FC<Props> = ({ currentUser, onUpdateProfile, onOpenInstallGuide }) => {
+const Settings: React.FC<Props> = ({ currentUser, onUpdateProfile, onOpenInstallGuide, setNotification }) => {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
@@ -105,7 +106,7 @@ const Settings: React.FC<Props> = ({ currentUser, onUpdateProfile, onOpenInstall
         {/* Admin Access Control Panel */}
         {currentUser.isAdmin && (
           <div className="mt-6 w-full max-w-7xl mx-auto flex flex-col gap-6">
-            <GeoPerimeterConfig />
+            <GeoPerimeterConfig setNotification={setNotification} />
             <UserAccessControl />
           </div>
         )}
@@ -114,7 +115,7 @@ const Settings: React.FC<Props> = ({ currentUser, onUpdateProfile, onOpenInstall
   );
 };
 
-const GeoPerimeterConfig: React.FC = () => {
+const GeoPerimeterConfig: React.FC<{ setNotification?: (msg: string, type: 'success' | 'error') => void }> = ({ setNotification }) => {
   const [enabled, setEnabled] = useState(false);
   const [lat, setLat] = useState(-29.4738);
   const [lng, setLng] = useState(-51.0);
@@ -170,9 +171,17 @@ const GeoPerimeterConfig: React.FC = () => {
       const { saveGeoPerimeter } = await import('../services/supabaseService');
       await saveGeoPerimeter({ lat, lng, radius, enabled });
       setHasConfig(true);
-      setStatusMsg({ type: 'success', text: 'Perímetro salvo com sucesso!' });
+      if (setNotification) {
+        setNotification('✅ Perímetro salvo com sucesso!', 'success');
+      } else {
+        setStatusMsg({ type: 'success', text: 'Perímetro salvo com sucesso!' });
+      }
     } catch {
-      setStatusMsg({ type: 'error', text: 'Erro ao salvar o perímetro.' });
+      if (setNotification) {
+        setNotification('Erro ao salvar o perímetro. Tente novamente.', 'error');
+      } else {
+        setStatusMsg({ type: 'error', text: 'Erro ao salvar o perímetro.' });
+      }
     } finally { setSaving(false); }
   };
 
