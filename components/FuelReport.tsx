@@ -114,11 +114,9 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
       document.body.style.backgroundColor = '#ffffff';
       document.body.style.color = '#000000';
       
-      const table = element?.querySelector('table');
-      if (table) {
-        table.style.borderWidth = '0.5px';
-        table.querySelectorAll('th, td').forEach((cell: any) => cell.style.borderWidth = '0.5px');
-      }
+      // O html2canvas nativamente engrossa bordas (2px) se elas colidirem (border-collapse).
+      // Eu já corrigi a marcação HTML para ser top/left na tabela e bottom/right nas células, evitando sobreposição!
+
 
       const opt = {
         margin: [10, 10, 10, 10],
@@ -140,10 +138,7 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
       document.body.style.backgroundColor = originalBodyBg;
       document.body.style.color = originalBodyColor;
       
-      if (table) {
-        table.style.borderWidth = '1px';
-        table.querySelectorAll('th, td').forEach((cell: any) => cell.style.borderWidth = '1px');
-      }
+      // limpa background
       
     } catch (err) {
       console.error("Erro ao gerar PDF:", err);
@@ -263,18 +258,18 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
             </div>
 
             {/* Tabela */}
-            <table className="w-full text-center border-collapse text-[12px] font-sans" style={{ border: '1px solid black' }}>
+            <table className="w-full text-center text-[12px] font-sans" style={{ borderTop: '1px solid black', borderLeft: '1px solid black', borderSpacing: 0 }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid black' }}>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '22%' }}>OPM</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '10%' }}>Vtr</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '10%' }}>Data</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '16%' }}>Posto Combustível</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '12%' }}>Motorista</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '8%' }}>Qtde Litros</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '10%' }}>Tipo Combustível</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '8%' }}>Valor Unitário</th>
-                  <th className="py-2 px-2" style={{ border: '1px solid black', width: '12%' }}>Valor Abastecido</th>
+                <tr>
+                  <th className="py-2 px-2" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', width: '22%' }}>OPM</th>
+                  <th className="py-2 px-2" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', width: '10%' }}>Vtr</th>
+                  <th className="py-2 px-2" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', width: '10%' }}>Data</th>
+                  <th className="py-2 px-2" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', width: '16%' }}>Posto Combustível</th>
+                  <th className="py-2 px-2" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', width: '12%' }}>Motorista</th>
+                  <th className="py-2 px-2" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', width: '8%' }}>Qtde Litros</th>
+                  <th className="py-2 px-2" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', width: '10%' }}>Tipo Combustível</th>
+                  <th className="py-2 px-2" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', width: '8%' }}>Valor Unitário</th>
+                  <th className="py-2 px-2" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', width: '12%' }}>Valor Abastecido</th>
                 </tr>
               </thead>
               <tbody>
@@ -293,31 +288,31 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
                   
                   return (
                     <tr key={s.id || idx}>
-                      <td className="py-1 px-2" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>
                         {opmName}
                       </td>
-                      <td className="py-1 px-2 font-bold" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2 font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>
                         {formatPlate(s.plate)}
                       </td>
-                      <td className="py-1 px-2" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>
                         {supplyDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})}
                       </td>
-                      <td className="py-1 px-2 uppercase" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2 uppercase" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>
                         {getStationDisplayName(s.location, nicknameMap)}
                       </td>
-                      <td className="py-1 px-2 uppercase font-bold text-[11px]" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2 uppercase font-bold text-[11px]" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>
                         {s.driver}
                       </td>
-                      <td className="py-1 px-2 font-bold" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2 font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>
                         {s.liters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className="py-1 px-2 uppercase" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2 uppercase" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>
                         {getShortenedFuelType(s.fuelType)}
                       </td>
-                      <td className="py-1 px-2" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>
                         R$ {s.pricePerLiter.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className="py-1 px-2 font-bold" style={{ border: '1px solid black', textAlign: 'center' }}>
+                      <td className="py-1 px-2 font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>
                         R$ {s.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
@@ -327,30 +322,30 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
                 {/* Espaços em branco para manter a estética de tabela Excel caso haja poucos itens */}
                 {Array.from({ length: Math.max(0, 10 - filteredSupplies.length) }).map((_, i) => (
                   <tr key={`empty-${i}`} style={{ height: '28px' }}>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
-                    <td style={{ border: '1px solid black' }}></td>
+                    <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black' }}></td>
+                    <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black' }}></td>
+                    <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black' }}></td>
+                    <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black' }}></td>
+                    <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black' }}></td>
+                    <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black' }}></td>
+                    <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black' }}></td>
+                    <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black' }}></td>
+                    <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black' }}></td>
                   </tr>
                 ))}
                 
                 {/* Linha de Total */}
                 <tr>
-                  <td colSpan={5} className="py-1.5 px-2 font-bold" style={{ borderTop: '1px solid black', textAlign: 'right' }}>
+                  <td colSpan={5} className="py-1.5 px-2 font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'right' }}>
                     
                   </td>
-                  <td className="py-1.5 px-2 font-bold" style={{ border: '1px solid black', textAlign: 'center', backgroundColor: '#f3f4f6' }}>
+                  <td className="py-1.5 px-2 font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', backgroundColor: '#f3f4f6' }}>
                     {totalLiters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
-                  <td colSpan={2} className="py-1.5 px-2 font-bold" style={{ borderTop: '1px solid black', borderBottom: '1px solid black', textAlign: 'right' }}>
+                  <td colSpan={2} className="py-1.5 px-2 font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'right' }}>
                     
                   </td>
-                  <td className="py-1.5 px-2 font-bold" style={{ border: '1px solid black', textAlign: 'center', backgroundColor: '#f3f4f6' }}>
+                  <td className="py-1.5 px-2 font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', backgroundColor: '#f3f4f6' }}>
                     R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                 </tr>

@@ -223,7 +223,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
           {/* Brasão e Cabeçalho */}
         <div className="text-center mb-10 flex flex-col items-center outline-none" contentEditable suppressContentEditableWarning>
           <img 
-            src="https://i.postimg.cc/MZM3gq2k/image.png" 
+            src="/brasao.png" 
             style={{ 
               width: '100px', 
               height: 'auto', 
