@@ -208,6 +208,17 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
     }
   }, [status, providerDescriptors]);
 
+  // Pause video when match is found to make it "fixed", resume when scanning
+  useEffect(() => {
+    if (videoRef.current) {
+      if (status === 'match-found') {
+        videoRef.current.pause();
+      } else if (status === 'scanning') {
+        videoRef.current.play().catch(e => console.log('Video resume error', e));
+      }
+    }
+  }, [status]);
+
   const getProviderTodayState = (providerId: string) => {
     const today = new Date().toISOString().split('T')[0];
     const todayRecords = attendance
@@ -589,7 +600,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
 
               {/* Context message */}
               {todayState?.hasOpenEntry ? (
-                <div className="flex items-center gap-2 p-3 rounded-xl mb-4 text-xs font-bold bg-amber-50 text-amber-700">
+                <div className="flex items-center justify-center gap-2 p-3 rounded-xl mb-4 text-xs font-bold bg-amber-50 text-amber-700">
                   <Clock size={14} className="shrink-0" /> Entrada aberta às {todayState.lastRecord?.entryTime}. Registrar Saída?
                 </div>
               ) : todayState?.lastRecord ? (
@@ -601,8 +612,22 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
                   <p className="pl-5 text-blue-600/80">Deseja registrar uma nova entrada neste mesmo dia?</p>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 p-3 rounded-xl mb-4 text-xs font-bold bg-blue-50 text-blue-700">
+                <div className="flex items-center justify-center gap-2 p-3 rounded-xl mb-4 text-xs font-bold bg-blue-50 text-blue-700">
                   <Clock size={14} className="shrink-0" /> Nenhum registro hoje. Registrar Entrada?
+                </div>
+              )}
+
+              {/* Perimeter Status Badge before buttons */}
+              {perimeterConfig && gpsStatus === 'acquired' && perimeterDistance !== null && (
+                <div className={`flex items-center justify-center gap-2 p-3 rounded-xl mb-4 text-[10px] font-black uppercase tracking-widest border ${
+                  perimeterDistance <= perimeterConfig.radius
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-red-50 text-red-700 border-red-200 shadow-sm shadow-red-500/20'
+                }`}>
+                  <MapPin size={16} className={perimeterDistance > perimeterConfig.radius ? 'animate-pulse' : ''} />
+                  {perimeterDistance <= perimeterConfig.radius
+                    ? `GPS: Dentro do Perímetro (${perimeterDistance}m)`
+                    : `ALERTA: Fora do Perímetro (+${perimeterDistance - perimeterConfig.radius}m)`}
                 </div>
               )}
 
