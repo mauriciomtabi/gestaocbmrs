@@ -50,18 +50,70 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
     }
     
     return providers.filter(p => {
+      // 1. Se tem assiduidade no mês, sempre aparece
       const pAttendance = attendance.filter(a => a.providerId === p.id);
-      
-      return pAttendance.some(a => {
+      const hasAttendanceThisMonth = pAttendance.some(a => {
         const dateParts = a.date.split('T')[0].split('-');
         const aYear = dateParts[0];
         const aMonth = dateParts[1];
-        
         const matchesYear = selectedYear === 'Todos' || aYear === selectedYear;
         const matchesMonth = selectedMonth === 'Todos' || aMonth === selectedMonth;
-        
         return matchesYear && matchesMonth;
       });
+
+      if (hasAttendanceThisMonth) return true;
+
+      // 2. Se não tem assiduidade no mês, avaliamos o status
+      // Identificamos o ano/mês do filtro (se for 'Todos', assumimos como o último possível para não excluir)
+      const filterYearNum = selectedYear === 'Todos' ? 9999 : parseInt(selectedYear);
+      const filterMonthNum = selectedMonth === 'Todos' ? 12 : parseInt(selectedMonth);
+
+      // Data de Cadastro (para garantir que não exiba prestadores ANTES de eles entrarem no sistema)
+      let enrollmentDate = new Date('2000-01-01');
+      const enrollmentLog = p.history?.find(l => l.action === 'CADASTRO');
+      if (enrollmentLog) {
+        enrollmentDate = new Date(enrollmentLog.timestamp);
+      } else if (p.history && p.history.length > 0) {
+        // Fallback para o primeiro log 
+        enrollmentDate = new Date(p.history[p.history.length - 1].timestamp);
+      }
+      
+      const enrolledYear = enrollmentDate.getFullYear();
+      const enrolledMonth = enrollmentDate.getMonth() + 1;
+      
+      // Se ele se cadastrou num mês/ano DEPOIS do filtro, com certeza não aparece.
+      if (enrolledYear > filterYearNum || (enrolledYear === filterYearNum && enrolledMonth > filterMonthNum)) {
+        return false;
+      }
+
+      // Se está ativo e a data filtrada é depois do cadastro dele, ele aparece (mesmo sem horas)
+      if (p.status === 'active' || p.status === 'suspended') {
+         return true;
+      }
+
+      // Se for concluído ou devolvido, achamos a data de conclusão/devolução
+      let statusChangeDate: Date | null = null;
+      if (p.status === 'completed') {
+         const log = p.history?.find(l => l.action === 'STATUS_ALTERADO' || (l.details && l.details.toLowerCase().includes('concluído')));
+         if (log) statusChangeDate = new Date(log.timestamp);
+      } else if (p.status === 'returned') {
+         const log = p.history?.find(l => l.action === 'DEVOLUÇÃO' || (l.details && l.details.toLowerCase().includes('devolvido')));
+         if (log) statusChangeDate = new Date(log.timestamp);
+      }
+
+      if (statusChangeDate) {
+         const changeYear = statusChangeDate.getFullYear();
+         const changeMonth = statusChangeDate.getMonth() + 1;
+         
+         // Aparece até o mês em que concluiu/devolveu.
+         // Ou seja, a data do filtro deve ser menor ou igual à data de mudança.
+         const isBeforeOrSameAsChange = filterYearNum < changeYear || (filterYearNum === changeYear && filterMonthNum <= changeMonth);
+         
+         return isBeforeOrSameAsChange;
+      }
+
+      // Fallback
+      return false;
     });
   }, [providers, attendance, selectedYear, selectedMonth]);
 
