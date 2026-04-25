@@ -326,7 +326,10 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         try { reasonObj = record.reason ? JSON.parse(record.reason) : {}; } catch(e){}
         if (gpsPosition) {
           reasonObj.exit = { lat: gpsPosition.lat, lng: gpsPosition.lng };
-          if (perimeterConfig) reasonObj.perimeter = { lat: perimeterConfig.lat, lng: perimeterConfig.lng, radius: perimeterConfig.radius };
+          if (perimeterConfig) {
+            reasonObj.perimeter = { lat: perimeterConfig.lat, lng: perimeterConfig.lng, radius: perimeterConfig.radius };
+            if (perimeterDistance !== null) reasonObj.exit.isOutside = perimeterDistance > perimeterConfig.radius;
+          }
         }
 
         const updatedRecord: AttendanceRecord = {
@@ -345,7 +348,10 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         let reasonObj: any = {};
         if (gpsPosition) {
           reasonObj.entry = { lat: gpsPosition.lat, lng: gpsPosition.lng };
-          if (perimeterConfig) reasonObj.perimeter = { lat: perimeterConfig.lat, lng: perimeterConfig.lng, radius: perimeterConfig.radius };
+          if (perimeterConfig) {
+            reasonObj.perimeter = { lat: perimeterConfig.lat, lng: perimeterConfig.lng, radius: perimeterConfig.radius };
+            if (perimeterDistance !== null) reasonObj.entry.isOutside = perimeterDistance > perimeterConfig.radius;
+          }
         }
 
         const newRecord: AttendanceRecord = {

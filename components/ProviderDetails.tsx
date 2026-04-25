@@ -726,6 +726,22 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                           Motivo: {record.reason}
                         </div>
                       )}
+                      
+                      {(() => {
+                        let hasWarning = false;
+                        if (record.type === 'presence' && record.reason) {
+                          try {
+                            const r = JSON.parse(record.reason);
+                            if (r?.entry?.isOutside || r?.exit?.isOutside) hasWarning = true;
+                          } catch(e) {}
+                        }
+                        return hasWarning ? (
+                          <div className="mt-3 flex items-center gap-1.5 text-[9px] text-red-600 font-black uppercase tracking-widest bg-red-50/80 px-3 py-2 rounded-xl border border-red-200 w-fit">
+                            <AlertCircle size={14} className="shrink-0" />
+                            Registro feito fora do perímetro configurado
+                          </div>
+                        ) : null;
+                      })()}
 
                       <div className="flex items-center justify-between md:hidden pt-3 border-t border-slate-100 mt-1">
                         <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg border uppercase ${record.type === 'justification' ? 'text-amber-800 bg-amber-100 border-amber-200' : 'text-blue-700 bg-blue-50 border-blue-100'}`}>
