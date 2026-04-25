@@ -5,6 +5,7 @@ import { formatMinutesToHHMM, formatDateBR, getDayOfWeekBR, getLatestVisit, calc
 import { ArrowLeft, Scan, Calendar, History, MapPin, Phone, Eye, Edit2, Trash2, X, Check, FileText, Download, Plus, Clock, LogOut, AlertCircle, Save, Upload, RefreshCw, File, ListFilter, ClipboardCheck, ShieldCheck, FileCheck, Edit3, Target, Gauge as GaugeIcon, ChevronLeft, ChevronRight, FileWarning, ZoomIn, ZoomOut, RotateCcw, ScanFace, Filter } from 'lucide-react';
 import AttendanceSheetOCR from './AttendanceSheetOCR';
 import FaceEnrollment from './FaceEnrollment';
+import GeoMapViewer from './GeoMapViewer';
 import * as pdfjs from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
@@ -1021,43 +1022,53 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                
                let locs: any = null;
                try {
-                 locs = JSON.parse(viewingAttachment.reason);
-               } catch(e) {
-                 if (viewingAttachment.reason.startsWith('LOCATION:')) {
-                   const coords = viewingAttachment.reason.split(':')[1];
-                   if (coords) {
-                     const [elat, elng] = coords.split(',');
-                     locs = { entry: { lat: elat, lng: elng } };
-                   }
+                 const parsed = JSON.parse(viewingAttachment.reason);
+                 if (parsed.entry?.lat && parsed.entry?.lng) {
+                   locs = { entry: { lat: parsed.entry.lat, lng: parsed.entry.lng } };
+                   if (parsed.exit?.lat && parsed.exit?.lng) locs.exit = { lat: parsed.exit.lat, lng: parsed.exit.lng };
+                   if (parsed.perimeter) locs.perimeter = parsed.perimeter;
                  }
+               } catch {
+                 const m = viewingAttachment.reason.match(/lat=([-\d.]+).*lng=([-\d.]+)/);
+                 if (m) locs = { entry: { lat: parseFloat(m[1]), lng: parseFloat(m[2]) } };
                }
 
+               if (!locs?.entry && !locs?.exit) return null;
+
                return (
-                 <div className="flex gap-2">
-                   {locs?.entry && (
-                     <a 
-                       href={locs.perimeter ? `https://www.google.com/maps/dir/${locs.perimeter.lat},${locs.perimeter.lng}/${locs.entry.lat},${locs.entry.lng}` : `https://www.google.com/maps/search/?api=1&query=${locs.entry.lat},${locs.entry.lng}`}
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       className="px-6 py-3 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center gap-2"
-                       title={locs.perimeter ? `Distância até o centro do perímetro de ${locs.perimeter.radius}m` : ''}
-                     >
-                       <MapPin size={16} />
-                       Loc. Entrada {locs.perimeter && '(Mapa x Perímetro)'}
-                     </a>
-                   )}
-                   {locs?.exit && (
-                     <a 
-                       href={locs.perimeter ? `https://www.google.com/maps/dir/${locs.perimeter.lat},${locs.perimeter.lng}/${locs.exit.lat},${locs.exit.lng}` : `https://www.google.com/maps/search/?api=1&query=${locs.exit.lat},${locs.exit.lng}`}
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       className="px-6 py-3 bg-indigo-600 text-white font-black rounded-2xl shadow-xl hover:bg-indigo-700 transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center gap-2"
-                       title={locs.perimeter ? `Distância até o centro do perímetro de ${locs.perimeter.radius}m` : ''}
-                     >
-                       <MapPin size={16} />
-                       Loc. Saída {locs.perimeter && '(Mapa x Perímetro)'}
-                     </a>
-                   )}
+                 <div className="w-full max-w-lg mt-4 text-left">
+                   <div className="flex items-center gap-2 mb-2">
+                     <MapPin size={14} className="text-white/50" />
+                     <span className="text-[10px] font-black uppercase tracking-widest text-white/50">Localização do Registro</span>
+                   </div>
+                   <GeoMapViewer
+                     entry={locs.entry}
+                     exit={locs.exit}
+                     perimeter={locs.perimeter}
+                     height={280}
+                   />
+                   <div className="flex flex-wrap gap-3 mt-3">
+                     {locs.entry && (
+                       <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/70">
+                         <span className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-white/20 shadow inline-block" />
+                         Entrada
+                         {locs.perimeter && ` · ${Math.round(Math.sqrt(Math.pow((locs.entry.lat - locs.perimeter.lat) * 111320, 2) + Math.pow((locs.entry.lng - locs.perimeter.lng) * 111320 * Math.cos(locs.perimeter.lat * Math.PI / 180), 2)))}m do centro`}
+                       </div>
+                     )}
+                     {locs.exit && (
+                       <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/70">
+                         <span className="w-3 h-3 rounded-full bg-red-500 border-2 border-white/20 shadow inline-block" />
+                         Saída
+                         {locs.perimeter && ` · ${Math.round(Math.sqrt(Math.pow((locs.exit.lat - locs.perimeter.lat) * 111320, 2) + Math.pow((locs.exit.lng - locs.perimeter.lng) * 111320 * Math.cos(locs.perimeter.lat * Math.PI / 180), 2)))}m do centro`}
+                       </div>
+                     )}
+                     {locs.perimeter && (
+                       <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/70">
+                         <span className="w-3 h-3 rounded-full bg-blue-500 border-2 border-white/20 shadow inline-block" />
+                         Perímetro ({locs.perimeter.radius}m)
+                       </div>
+                     )}
+                   </div>
                  </div>
                );
              })()}
