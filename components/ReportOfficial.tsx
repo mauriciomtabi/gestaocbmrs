@@ -232,7 +232,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
 
       {/* Papel A4 Oficial - Container para o PDF */}
       <div className="w-full pb-12 md:pb-0 overflow-visible print:border-none print:shadow-none print:m-0 print:p-0">
-        <div id="official-document-content" className="min-w-[21cm] max-w-[21cm] mx-auto bg-white p-[1.5cm] md:p-[2cm] text-black shadow-2xl md:shadow-lg animate-in zoom-in-95 duration-700 print:shadow-none print:m-0 print:p-[1.5cm] print:max-w-none print:w-full" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: '1.5' }}>
+        <div id="official-document-content" className="min-w-[21cm] max-w-[21cm] mx-auto p-[1.5cm] md:p-[2cm] shadow-2xl md:shadow-lg animate-in zoom-in-95 duration-700 print:shadow-none print:m-0 print:p-[1.5cm] print:max-w-none print:w-full" style={{ backgroundColor: '#ffffff', color: '#000000', fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: '1.5' }}>
           
           {/* Brasão e Cabeçalho */}
         <div className="text-center mb-10 flex flex-col items-center outline-none" contentEditable suppressContentEditableWarning>
@@ -315,14 +315,14 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
 
         {/* Anexo - Lista de Frequência */}
         <div className="mt-20 pt-10 border-t border-slate-100 border-dashed" style={{ pageBreakBefore: 'always' }}>
-          <h3 className="text-center font-bold text-lg mb-8 uppercase text-black">Frequência Prestadores Serviço Comunitário</h3>
+          <h3 className="text-center font-bold text-lg mb-8 uppercase" style={{ color: '#000000' }}>Frequência Prestadores Serviço Comunitário</h3>
           
-          <table className="w-full border-collapse border border-black text-[10pt] text-black">
+          <table className="w-full border-collapse text-[10pt]" style={{ border: '1px solid black', color: '#000000' }}>
             <thead>
-              <tr className="bg-slate-50">
-                <th className="border border-black px-4 py-2 text-left font-bold uppercase">PRESTADORES DE SERVIÇO</th>
-                <th className="border border-black px-4 py-2 text-center w-44 font-bold uppercase leading-tight">ÚLTIMO<br />COMPARECIMENTO</th>
-                <th className="border border-black px-4 py-2 text-center w-48 font-bold uppercase leading-tight">
+              <tr style={{ backgroundColor: '#f8fafc' }}>
+                <th className="px-4 py-2 text-left font-bold uppercase" style={{ border: '1px solid black' }}>PRESTADORES DE SERVIÇO</th>
+                <th className="px-4 py-2 text-center w-44 font-bold uppercase leading-tight" style={{ border: '1px solid black' }}>ÚLTIMO<br />COMPARECIMENTO</th>
+                <th className="px-4 py-2 text-center w-48 font-bold uppercase leading-tight" style={{ border: '1px solid black' }}>
                   <span className="whitespace-nowrap">TOTAL DE HORAS</span><br />
                   <span className="whitespace-nowrap">CUMPRIDAS</span>
                 </th>
@@ -331,14 +331,14 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
             <tbody>
               {consolidatedData.map((row) => (
                 <tr key={row.providerId}>
-                  <td className="border border-black px-4 py-2 uppercase font-medium">{row.providerName}</td>
-                  <td className="border border-black px-4 py-2 text-center">{formatDateBR(row.lastVisit)}</td>
-                  <td className="border border-black px-4 py-2 text-center font-bold">{formatMinutesToHHMM(row.totalWorkedMinutes)}</td>
+                  <td className="px-4 py-2 uppercase font-medium" style={{ border: '1px solid black' }}>{row.providerName}</td>
+                  <td className="px-4 py-2 text-center" style={{ border: '1px solid black' }}>{formatDateBR(row.lastVisit)}</td>
+                  <td className="px-4 py-2 text-center font-bold" style={{ border: '1px solid black' }}>{formatMinutesToHHMM(row.totalWorkedMinutes)}</td>
                 </tr>
               ))}
               {consolidatedData.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="border border-black px-4 py-8 text-center text-black italic">
+                  <td colSpan={3} className="px-4 py-8 text-center italic" style={{ border: '1px solid black', color: '#000000' }}>
                     Nenhum registro encontrado para o período selecionado.
                   </td>
                 </tr>
