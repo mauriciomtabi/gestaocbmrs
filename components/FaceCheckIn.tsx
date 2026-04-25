@@ -51,6 +51,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const noMatchCountRef = useRef(0);
 
   const [status, setStatus] = useState<ScreenStatus>('loading');
   const [loadingMessage, setLoadingMessage] = useState('Inicializando câmera...');
@@ -106,6 +107,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
       try {
         const detections = await detectAllFaces(videoRef.current);
         if (detections.length === 0) {
+          noMatchCountRef.current = 0;
           setStatus('scanning');
           return;
         }
@@ -113,6 +115,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
         for (const detection of detections) {
           const match = findBestMatch(detection.descriptor, providerDescriptors);
           if (match) {
+            noMatchCountRef.current = 0;
             clearInterval(scanIntervalRef.current!);
             if (noMatchTimeoutRef.current) clearTimeout(noMatchTimeoutRef.current);
             setMatchedProvider(match);
@@ -121,9 +124,16 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
             return;
           }
         }
-        setStatus('no-match');
-        if (noMatchTimeoutRef.current) clearTimeout(noMatchTimeoutRef.current);
-        noMatchTimeoutRef.current = setTimeout(() => setStatus('scanning'), 3000);
+        
+        noMatchCountRef.current += 1;
+        if (noMatchCountRef.current >= 4) {
+          setStatus('no-match');
+          if (noMatchTimeoutRef.current) clearTimeout(noMatchTimeoutRef.current);
+          noMatchTimeoutRef.current = setTimeout(() => {
+            setStatus('scanning');
+            noMatchCountRef.current = 0;
+          }, 3000);
+        }
       } catch { /* silently continue */ }
     }, 400);
   }, [providerDescriptors, status]);
