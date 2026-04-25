@@ -288,31 +288,31 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
                   
                   return (
                     <tr key={s.id || idx}>
-                      <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                      <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                         {opmName}
                       </td>
-                      <td className="font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                      <td className="font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                         {formatPlate(s.plate)}
                       </td>
-                      <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                      <td style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                         {supplyDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'})}
                       </td>
-                      <td className="uppercase" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                      <td className="uppercase" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                         {getStationDisplayName(s.location, nicknameMap)}
                       </td>
-                      <td className="uppercase font-bold text-[11px]" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                      <td className="uppercase font-bold text-[11px]" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                         {s.driver}
                       </td>
-                      <td className="font-bold whitespace-nowrap" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                      <td className="font-bold whitespace-nowrap" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                         {s.liters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className="uppercase" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                      <td className="uppercase" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                         {getShortenedFuelType(s.fuelType)}
                       </td>
-                      <td className="whitespace-nowrap" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                      <td className="whitespace-nowrap" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                         R$ {s.pricePerLiter.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className="font-bold whitespace-nowrap" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                      <td className="font-bold whitespace-nowrap" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                         R$ {s.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
@@ -336,16 +336,16 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
                 
                 {/* Linha de Total */}
                 <tr>
-                  <td colSpan={5} className="font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'right', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                  <td colSpan={5} className="font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'right', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                     
                   </td>
-                  <td className="font-bold whitespace-nowrap" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', backgroundColor: '#f3f4f6', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                  <td className="font-bold whitespace-nowrap" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', backgroundColor: '#f3f4f6', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                     {totalLiters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
-                  <td colSpan={2} className="font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'right', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                  <td colSpan={2} className="font-bold" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'right', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                     
                   </td>
-                  <td className="font-bold whitespace-nowrap" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', backgroundColor: '#f3f4f6', padding: '8px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
+                  <td className="font-bold whitespace-nowrap" style={{ borderBottom: '1px solid black', borderRight: '1px solid black', textAlign: 'center', backgroundColor: '#f3f4f6', padding: '4px 4px 12px 4px', lineHeight: '1', verticalAlign: 'middle' }}>
                     R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                 </tr>
