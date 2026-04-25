@@ -211,6 +211,15 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
 
 
 
+  useEffect(() => {
+    if (perimeterConfig && gpsPosition) {
+      const dist = calculateDistance(gpsPosition.lat, gpsPosition.lng, perimeterConfig.lat, perimeterConfig.lng);
+      setPerimeterDistance(Math.round(dist));
+    } else {
+      setPerimeterDistance(null);
+    }
+  }, [perimeterConfig, gpsPosition]);
+
   const getProviderTodayState = (providerId: string) => {
     const today = new Date().toISOString().split('T')[0];
     const todayRecords = attendance
@@ -225,10 +234,8 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
   // Check perimeter before registering — warn but never block
   const requestRegister = (type: 'entrada' | 'saida') => {
     if (!matchedProvider) return;
-    if (perimeterConfig && gpsPosition) {
-      const dist = calculateDistance(gpsPosition.lat, gpsPosition.lng, perimeterConfig.lat, perimeterConfig.lng);
-      setPerimeterDistance(Math.round(dist));
-      if (dist > perimeterConfig.radius) {
+    if (perimeterConfig && gpsPosition && perimeterDistance !== null) {
+      if (perimeterDistance > perimeterConfig.radius) {
         setPendingRegisterType(type);
         setShowPerimeterWarning(true);
         return;

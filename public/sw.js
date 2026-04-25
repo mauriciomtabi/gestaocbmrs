@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gestao-cbm-v9';
+const CACHE_NAME = 'gestao-cbm-v10';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
