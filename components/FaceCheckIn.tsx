@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, CheckCircle2, AlertCircle, Loader2, Clock, LogIn, LogOut, ScanFace, X, Users, SwitchCamera, MapPin, Navigation } from 'lucide-react';
+import { Camera, Check, CheckCircle2, AlertCircle, Loader2, Clock, LogIn, LogOut, ScanFace, X, Users, SwitchCamera, MapPin, Navigation } from 'lucide-react';
 import { loadFaceModels, detectAllFaces, findBestMatch, arrayToDescriptor, ProviderDescriptor } from '../services/faceService';
 import { getFaceDescriptors, saveAttendance, saveAuditLog, getGeoPerimeter } from '../services/supabaseService';
 import { Provider, AttendanceRecord, AuditLog } from '../types';
@@ -489,7 +489,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
             {status === 'scanning' && (
               <div className="absolute inset-0 pointer-events-none">
                 {/* Face outline marker */}
-                <div className={`absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 transition-opacity ${providerDescriptors.length > 0 ? 'opacity-100' : 'opacity-30'}`}>
+                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 transition-opacity ${providerDescriptors.length > 0 ? 'opacity-100' : 'opacity-30'}`}>
                   <div className="border-2 border-dashed border-blue-400/60 rounded-[50%] w-48 h-64 shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] ring-2 ring-blue-400/20" />
                 </div>
                 <div className="absolute bottom-4 left-0 right-0 flex justify-center">
