@@ -14,6 +14,8 @@ interface Props {
 }
 
 const Settings: React.FC<Props> = ({ currentUser, onUpdateProfile, onOpenInstallGuide, setNotification }) => {
+  const [activeTab, setActiveTab] = useState<'profile' | 'perimeter' | 'users'>('profile');
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
@@ -29,91 +31,111 @@ const Settings: React.FC<Props> = ({ currentUser, onUpdateProfile, onOpenInstall
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto pb-24 md:pb-8 no-scrollbar">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full max-w-7xl mx-auto">
-          
-          {/* Main Content Area - Profile */}
-          <div className="lg:col-span-8 flex flex-col gap-6">
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 text-blue-600 rounded-xl">
-                    <UserCircle size={20} />
-                  </div>
-                  <div>
-                    <h2 className="font-black text-slate-800 uppercase text-sm tracking-tight">Meu Perfil</h2>
-                    <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Informações da Conta</p>
-                  </div>
-                </div>
-                <div className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase flex items-center gap-1.5 border border-emerald-200">
-                  <ShieldCheck size={12} /> Operador Ativo
-                </div>
-              </div>
-              <div className="p-6">
-                <UserProfile user={currentUser} onUpdate={onUpdateProfile} onBack={() => {}} />
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar Area - System Settings */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            
-            {/* App Installation */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl shadow-xl shadow-blue-900/20 p-6 text-white relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700"></div>
-              
-              <div className="relative z-10">
-                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 border border-white/20 shadow-inner">
-                  <Smartphone size={24} className="text-white drop-shadow-md" />
-                </div>
-                
-                <h3 className="font-black text-xl uppercase tracking-tight mb-2">Instalar Aplicativo</h3>
-                <p className="text-blue-100 text-xs font-medium mb-6 leading-relaxed">
-                  Adicione o Gestão CBM à tela inicial do seu celular computador para acesso rápido e experiência em tela cheia (PWA).
-                </p>
-                
-                <button 
-                  onClick={onOpenInstallGuide}
-                  className="w-full bg-white text-blue-700 hover:bg-blue-50 py-3.5 px-4 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-between group/btn shadow-lg transition-all active:scale-95"
-                >
-                  Ver Guia de Instalação
-                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center group-hover/btn:translate-x-1 transition-transform">
-                    <ChevronRight size={14} className="text-blue-600" />
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* System Info */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Informações do Sistema</h3>
-              <div className="space-y-3 text-xs font-medium text-slate-600">
-                <div className="flex justify-between items-center py-2">
-                  <span>Versão</span>
-                  <span className="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded">{__APP_VERSION__}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-t border-slate-100">
-                  <span>Última atualização</span>
-                  <span className="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded">{__BUILD_DATE__}</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
+      {/* Tab bar — same style as ProviderDetails */}
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="flex border-b border-slate-100 bg-slate-50/50 shrink-0">
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === 'profile' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-slate-400 hover:bg-slate-100'}`}
+          >
+            <UserCircle size={16} /> Meu Perfil
+          </button>
+          <button
+            onClick={() => setActiveTab('perimeter')}
+            className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === 'perimeter' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-slate-400 hover:bg-slate-100'}`}
+          >
+            <MapPin size={16} /> Perímetro
+          </button>
+          {currentUser.isAdmin && (
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === 'users' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-slate-400 hover:bg-slate-100'}`}
+            >
+              <ShieldCheck size={16} /> Usuários
+            </button>
+          )}
         </div>
 
-        {/* Admin Access Control Panel */}
-        {currentUser.isAdmin && (
-          <div className="mt-6 w-full max-w-7xl mx-auto flex flex-col gap-6">
-            <GeoPerimeterConfig setNotification={setNotification} />
-            <UserAccessControl />
-          </div>
-        )}
+        <div className="flex-1 overflow-auto pb-24 md:pb-8">
+          {activeTab === 'profile' && (
+            <div className="p-6 max-w-4xl mx-auto space-y-6">
+              {/* Profile card */}
+              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><UserCircle size={20} /></div>
+                    <div>
+                      <h2 className="font-black text-slate-800 uppercase text-sm tracking-tight">Meu Perfil</h2>
+                      <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Informações da Conta</p>
+                    </div>
+                  </div>
+                  <div className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase flex items-center gap-1.5 border border-emerald-200">
+                    <ShieldCheck size={12} /> Operador Ativo
+                  </div>
+                </div>
+                <div className="p-6">
+                  <UserProfile user={currentUser} onUpdate={onUpdateProfile} onBack={() => {}} />
+                </div>
+              </div>
+
+              {/* Install + System Info */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl shadow-xl shadow-blue-900/20 p-6 text-white relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
+                  <div className="relative z-10">
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 border border-white/20 shadow-inner">
+                      <Smartphone size={24} className="text-white drop-shadow-md" />
+                    </div>
+                    <h3 className="font-black text-xl uppercase tracking-tight mb-2">Instalar Aplicativo</h3>
+                    <p className="text-blue-100 text-xs font-medium mb-6 leading-relaxed">
+                      Adicione o Gestão CBM à tela inicial do seu celular ou computador para acesso rápido e experiência em tela cheia (PWA).
+                    </p>
+                    <button
+                      onClick={onOpenInstallGuide}
+                      className="w-full bg-white text-blue-700 hover:bg-blue-50 py-3.5 px-4 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-between group/btn shadow-lg transition-all active:scale-95"
+                    >
+                      Ver Guia de Instalação
+                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center group-hover/btn:translate-x-1 transition-transform">
+                        <ChevronRight size={14} className="text-blue-600" />
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Informações do Sistema</h3>
+                  <div className="space-y-3 text-xs font-medium text-slate-600">
+                    <div className="flex justify-between items-center py-2">
+                      <span>Versão</span>
+                      <span className="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded">{__APP_VERSION__}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-t border-slate-100">
+                      <span>Última atualização</span>
+                      <span className="font-mono text-slate-900 bg-slate-100 px-2 py-0.5 rounded">{__BUILD_DATE__}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'perimeter' && (
+            <div className="p-6 max-w-4xl mx-auto">
+              <GeoPerimeterConfig setNotification={setNotification} />
+            </div>
+          )}
+
+          {activeTab === 'users' && currentUser.isAdmin && (
+            <div className="p-6 max-w-4xl mx-auto">
+              <UserAccessControl />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
+
 
 const GeoPerimeterConfig: React.FC<{ setNotification?: (msg: string, type: 'success' | 'error') => void }> = ({ setNotification }) => {
   const [enabled, setEnabled] = useState(false);
