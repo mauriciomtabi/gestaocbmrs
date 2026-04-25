@@ -114,38 +114,30 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
     return months.find(m => m.value === selectedMonth)?.label.toLowerCase() || "novembro";
   };
 
-  const handleGeneratePDF = () => {
-    const style = document.createElement('style');
-    style.innerHTML = `
-      @media print {
-        @page { size: A4 portrait; margin: 0; }
-        body, html, #root, main { 
-          background-color: white !important; 
-          margin: 0 !important; 
-          padding: 0 !important;
-          height: auto !important;
-          overflow: visible !important;
-          border: none !important;
-        }
-        nav { display: none !important; }
-        .no-print { display: none !important; }
-        ::-webkit-scrollbar { display: none !important; }
-        * { 
-          -webkit-print-color-adjust: exact; 
-          print-color-adjust: exact; 
-          box-shadow: none !important; 
-        }
-        div, main { overflow: visible !important; height: auto !important; }
-      }
-    `;
-    document.head.appendChild(style);
-    
-    // Imprimir via navegador nativo (Zero erros de CORS e qualidade vetorizada!)
-    setTimeout(() => {
-      window.print();
-      // Remover os estilos logo após a janela fechar
-      setTimeout(() => document.head.removeChild(style), 1000);
-    }, 100);
+  const handleGeneratePDF = async () => {
+    setIsGenerating(true);
+    try {
+      const element = document.getElementById('official-document-content');
+      
+      const opt = {
+        margin: [5, 5, 5, 5],
+        filename: `Oficio_${selectedYear}_${selectedMonth}.pdf`,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true,
+          logging: false
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error("Erro ao gerar PDF:", err);
+      alert("Houve um erro ao gerar o PDF. Tente novamente.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const selectClasses = "bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all cursor-pointer";
@@ -167,10 +159,11 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
           </div>
           <button 
             onClick={handleGeneratePDF}
-            className={`w-full md:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-sm active:scale-95`}
+            disabled={isGenerating}
+            className={`w-full md:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-sm active:scale-95 disabled:bg-slate-300 disabled:shadow-none`}
           >
-            <FileDown size={20} />
-            Gerar PDF (Ofício)
+            {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <FileDown size={20} />}
+            {isGenerating ? 'Gerando...' : 'Gerar PDF (Ofício)'}
           </button>
         </div>
 
@@ -228,7 +221,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
         <div id="official-document-content" className="min-w-[21cm] max-w-[21cm] mx-auto bg-white p-[1.5cm] md:p-[2cm] text-black shadow-2xl md:shadow-lg animate-in zoom-in-95 duration-700 print:shadow-none print:m-0 print:p-[1.5cm] print:max-w-none print:w-full" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: '1.5' }}>
           
           {/* Brasão e Cabeçalho */}
-        <div className="text-center mb-10 flex flex-col items-center">
+        <div className="text-center mb-10 flex flex-col items-center outline-none" contentEditable suppressContentEditableWarning>
           <img 
             src="https://i.postimg.cc/MZM3gq2k/image.png" 
             style={{ 
@@ -256,17 +249,17 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
         </div>
 
         {/* Número do Ofício */}
-        <div className="mb-4">
-          Ofício nº <span contentEditable suppressContentEditableWarning className="outline-none transition-all cursor-text focus:bg-blue-50 border-b-2 border-dashed border-slate-300 hover:border-blue-400 pb-0.5 print:border-none" title="Clique para editar o número do ofício">088/3ºPelBM/1ªCiaBM/8ºBBM/2025</span>.
+        <div className="mb-4 outline-none" contentEditable suppressContentEditableWarning>
+          Ofício nº 088/3ºPelBM/1ªCiaBM/8ºBBM/2025.
         </div>
 
         {/* Data - Alinhada à direita */}
-        <div className="text-right mb-16">
+        <div className="text-right mb-16 outline-none" contentEditable suppressContentEditableWarning>
           Sapucaia do Sul, {today}.
         </div>
 
         {/* Destinatário */}
-        <div className="mb-6">
+        <div className="mb-6 outline-none" contentEditable suppressContentEditableWarning>
           <p>Ao Fórum da Comarca de Sapucaia do Sul</p>
           <p>Vara de Execuções Criminais</p>
           <p>Av. João Pereira de Vargas, nº 431 – Centro</p>
@@ -274,12 +267,12 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
         </div>
 
         {/* Assunto */}
-        <div className="mb-10">
+        <div className="mb-10 outline-none" contentEditable suppressContentEditableWarning>
           Assunto: Prestador de Serviço Comunitário
         </div>
 
         {/* Texto do Ofício */}
-        <div className="text-justify space-y-6">
+        <div className="text-justify space-y-6 outline-none" contentEditable suppressContentEditableWarning>
           <div className="flex gap-4">
             <span className="shrink-0">1.</span>
             <p>
@@ -297,7 +290,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
         </div>
 
         {/* Assinatura */}
-        <div className="mt-32 text-center flex flex-col items-center">
+        <div className="mt-32 text-center flex flex-col items-center outline-none" contentEditable suppressContentEditableWarning>
           <div className="font-bold uppercase">
             RONALDO GONCZOROSKI DE OLIVEIRA – 1º Sgt QPBM
           </div>
