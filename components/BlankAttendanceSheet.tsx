@@ -199,11 +199,11 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
 
               {/* Cabeçalho da Grade */}
               <tr className="font-bold text-center" style={{ fontSize: '10pt' }}>
-                <td className="py-0.5 w-[18%]" style={{ border: '1px solid black' }}>Data</td>
-                <td className="py-0.5 w-[10%]" style={{ border: '1px solid black' }}>Chegada</td>
-                <td className="py-0.5 w-[10%]" style={{ border: '1px solid black' }}>Saída</td>
-                <td className="py-0.5 w-[42%]" style={{ border: '1px solid black' }}>Assinatura do prestador</td>
-                <td className="py-0.5 w-[20%]" style={{ border: '1px solid black' }}>
+                <td className="py-0.5 w-[14%]" style={{ border: '1px solid black' }}>Data</td>
+                <td className="py-0.5 w-[11%]" style={{ border: '1px solid black' }}>Chegada</td>
+                <td className="py-0.5 w-[12%]" style={{ border: '1px solid black' }}>Saída</td>
+                <td className="py-0.5 w-[40%]" style={{ border: '1px solid black' }}>Assinatura do prestador</td>
+                <td className="py-0.5 w-[23%]" style={{ border: '1px solid black' }}>
                   <div className="flex flex-col items-center justify-center leading-none">
                     <span>Assinatura do</span>
                     <span>responsável</span>
@@ -213,7 +213,7 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
 
               {/* Linhas Vazias */}
               {emptyRows.map((_, idx) => (
-                <tr key={idx} style={{ height: '42px' }}>
+                <tr key={idx} style={{ height: '38px' }}>
                   <td style={{ border: '1px solid black' }}></td>
                   <td style={{ border: '1px solid black' }}></td>
                   <td style={{ border: '1px solid black' }}></td>
