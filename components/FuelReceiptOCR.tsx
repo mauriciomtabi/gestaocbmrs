@@ -13,6 +13,9 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showWebcam, setShowWebcam] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,6 +29,54 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
     };
     reader.readAsDataURL(file);
   };
+
+  const startWebcam = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+      streamRef.current = stream;
+      setShowWebcam(true);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(console.error);
+        }
+      }, 100);
+    } catch (err) {
+      console.error(err);
+      setError("Erro ao acessar a câmera. Verifique as permissões.");
+    }
+  };
+
+  const stopWebcam = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    setShowWebcam(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        setPreview(canvas.toDataURL('image/jpeg', 0.8));
+        stopWebcam();
+        setError(null);
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    return () => {
+      stopWebcam();
+    };
+  }, []);
 
   const processImage = async () => {
     if (!preview) return;
@@ -143,13 +194,41 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
             </div>
             <h3 className="font-black text-blue-900 uppercase tracking-tight text-sm">Digitalizar Nota</h3>
           </div>
-          <button onClick={onCancel} className="p-2.5 hover:bg-blue-100 text-blue-400 transition-colors rounded-full">
+          <button onClick={() => { stopWebcam(); onCancel(); }} className="p-2.5 hover:bg-blue-100 text-blue-400 transition-colors rounded-full">
             <X size={20} />
           </button>
         </div>
 
         <div className="p-8 overflow-y-auto flex flex-col items-center text-center space-y-6">
-          {!preview ? (
+          {showWebcam ? (
+            <div className="w-full flex flex-col items-center gap-4">
+              <div className="relative w-full max-w-sm aspect-[3/4] bg-black rounded-3xl overflow-hidden shadow-inner border-4 border-slate-900">
+                <video 
+                  ref={videoRef} 
+                  playsInline 
+                  autoPlay 
+                  muted 
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 pointer-events-none border-2 border-white/20 m-4 rounded-xl border-dashed"></div>
+              </div>
+              <div className="flex gap-3 w-full max-w-sm mt-2">
+                <button 
+                  onClick={stopWebcam}
+                  className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl hover:bg-slate-200 transition-all uppercase text-[10px] tracking-widest"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={capturePhoto}
+                  className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center justify-center gap-2"
+                >
+                  <Camera size={18} />
+                  Capturar
+                </button>
+              </div>
+            </div>
+          ) : !preview ? (
             <>
               <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mb-2">
                 <Camera size={40} />
@@ -160,10 +239,7 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
               </div>
               <div className="flex flex-col sm:flex-row w-full gap-3 pt-4">
                 <button 
-                  onClick={() => {
-                    const input = document.getElementById('fuel-camera-input');
-                    if (input) input.click();
-                  }}
+                  onClick={startWebcam}
                   className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest"
                 >
                   <Camera size={18} />
@@ -179,14 +255,6 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
                   <Upload size={18} />
                   Fazer Upload
                 </button>
-                <input 
-                  id="fuel-camera-input"
-                  type="file" 
-                  onChange={handleFileChange} 
-                  accept="image/*" 
-                  capture="environment" 
-                  className="hidden" 
-                />
                 <input 
                   id="fuel-file-input"
                   type="file" 
