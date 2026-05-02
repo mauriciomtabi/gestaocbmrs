@@ -367,7 +367,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
         </div>
 
         {/* Anexo - Lista de Frequência */}
-        <div className="mt-20 pt-10 border-t border-slate-100 border-dashed" style={{ pageBreakBefore: 'always' }}>
+        <div className="mt-20 pt-10" style={{ pageBreakBefore: 'always' }}>
           <h3 className="text-center font-bold text-lg mb-8 uppercase" style={{ color: '#000000' }}>Frequência Prestadores Serviço Comunitário</h3>
           
           <table className="w-full border-collapse text-[10pt]" style={{ border: '1px solid black', color: '#000000' }}>
