@@ -480,25 +480,29 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                   });
                   
                   return (
-                    <div key={idx} className={`p-4 rounded-2xl border flex flex-wrap gap-3 items-end relative group transition-all ${isDuplicate ? 'bg-amber-50/50 border-amber-200 opacity-80' : 'bg-slate-50 border-slate-200'}`}>
-                      <div className="flex-1 min-w-[120px]">
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Data</label>
-                          {isDuplicate && (
-                            <span className="text-[8px] font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded uppercase tracking-tighter">Já Registrado</span>
-                          )}
+                    <div key={idx} className={`p-4 rounded-2xl border relative group transition-all ${isDuplicate ? 'bg-amber-50/50 border-amber-200 opacity-80' : 'bg-slate-50 border-slate-200'}`}>
+                      <div className="flex flex-col gap-3 pr-8">
+                        <div className="w-full">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">Data</label>
+                            {isDuplicate && (
+                              <span className="text-[8px] font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded uppercase tracking-tighter">Já Registrado</span>
+                            )}
+                          </div>
+                          <input type="date" value={record.date} onChange={(e) => handleUpdateField(idx, 'date', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm" />
                         </div>
-                        <input type="date" value={record.date} onChange={(e) => handleUpdateField(idx, 'date', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm" />
+                        <div className="flex gap-3">
+                          <div className="flex-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Entrada</label>
+                            <input type="time" value={record.entryTime} onChange={(e) => handleUpdateField(idx, 'entryTime', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm" />
+                          </div>
+                          <div className="flex-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Saída</label>
+                            <input type="time" value={record.exitTime} onChange={(e) => handleUpdateField(idx, 'exitTime', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm" />
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-[80px]">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Entrada</label>
-                        <input type="time" value={record.entryTime} onChange={(e) => handleUpdateField(idx, 'entryTime', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm" />
-                      </div>
-                      <div className="flex-1 min-w-[80px]">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Saída</label>
-                        <input type="time" value={record.exitTime} onChange={(e) => handleUpdateField(idx, 'exitTime', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm" />
-                      </div>
-                      <button onClick={() => removeRecord(idx)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><X size={18} /></button>
+                      <button onClick={() => removeRecord(idx)} className="absolute top-4 right-2 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><X size={18} /></button>
                     </div>
                   );
                 })}
