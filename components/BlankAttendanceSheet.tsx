@@ -136,9 +136,9 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
               alt="Brasão" 
               style={{ width: '65px', height: 'auto', display: 'block' }}
             />
-            <div className="flex flex-col">
-              <div style={{ fontSize: '7.5pt', letterSpacing: '0.02em', lineHeight: '1' }}>ESTADO DO RIO GRANDE DO SUL</div>
-              <div style={{ fontSize: '15pt', letterSpacing: '-0.02em', lineHeight: '1.1' }}>PODER JUDICIÁRIO</div>
+            <div className="flex flex-col" style={{ fontFamily: '"Times New Roman", Times, serif', width: 'fit-content' }}>
+              <div style={{ fontSize: '7.8pt', letterSpacing: '0.04em', lineHeight: '1', whiteSpace: 'nowrap' }}>ESTADO DO RIO GRANDE DO SUL</div>
+              <div style={{ fontSize: '14.5pt', letterSpacing: '0.015em', lineHeight: '1', whiteSpace: 'nowrap' }}>PODER JUDICIÁRIO</div>
             </div>
           </div>
 
