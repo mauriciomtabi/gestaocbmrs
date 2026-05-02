@@ -60,8 +60,8 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
     }, 100);
   };
 
-  // 13 linhas em branco para preenchimento (exatamente igual à imagem de referência)
-  const emptyRows = Array.from({ length: 13 });
+  // 10 linhas em branco para preenchimento (exatamente igual à imagem de referência)
+  const emptyRows = Array.from({ length: 10 });
 
   const modalContent = (
     <div className="fixed inset-0 z-[100] flex justify-center items-start bg-black/60 backdrop-blur-sm p-4 md:p-8 overflow-y-auto print-wrapper print:bg-white print:p-0">
@@ -148,56 +148,56 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
               
               {/* Informações 1 */}
               <tr>
-                <td colSpan={2} className="py-1 px-2" style={{ border: '1px solid black', width: '50%' }}>
+                <td colSpan={2} className="py-0.5 px-2" style={{ border: '1px solid black', width: '65%' }}>
                   <span className="font-bold">Processo nº:</span> <span className="outline-none whitespace-nowrap" contentEditable suppressContentEditableWarning>{provider.processNumber || '____________________'}</span>
                 </td>
-                <td colSpan={3} className="py-1 px-2" style={{ border: '1px solid black', width: '50%' }}>
+                <td colSpan={3} className="py-0.5 px-2" style={{ border: '1px solid black', width: '35%' }}>
                   <span className="font-bold">Mês de cumprimento:</span> <span className="outline-none bg-yellow-200/50 print:bg-transparent" contentEditable suppressContentEditableWarning>{targetMonth} / {targetYear}</span>
                 </td>
               </tr>
               
               {/* Nome */}
               <tr>
-                <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
+                <td colSpan={5} className="py-0.5 px-2" style={{ border: '1px solid black' }}>
                   <span className="font-bold">Nome do Prestador:</span> <span className="outline-none bg-yellow-200/50 print:bg-transparent" contentEditable suppressContentEditableWarning>{provider.name}</span>
                 </td>
               </tr>
               
               {/* Telefone */}
               <tr>
-                <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
+                <td colSpan={5} className="py-0.5 px-2" style={{ border: '1px solid black' }}>
                   <span className="font-bold">Telefone:</span> <span className="outline-none" contentEditable suppressContentEditableWarning>{provider.phone || '____________________'}</span>
                 </td>
               </tr>
               
               {/* Endereço */}
               <tr>
-                <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
+                <td colSpan={5} className="py-0.5 px-2" style={{ border: '1px solid black' }}>
                   <span className="font-bold">Endereço:</span> <span className="outline-none" contentEditable suppressContentEditableWarning>{provider.address || '____________________'}</span>
                 </td>
               </tr>
               
               {/* Entidade */}
               <tr>
-                <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
+                <td colSpan={5} className="py-0.5 px-2" style={{ border: '1px solid black' }}>
                   <span className="font-bold">Entidade Conveniada:</span> <span className="outline-none" contentEditable suppressContentEditableWarning>Corpo de Bombeiros Militar de Sapucaia do Sul</span>
                 </td>
               </tr>
               
               {/* E-mail */}
               <tr>
-                <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
+                <td colSpan={5} className="py-0.5 px-2" style={{ border: '1px solid black' }}>
                   <span className="font-bold">E-mail Entidade Conveniada:</span> <span className="outline-none" contentEditable suppressContentEditableWarning>sapucaiadosul@cbm.rs.gov.br</span>
                 </td>
               </tr>
 
               {/* Cabeçalho da Grade */}
               <tr className="font-bold text-center">
-                <td className="py-1.5 w-[12%]" style={{ border: '1px solid black' }}>Data</td>
-                <td className="py-1.5 w-[14%]" style={{ border: '1px solid black' }}>Chegada</td>
-                <td className="py-1.5 w-[14%]" style={{ border: '1px solid black' }}>Saída</td>
-                <td className="py-1.5 w-[30%]" style={{ border: '1px solid black' }}>Assinatura do prestador</td>
-                <td className="py-1.5 w-[30%]" style={{ border: '1px solid black' }}>
+                <td className="py-1 w-[12%]" style={{ border: '1px solid black' }}>Data</td>
+                <td className="py-1 w-[14%]" style={{ border: '1px solid black' }}>Chegada</td>
+                <td className="py-1 w-[14%]" style={{ border: '1px solid black' }}>Saída</td>
+                <td className="py-1 w-[30%]" style={{ border: '1px solid black' }}>Assinatura do prestador</td>
+                <td className="py-1 w-[30%]" style={{ border: '1px solid black' }}>
                   <div className="flex flex-col items-center justify-center leading-tight">
                     <span>Assinatura do</span>
                     <span>responsável</span>
@@ -207,7 +207,7 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
 
               {/* Linhas Vazias */}
               {emptyRows.map((_, idx) => (
-                <tr key={idx} style={{ height: '32px' }}>
+                <tr key={idx} style={{ height: '42px' }}>
                   <td style={{ border: '1px solid black' }}></td>
                   <td style={{ border: '1px solid black' }}></td>
                   <td style={{ border: '1px solid black' }}></td>
@@ -218,7 +218,7 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
               
               {/* Total Horas */}
               <tr>
-                <td colSpan={5} className="py-2 px-2" style={{ border: '1px solid black' }}>
+                <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
                   <span className="font-bold">Total de horas:</span>
                 </td>
               </tr>
