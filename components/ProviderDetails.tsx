@@ -2,8 +2,9 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Provider, AttendanceRecord, AuditLog } from '../types';
 import { formatMinutesToHHMM, formatDateBR, getDayOfWeekBR, getLatestVisit, calculateDuration, sanitizeObservations } from '../utils/timeUtils';
-import { ArrowLeft, Scan, Calendar, History, MapPin, Phone, Eye, Edit2, Trash2, X, Check, FileText, Download, Plus, Clock, LogOut, AlertCircle, Save, Upload, RefreshCw, File, ListFilter, ClipboardCheck, ShieldCheck, FileCheck, Edit3, Target, Gauge as GaugeIcon, ChevronLeft, ChevronRight, FileWarning, ZoomIn, ZoomOut, RotateCcw, ScanFace, Filter } from 'lucide-react';
+import { ArrowLeft, Scan, Calendar, History, MapPin, Phone, Eye, Edit2, Trash2, X, Check, FileText, Download, Plus, Clock, LogOut, AlertCircle, Save, Upload, RefreshCw, File, ListFilter, ClipboardCheck, ShieldCheck, FileCheck, Edit3, Target, Gauge as GaugeIcon, ChevronLeft, ChevronRight, FileWarning, ZoomIn, ZoomOut, RotateCcw, ScanFace, Filter, Printer } from 'lucide-react';
 import AttendanceSheetOCR from './AttendanceSheetOCR';
+import BlankAttendanceSheet from './BlankAttendanceSheet';
 import FaceEnrollment from './FaceEnrollment';
 import GeoMapViewer from './GeoMapViewer';
 import * as pdfjs from 'pdfjs-dist';
@@ -97,6 +98,7 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
   const [viewingReturnDoc, setViewingReturnDoc] = useState<string | null>(null);
   const [viewingGeneralDoc, setViewingGeneralDoc] = useState<{ title: string; data: string } | null>(null);
   const [isFaceEnrollOpen, setIsFaceEnrollOpen] = useState(false);
+  const [isBlankSheetModalOpen, setIsBlankSheetModalOpen] = useState(false);
   const [hasFaceDescriptor, setHasFaceDescriptor] = useState(false);
 
   useEffect(() => {
@@ -447,6 +449,10 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
   const inputClasses = "w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-100 outline-none transition-all text-sm shadow-inner";
   const editInputClasses = "w-full px-2 py-1 rounded border border-slate-300 bg-white text-slate-900 text-xs outline-none focus:ring-2 focus:ring-blue-500 shadow-sm";
 
+  if (isBlankSheetModalOpen) {
+    return <BlankAttendanceSheet provider={provider} onClose={() => setIsBlankSheetModalOpen(false)} />;
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20 md:pb-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -575,7 +581,14 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
             <div className="p-5 flex flex-wrap sm:flex-row justify-between items-center gap-3 bg-white">
               <h3 className="hidden sm:block text-base font-black text-slate-800 uppercase tracking-tight">Registro de Frequência</h3>
               {provider.status === 'active' && (
-                <div className="flex w-full sm:w-auto gap-2 justify-center">
+                <div className="flex w-full sm:w-auto gap-2 justify-center flex-wrap">
+                  <button 
+                    onClick={() => setIsBlankSheetModalOpen(true)} 
+                    title="Imprimir Folha"
+                    className="flex-1 sm:flex-none bg-white text-slate-600 border border-slate-200 p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-sm"
+                  >
+                    <Printer size={16} /> <span className="hidden sm:inline">Imprimir Folha</span>
+                  </button>
                   <button 
                     onClick={() => setIsJustificationOpen(true)} 
                     title="Justificativa"
