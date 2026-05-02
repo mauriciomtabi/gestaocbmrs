@@ -449,10 +449,6 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
   const inputClasses = "w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-100 outline-none transition-all text-sm shadow-inner";
   const editInputClasses = "w-full px-2 py-1 rounded border border-slate-300 bg-white text-slate-900 text-xs outline-none focus:ring-2 focus:ring-blue-500 shadow-sm";
 
-  if (isBlankSheetModalOpen) {
-    return <BlankAttendanceSheet provider={provider} onClose={() => setIsBlankSheetModalOpen(false)} />;
-  }
-
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20 md:pb-6">
       <div className="flex flex-wrap items-center justify-between gap-4">

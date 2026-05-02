@@ -38,6 +38,16 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
           print-color-adjust: exact; 
           box-shadow: none !important; 
         }
+        body > *:not(.print-wrapper) {
+          display: none !important;
+        }
+        .print-wrapper {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          display: block !important;
+        }
         div, main { overflow: visible !important; height: auto !important; }
       }
     `;
@@ -49,19 +59,21 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
     }, 100);
   };
 
-  // 15 linhas em branco para preenchimento
-  const emptyRows = Array.from({ length: 15 });
+  // 13 linhas em branco para preenchimento (exatamente igual à imagem de referência)
+  const emptyRows = Array.from({ length: 13 });
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-slate-100 overflow-y-auto">
-      {/* Barra de Ações Fixa no Topo (no-print) */}
-      <div className="no-print sticky top-0 z-50 bg-white border-b border-slate-200 px-4 md:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={onClose} 
-            className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors font-bold text-sm px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 bg-white"
-          >
-            <ArrowLeft size={18} />
+    <div className="fixed inset-0 z-[100] flex justify-center items-start bg-black/60 backdrop-blur-sm p-4 md:p-8 overflow-y-auto print-wrapper print:bg-white print:p-0">
+      <div className="bg-slate-100 rounded-[2rem] overflow-hidden shadow-2xl max-w-4xl w-full flex flex-col relative my-auto print:rounded-none print:shadow-none print:max-w-none">
+        
+        {/* Barra de Ações Fixa no Topo (no-print) */}
+        <div className="no-print sticky top-0 z-10 bg-white border-b border-slate-200 px-4 md:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={onClose} 
+              className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors font-bold text-sm px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 bg-white"
+            >
+              <ArrowLeft size={18} />
             Voltar
           </button>
           <div>
@@ -99,10 +111,10 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
       </div>
 
       {/* Papel A4 Oficial */}
-      <div className="w-full py-8 md:py-12 overflow-visible print:p-0 print:py-0 print:border-none print:shadow-none print:bg-white flex-1 flex justify-center items-start">
+      <div className="w-full py-8 md:py-8 overflow-visible print:p-0 print:py-0 print:border-none print:shadow-none print:bg-white flex justify-center items-start bg-slate-100">
         <div 
           id="blank-sheet-content" 
-          className="bg-white min-w-[21cm] max-w-[21cm] p-[1.5cm] md:p-[2cm] shadow-xl border border-slate-200 print:border-none print:shadow-none print:m-0 print:p-[1.5cm] print:max-w-none print:w-full"
+          className="bg-white min-w-[21cm] max-w-[21cm] p-[1.5cm] md:p-[2cm] shadow-xl border border-slate-200 print:border-none print:shadow-none print:m-0 print:p-[1cm] print:max-w-none print:w-full"
           style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', color: '#000' }}
         >
           {/* Cabeçalho */}
@@ -135,56 +147,56 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
               
               {/* Informações 1 */}
               <tr>
-                <td colSpan={2} className="py-1.5 px-2" style={{ border: '1px solid black', width: '50%' }}>
-                  <span className="font-bold">Processo nº:</span> <span className="outline-none" contentEditable suppressContentEditableWarning>{provider.processNumber || '____________________'}</span>
+                <td colSpan={2} className="py-1 px-2" style={{ border: '1px solid black', width: '50%' }}>
+                  <span className="font-bold">Processo nº:</span> <span className="outline-none whitespace-nowrap" contentEditable suppressContentEditableWarning>{provider.processNumber || '____________________'}</span>
                 </td>
-                <td colSpan={3} className="py-1.5 px-2" style={{ border: '1px solid black', width: '50%' }}>
+                <td colSpan={3} className="py-1 px-2" style={{ border: '1px solid black', width: '50%' }}>
                   <span className="font-bold">Mês de cumprimento:</span> <span className="outline-none bg-yellow-200/50 print:bg-transparent" contentEditable suppressContentEditableWarning>{targetMonth} / {targetYear}</span>
                 </td>
               </tr>
               
               {/* Nome */}
               <tr>
-                <td colSpan={5} className="py-1.5 px-2" style={{ border: '1px solid black' }}>
+                <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
                   <span className="font-bold">Nome do Prestador:</span> <span className="outline-none bg-yellow-200/50 print:bg-transparent" contentEditable suppressContentEditableWarning>{provider.name}</span>
                 </td>
               </tr>
               
               {/* Telefone */}
               <tr>
-                <td colSpan={5} className="py-1.5 px-2" style={{ border: '1px solid black' }}>
+                <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
                   <span className="font-bold">Telefone:</span> <span className="outline-none" contentEditable suppressContentEditableWarning>{provider.phone || '____________________'}</span>
                 </td>
               </tr>
               
               {/* Endereço */}
               <tr>
-                <td colSpan={5} className="py-1.5 px-2" style={{ border: '1px solid black' }}>
+                <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
                   <span className="font-bold">Endereço:</span> <span className="outline-none" contentEditable suppressContentEditableWarning>{provider.address || '____________________'}</span>
                 </td>
               </tr>
               
               {/* Entidade */}
               <tr>
-                <td colSpan={5} className="py-1.5 px-2" style={{ border: '1px solid black' }}>
+                <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
                   <span className="font-bold">Entidade Conveniada:</span> <span className="outline-none" contentEditable suppressContentEditableWarning>Corpo de Bombeiros Militar de Sapucaia do Sul</span>
                 </td>
               </tr>
               
               {/* E-mail */}
               <tr>
-                <td colSpan={5} className="py-1.5 px-2" style={{ border: '1px solid black' }}>
+                <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
                   <span className="font-bold">E-mail Entidade Conveniada:</span> <span className="outline-none" contentEditable suppressContentEditableWarning>sapucaiadosul@cbm.rs.gov.br</span>
                 </td>
               </tr>
 
               {/* Cabeçalho da Grade */}
               <tr className="font-bold text-center">
-                <td className="py-2 w-[12%]" style={{ border: '1px solid black' }}>Data</td>
-                <td className="py-2 w-[14%]" style={{ border: '1px solid black' }}>Chegada</td>
-                <td className="py-2 w-[14%]" style={{ border: '1px solid black' }}>Saída</td>
-                <td className="py-2 w-[30%]" style={{ border: '1px solid black' }}>Assinatura do prestador</td>
-                <td className="py-2 w-[30%]" style={{ border: '1px solid black' }}>
+                <td className="py-1.5 w-[12%]" style={{ border: '1px solid black' }}>Data</td>
+                <td className="py-1.5 w-[14%]" style={{ border: '1px solid black' }}>Chegada</td>
+                <td className="py-1.5 w-[14%]" style={{ border: '1px solid black' }}>Saída</td>
+                <td className="py-1.5 w-[30%]" style={{ border: '1px solid black' }}>Assinatura do prestador</td>
+                <td className="py-1.5 w-[30%]" style={{ border: '1px solid black' }}>
                   <div className="flex flex-col items-center justify-center leading-tight">
                     <span>Assinatura do</span>
                     <span>responsável</span>
@@ -194,7 +206,7 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
 
               {/* Linhas Vazias */}
               {emptyRows.map((_, idx) => (
-                <tr key={idx} style={{ height: '26px' }}>
+                <tr key={idx} style={{ height: '32px' }}>
                   <td style={{ border: '1px solid black' }}></td>
                   <td style={{ border: '1px solid black' }}></td>
                   <td style={{ border: '1px solid black' }}></td>
@@ -236,6 +248,7 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
           </div>
 
         </div>
+      </div>
       </div>
     </div>
   );
