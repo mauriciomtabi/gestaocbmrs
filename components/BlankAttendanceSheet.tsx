@@ -141,18 +141,24 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
             <tbody>
               {/* Título */}
               <tr>
-                <td colSpan={5} className="font-bold text-center uppercase py-2" style={{ border: '1px solid black', fontSize: '12pt' }}>
+                <td colSpan={5} className="font-bold text-center uppercase py-1" style={{ border: '1px solid black', fontSize: '11pt' }}>
                   FOLHA DE FREQUÊNCIA
                 </td>
               </tr>
               
               {/* Informações 1 */}
               <tr>
-                <td colSpan={2} className="py-0.5 px-2" style={{ border: '1px solid black', width: '75%' }}>
-                  <span className="font-bold">Processo nº:</span> <span className="outline-none whitespace-nowrap" contentEditable suppressContentEditableWarning>{provider.processNumber || '____________________'}</span>
+                <td colSpan={2} className="py-0.5 px-2" style={{ border: '1px solid black', width: '50%' }}>
+                  <div className="flex items-center gap-1 whitespace-nowrap overflow-hidden">
+                    <span className="font-bold">Processo nº:</span> 
+                    <span className="outline-none" contentEditable suppressContentEditableWarning>{provider.processNumber || '____________________'}</span>
+                  </div>
                 </td>
-                <td colSpan={3} className="py-0.5 px-2" style={{ border: '1px solid black', width: '25%' }}>
-                  <span className="font-bold">Mês de cumprimento:</span> <span className="outline-none bg-yellow-200/50 print:bg-transparent" contentEditable suppressContentEditableWarning>{targetMonth} / {targetYear}</span>
+                <td colSpan={3} className="py-0.5 px-2" style={{ border: '1px solid black', width: '50%' }}>
+                  <div className="flex items-center gap-1 whitespace-nowrap overflow-hidden">
+                    <span className="font-bold">Mês de cumprimento:</span> 
+                    <span className="outline-none bg-yellow-200/50 print:bg-transparent" contentEditable suppressContentEditableWarning>{targetMonth} / {targetYear}</span>
+                  </div>
                 </td>
               </tr>
               
@@ -192,13 +198,13 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
               </tr>
 
               {/* Cabeçalho da Grade */}
-              <tr className="font-bold text-center">
-                <td className="py-1 w-[16%]" style={{ border: '1px solid black' }}>Data</td>
-                <td className="py-1 w-[12%]" style={{ border: '1px solid black' }}>Chegada</td>
-                <td className="py-1 w-[12%]" style={{ border: '1px solid black' }}>Saída</td>
-                <td className="py-1 w-[35%]" style={{ border: '1px solid black' }}>Assinatura do prestador</td>
-                <td className="py-1 w-[25%]" style={{ border: '1px solid black' }}>
-                  <div className="flex flex-col items-center justify-center leading-tight">
+              <tr className="font-bold text-center" style={{ fontSize: '10pt' }}>
+                <td className="py-0.5 w-[18%]" style={{ border: '1px solid black' }}>Data</td>
+                <td className="py-0.5 w-[10%]" style={{ border: '1px solid black' }}>Chegada</td>
+                <td className="py-0.5 w-[10%]" style={{ border: '1px solid black' }}>Saída</td>
+                <td className="py-0.5 w-[42%]" style={{ border: '1px solid black' }}>Assinatura do prestador</td>
+                <td className="py-0.5 w-[20%]" style={{ border: '1px solid black' }}>
+                  <div className="flex flex-col items-center justify-center leading-none">
                     <span>Assinatura do</span>
                     <span>responsável</span>
                   </div>
