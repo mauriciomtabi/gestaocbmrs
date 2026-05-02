@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Provider } from '../types';
 import { ArrowLeft, FileDown, Printer } from 'lucide-react';
 
@@ -62,7 +63,7 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
   // 13 linhas em branco para preenchimento (exatamente igual à imagem de referência)
   const emptyRows = Array.from({ length: 13 });
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-[100] flex justify-center items-start bg-black/60 backdrop-blur-sm p-4 md:p-8 overflow-y-auto print-wrapper print:bg-white print:p-0">
       <div className="bg-slate-100 rounded-[2rem] overflow-hidden shadow-2xl max-w-4xl w-full flex flex-col relative my-auto print:rounded-none print:shadow-none print:max-w-none">
         
@@ -252,6 +253,8 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default BlankAttendanceSheet;
