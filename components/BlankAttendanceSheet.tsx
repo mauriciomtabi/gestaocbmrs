@@ -157,18 +157,18 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
                 </td>
               </tr>
               
-              {/* Informações 1 */}
+              {/* Informações 1 (Processo e Mês) */}
               <tr>
-                <td colSpan={2} className="py-0.5 px-2" style={{ border: '1px solid black', width: '50%' }}>
-                  <div className="flex items-center gap-1 whitespace-nowrap overflow-hidden">
-                    <span className="font-bold">Processo nº:</span> 
-                    <span className="outline-none" contentEditable suppressContentEditableWarning>{provider.processNumber || '____________________'}</span>
-                  </div>
-                </td>
-                <td colSpan={3} className="py-0.5 px-2" style={{ border: '1px solid black', width: '50%' }}>
-                  <div className="flex items-center gap-1 whitespace-nowrap overflow-hidden">
-                    <span className="font-bold">Mês de cumprimento:</span> 
-                    <span className="outline-none bg-yellow-200/50 print:bg-transparent" contentEditable suppressContentEditableWarning>{targetMonth} / {targetYear}</span>
+                <td colSpan={5} className="p-0" style={{ border: '1px solid black' }}>
+                  <div className="flex w-full">
+                    <div className="flex-1 py-0.5 px-2 border-r border-black flex items-center gap-1 overflow-hidden whitespace-nowrap">
+                      <span className="font-bold">Processo nº:</span> 
+                      <span className="outline-none" contentEditable suppressContentEditableWarning>{provider.processNumber || '____________________'}</span>
+                    </div>
+                    <div className="flex-1 py-0.5 px-2 flex items-center gap-1 overflow-hidden whitespace-nowrap">
+                      <span className="font-bold">Mês de cumprimento:</span> 
+                      <span className="outline-none bg-yellow-200/50 print:bg-transparent" contentEditable suppressContentEditableWarning>{targetMonth} / {targetYear}</span>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -210,11 +210,11 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
 
               {/* Cabeçalho da Grade */}
               <tr className="font-bold text-center" style={{ fontSize: '10pt' }}>
-                <td className="py-0.5 w-[14%]" style={{ border: '1px solid black' }}>Data</td>
+                <td className="py-0.5 w-[13%]" style={{ border: '1px solid black' }}>Data</td>
                 <td className="py-0.5 w-[11%]" style={{ border: '1px solid black' }}>Chegada</td>
-                <td className="py-0.5 w-[12%]" style={{ border: '1px solid black' }}>Saída</td>
-                <td className="py-0.5 w-[40%]" style={{ border: '1px solid black' }}>Assinatura do prestador</td>
-                <td className="py-0.5 w-[23%]" style={{ border: '1px solid black' }}>
+                <td className="py-0.5 w-[11%]" style={{ border: '1px solid black' }}>Saída</td>
+                <td className="py-0.5 w-[30%]" style={{ border: '1px solid black' }}>Assinatura do prestador</td>
+                <td className="py-0.5 w-[35%]" style={{ border: '1px solid black' }}>
                   <div className="flex flex-col items-center justify-center leading-none">
                     <span>Assinatura do</span>
                     <span>responsável</span>
@@ -224,7 +224,7 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
 
               {/* Linhas Vazias */}
               {emptyRows.map((_, idx) => (
-                <tr key={idx} style={{ height: '38px' }}>
+                <tr key={idx} style={{ height: '36px' }}>
                   <td style={{ border: '1px solid black' }}></td>
                   <td style={{ border: '1px solid black' }}></td>
                   <td style={{ border: '1px solid black' }}></td>
