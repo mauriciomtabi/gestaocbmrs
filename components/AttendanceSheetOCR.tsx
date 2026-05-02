@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, SyntheticEvent } from 'react';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { extractAttendanceFromFile } from '../services/geminiService';
-import { Upload, Loader2, Check, X, FileText, AlertCircle, Save, AlertTriangle, Image as ImageIcon, Sparkles, Cpu, Calculator } from 'lucide-react';
+import { Upload, Loader2, Check, X, FileText, AlertCircle, Save, AlertTriangle, Image as ImageIcon, Sparkles, Cpu, Calculator, Camera } from 'lucide-react';
 import { AttendanceRecord } from '../types';
 import { calculateDuration, formatMinutesToHHMM } from '../utils/timeUtils';
 import * as pdfjs from 'pdfjs-dist';
@@ -327,19 +327,21 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                   </div>
                 </div>
               ) : !preview && !converting ? (
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col sm:flex-row gap-4 w-full">
+                <div className="flex flex-col items-center text-center space-y-6 pt-4">
+                  <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mb-2">
+                    <Camera size={40} />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight">Capturar Folha</h4>
+                    <p className="text-slate-500 text-sm mt-2 font-medium">Posicione a folha de frequência em um local iluminado para facilitar a leitura inteligente.</p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row w-full gap-3 pt-4">
                     <button 
                       onClick={startWebcam}
-                      className="flex-1 flex flex-col items-center justify-center gap-4 py-8 border-4 border-dashed border-slate-100 bg-slate-50 text-slate-500 rounded-[2rem] hover:bg-blue-50 hover:border-blue-100 transition-all group"
+                      className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest"
                     >
-                      <div className="bg-white p-4 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                        <Camera size={32} className="text-blue-600" />
-                      </div>
-                      <div className="text-center">
-                        <p className="font-black text-slate-800 uppercase tracking-tight text-sm">Tirar Foto</p>
-                        <p className="text-[10px] text-slate-400 font-medium uppercase mt-1">Câmera Traseira</p>
-                      </div>
+                      <Camera size={18} />
+                      Tirar Foto
                     </button>
                     
                     <button 
@@ -347,15 +349,10 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                         const input = document.getElementById('file-input');
                         if (input) input.click();
                       }} 
-                      className="flex-1 flex flex-col items-center justify-center gap-4 py-8 border-4 border-dashed border-slate-100 bg-slate-50 text-slate-500 rounded-[2rem] hover:bg-blue-50 hover:border-blue-100 transition-all group"
+                      className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest border border-slate-200"
                     >
-                      <div className="bg-white p-4 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                        <Upload size={32} className="text-blue-600" />
-                      </div>
-                      <div className="text-center">
-                        <p className="font-black text-slate-800 uppercase tracking-tight text-sm">Fazer Upload</p>
-                        <p className="text-[10px] text-slate-400 font-medium uppercase mt-1">Galeria ou PDF</p>
-                      </div>
+                      <Upload size={18} />
+                      Fazer Upload
                     </button>
 
                     <input id="file-input" type="file" onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />
