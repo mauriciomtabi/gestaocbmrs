@@ -30,7 +30,7 @@ const months = [
 
 const ITEMS_PER_PAGE = 50;
 
-type SortOption = 'name-asc' | 'name-desc' | 'date-desc' | 'date-asc';
+type SortOption = 'name-asc' | 'name-desc' | 'date-desc' | 'date-asc' | 'progress-desc' | 'progress-asc';
 
 const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd, onNavigateDashboard }) => {
   const [mainTab, setMainTab] = useState<'providers' | 'reports'>('providers');
@@ -90,6 +90,14 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
 
     // Aplicação da Ordenação
     result.sort((a, b) => {
+      // Helper function to calculate progress percentage for sorting
+      const getProgress = (provider: Provider) => {
+        const pAttendance = attendance.filter(att => att.providerId === provider.id);
+        const workedMinutes = pAttendance.reduce((acc, curr) => acc + curr.durationMinutes, 0);
+        const requiredMinutes = (provider.totalHoursToFulfill || 40) * 60;
+        return workedMinutes / requiredMinutes;
+      };
+
       switch (sortOrder) {
         case 'name-asc':
           return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
@@ -99,13 +107,17 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
           return (b.referralDate || '').localeCompare(a.referralDate || '');
         case 'date-asc':
           return (a.referralDate || '').localeCompare(b.referralDate || '');
+        case 'progress-desc':
+          return getProgress(b) - getProgress(a);
+        case 'progress-asc':
+          return getProgress(a) - getProgress(b);
         default:
           return 0;
       }
     });
 
     return result;
-  }, [baseFilteredProviders, activeTab, sortOrder]);
+  }, [baseFilteredProviders, activeTab, sortOrder, attendance]);
 
   const totalPages = Math.ceil(filteredProviders.length / ITEMS_PER_PAGE);
   const paginatedProviders = filteredProviders.slice(
@@ -236,6 +248,8 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
                 <option value="name-desc">Alfabética (Z-A)</option>
                 <option value="date-desc">Recentes Primeiro</option>
                 <option value="date-asc">Antigos Primeiro</option>
+                <option value="progress-desc">Maior Progresso</option>
+                <option value="progress-asc">Menor Progresso</option>
               </select>
             </div>
             
