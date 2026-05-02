@@ -209,7 +209,7 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
               </tr>
 
               {/* Cabeçalho da Grade */}
-              <tr className="font-bold text-center" style={{ fontSize: '10pt' }}>
+              <tr className="font-bold text-center" style={{ fontSize: '11.5pt' }}>
                 <td className="py-0.5" style={{ border: '1px solid black', width: '18%' }}>Data</td>
                 <td className="py-0.5" style={{ border: '1px solid black', width: '11%' }}>Chegada</td>
                 <td className="py-0.5" style={{ border: '1px solid black', width: '11%' }}>Saída</td>
@@ -243,7 +243,7 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
           </table>
 
           {/* Questionário Rodapé */}
-          <div className="space-y-4" style={{ fontSize: '11pt' }}>
+          <div className="space-y-1.5" style={{ fontSize: '11pt' }}>
             <div className="flex flex-col">
               <span>Faltas no período?</span>
               <span>Sim ( &nbsp; ) &nbsp;&nbsp; Não ( &nbsp; )</span>
