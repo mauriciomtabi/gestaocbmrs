@@ -173,30 +173,31 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
       return;
     }
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="pt-BR">
-      <head>
-        <meta charset="UTF-8" />
-        <title>Ofício</title>
-        <style>
-          @page { size: A4 portrait; margin: 1.5cm 2cm; }
-          * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          body { margin: 0; padding: 0; background: white; font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; color: #000; }
-          table { border-collapse: collapse; width: 100%; }
-          th, td { border: 1px solid black; padding: 4px 12px; }
-          thead tr { background-color: #f8fafc; }
-        </style>
-      </head>
-      <body>${content.innerHTML}</body>
-      </html>
-    `);
+    const parentStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(el => el.outerHTML)
+      .join('\n');
+
+    printWindow.document.write(
+      '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8" /><title>Oficio</title>' +
+      parentStyles +
+      '<style>' +
+      '@page { size: A4 portrait; margin: 1.5cm 2cm; }' +
+      '* { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }' +
+      'html, body { margin: 0; padding: 0; background: white !important; font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; color: #000 !important; }' +
+      'table { border-collapse: collapse; width: 100%; }' +
+      'th, td { border: 1px solid black; padding: 4px 12px; }' +
+      'thead tr { background-color: #f8fafc !important; }' +
+      '#official-document-content { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; max-width: none !important; min-width: auto !important; }' +
+      '</style></head><body>' +
+      content.innerHTML +
+      '</body></html>'
+    );
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => {
       printWindow.print();
-      printWindow.close();
-    }, 500);
+      setTimeout(() => printWindow.close(), 500);
+    }, 800);
   };
 
   const selectClasses = "bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all cursor-pointer";
@@ -223,6 +224,14 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
             <FileDown size={20} />
             Gerar PDF (Ofício)
           </button>
+        </div>
+
+        {/* Dica: desmarcar cabeçalhos e rodapés */}
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 p-3 rounded-2xl text-amber-800">
+          <AlertCircle size={18} className="shrink-0 mt-0.5" />
+          <span className="text-[11px] font-bold leading-relaxed">
+            <strong>Dica de impressão:</strong> No diálogo que abrir, desmarque a opção <strong>"Cabeçalhos e rodapés"</strong> para remover data, URL e número de página do impresso.
+          </span>
         </div>
 
         {/* Aviso de Scroll no Mobile */}
