@@ -13,12 +13,13 @@ interface Props {
   stationNicknames: StationNickname[];
   onNavigateProvider: (p: Provider) => void;
   onNavigateFuel: () => void;
+  initialTab?: 'geral' | 'prestadores' | 'abastecimento';
 }
 
 const currentYear = new Date().getFullYear();
 
-const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehicles, stationNicknames, onNavigateProvider, onNavigateFuel }) => {
-  const [activeTab, setActiveTab] = React.useState<'geral' | 'prestadores' | 'abastecimento'>('geral');
+const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehicles, stationNicknames, onNavigateProvider, onNavigateFuel, initialTab }) => {
+  const [activeTab, setActiveTab] = React.useState<'geral' | 'prestadores' | 'abastecimento'>(initialTab || 'geral');
   
   // Abastecimento Filters
   const [filterFuelType, setFilterFuelType] = React.useState<string | null>(null);

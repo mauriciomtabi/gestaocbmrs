@@ -35,6 +35,13 @@ const Toast: React.FC<{ message: string; type: 'success' | 'error'; onClose: () 
 
 const App: React.FC = () => {
   const [view, setView] = useState<'dashboard' | 'providers' | 'details' | 'reports' | 'settings' | 'fuel' | 'face-checkin' | 'help'>('dashboard');
+  const [dashboardTab, setDashboardTab] = useState<'geral' | 'prestadores' | 'abastecimento'>('geral');
+  
+  const navigateToDashboard = (tab: 'geral' | 'prestadores' | 'abastecimento') => {
+    setDashboardTab(tab);
+    setView('dashboard');
+  };
+
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
@@ -413,9 +420,9 @@ const App: React.FC = () => {
 
   const currentProvider = providers.find(p => p.id === selectedProviderId);
 
-  const NavItem = ({ icon: Icon, label, target, active }: any) => (
+  const NavItem = ({ icon: Icon, label, target, active, onClick }: any) => (
     <button 
-      onClick={() => setView(target)}
+      onClick={onClick || (() => setView(target))}
       title={label}
       className={`flex flex-col md:flex-row items-center gap-1 md:gap-3 px-3 py-2 md:px-4 md:py-2.5 rounded-xl transition-all w-full text-[10px] md:text-sm font-bold ${active ? 'bg-blue-600 md:bg-blue-800 text-white shadow-lg md:shadow-inner scale-110 md:scale-100' : 'text-blue-200 hover:text-white hover:bg-blue-800/50'}`}
     >
@@ -439,7 +446,7 @@ const App: React.FC = () => {
         
         <div className="flex md:flex-col gap-1 md:gap-2 w-full max-sm md:max-w-none">
           {currentUser.allowedScreens?.includes('dashboard') && (
-            <NavItem icon={LayoutDashboard} label="Painel" target="dashboard" active={view === 'dashboard'} />
+            <NavItem icon={LayoutDashboard} label="Painel" target="dashboard" active={view === 'dashboard'} onClick={() => navigateToDashboard('geral')} />
           )}
           {currentUser.allowedScreens?.includes('providers') && (
             <NavItem icon={Users} label="Prestadores" target="providers" active={view === 'providers' || view === 'details'} />
@@ -501,6 +508,7 @@ const App: React.FC = () => {
             fuelSupplies={fuelSupplies} 
             vehicles={vehicles} 
             stationNicknames={stationNicknames}
+            initialTab={dashboardTab}
             onNavigateProvider={(p) => {
               setSelectedProviderId(p.id);
               setView('details');
@@ -514,7 +522,7 @@ const App: React.FC = () => {
             attendance={attendance}
             onSelect={handleSelectProvider}
             onAdd={() => setIsModalOpen(true)}
-            onNavigateDashboard={() => setView('dashboard')}
+            onNavigateDashboard={() => navigateToDashboard('prestadores')}
           />
         )}
         {view === 'details' && currentProvider && (
@@ -540,7 +548,7 @@ const App: React.FC = () => {
             fuelSupplies={fuelSupplies}
             stationNicknames={stationNicknames}
             onUpdateVehicles={fetchData}
-            onNavigateDashboard={() => setView('dashboard')}
+            onNavigateDashboard={() => navigateToDashboard('abastecimento')}
             setNotification={(msg: string, type: 'success' | 'error') => setNotification({ message: msg, type })}
           />
         )}
