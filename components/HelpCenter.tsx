@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {  Search, Book, Users, ScanFace, Fuel, FileText, AlertCircle, CheckCircle2, ChevronDown, MonitorPlay, Sparkles, ThumbsUp , BookOpen } from 'lucide-react';
+import {  Search, Book, Users, ScanFace, Fuel, FileText, AlertCircle, CheckCircle2, ChevronDown, MonitorPlay, Sparkles, ThumbsUp , BookOpen, Activity, Smartphone } from 'lucide-react';
 
 type Topic = {
   id: string;
@@ -30,6 +30,13 @@ const HELP_DATA: Topic[] = [
           O <strong>Painel de Controle</strong> (Dashboard) é a central de comando do Sistema de Gestão CBM.
           Ele foi remodelado em <strong>três abas principais</strong> para organizar melhor as informações vitais e operacionais.
         </p>
+
+        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex items-start gap-3">
+          <Sparkles className="text-emerald-600 shrink-0 mt-0.5" size={20} />
+          <p className="text-sm text-emerald-900 font-medium">
+            <strong>Navegação Contextual:</strong> Agora, ao clicar no botão "Painel" dentro dos módulos de Prestadores ou Abastecimento, o sistema te leva diretamente para a aba correspondente no Dashboard, sem resets.
+          </p>
+        </div>
 
         <div className="space-y-8 mt-6">
           <div className="border border-slate-200 rounded-3xl p-6 bg-white shadow-sm hover:shadow-md transition-all">
@@ -126,7 +133,7 @@ const HELP_DATA: Topic[] = [
           <div className="flex items-start gap-2">
             <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={20} />
             <p className="text-sm text-amber-900 font-medium">
-              Os contadores de cada aba (Ativos, Finalizados, Devolvidos) são atualizados automaticamente conforme os filtros de período aplicados.
+              <strong>Filtros Avançados:</strong> Use os seletores de Ano e Mês para filtrar a lista. Além disso, você pode ordenar por <strong>Maior ou Menor Progresso</strong> para identificar rapidamente quem está perto de concluir a carga horária.
             </p>
           </div>
         </div>
@@ -221,12 +228,13 @@ const HELP_DATA: Topic[] = [
         </p>
         <ul className="list-disc pl-5 space-y-2 text-slate-600 mt-2">
           <li>Data e hora exatos do check-in.</li>
-          <li>Uma captura de tela com <strong>marca d'água</strong> contendo o tipo de registro (Entrada ou Saída), data e horário — servindo como comprovante visual inviolável.</li>
+          <li>Uma captura de tela com <strong>marca d'água</strong> contendo o tipo de registro (Entrada ou Saída), data, horário e o <strong>nome do militar operador</strong>.</li>
+          <li><strong>Localização Verificada:</strong> Cada foto inclui um link direto para o Google Maps com as coordenadas exatas de onde o check-in foi realizado, garantindo a integridade do registro.</li>
           <li>Rótulo de justificativa <em>BIOMETRIA</em> no histórico do prestador.</li>
           <li>As horas são calculadas e somadas ao total automaticamente assim que a saída é registrada.</li>
         </ul>
 
-        <Screenshot src="/docs/face-comprovante.png" caption="Comprovante Biométrico — captura com marca d'água de data/hora gravada no histórico do prestador" />
+        <Screenshot src="/docs/face-comprovante.png" caption="Comprovante Biométrico — agora com marca d'água detalhada e link de localização para auditoria" />
       </div>
     )
   },
@@ -293,6 +301,79 @@ const HELP_DATA: Topic[] = [
           <p className="text-sm text-emerald-900 font-medium">
             O documento é gerado com Brasão oficial, identificação da unidade, parágrafos formais padronizados e rodapé com campo para assinatura — pronto para ser encaminhado ao juizado.
           </p>
+        </div>
+      </div>
+    )
+  },
+  {
+    id: 'boot-system',
+    category: 'Sistema',
+    title: 'Inicialização e Atualização Automática',
+    icon: Activity,
+    tags: ['boot', 'iniciar', 'carregar', 'atualizar', 'v2', 'performance', 'erro de dados', 'branco'],
+    content: (
+      <div className="space-y-4">
+        <p className="text-slate-600 leading-relaxed">
+          O sistema conta com um motor de inicialização otimizado para garantir que todos os dados (Supabase) e permissões sejam carregados na sequência correta antes de liberar o acesso.
+        </p>
+
+        <div className="space-y-6 mt-4">
+          <div className="border-l-4 border-blue-600 pl-4">
+            <h4 className="font-black text-slate-800">1. Inicialização Sequencial</h4>
+            <p className="text-sm text-slate-600 mt-1">
+              Ao abrir o sistema, uma barra de progresso detalha cada etapa: Autenticação Militar, Sincronização de Banco de Dados e Calibração de IA. Isso evita o erro de "tela em branco" ou falta de dados no primeiro acesso diário.
+            </p>
+          </div>
+
+          <div className="border-l-4 border-blue-600 pl-4">
+            <h4 className="font-black text-slate-800">2. Atualização Diária Obrigatória</h4>
+            <p className="text-sm text-slate-600 mt-1">
+              Para garantir que você esteja sempre usando a versão mais recente e segura (PWA), o sistema detecta o primeiro acesso do dia e realiza uma atualização automática e silenciosa se houver mudanças pendentes.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mt-4 flex items-start gap-3">
+          <CheckCircle2 className="text-blue-600 shrink-0 mt-0.5" size={20} />
+          <p className="text-sm text-blue-900 font-medium">
+            Se o sistema parecer "travado" no boot por mais de 15 segundos, ele possui um mecanismo de recuperação automática que forçará a entrada para não interromper o serviço.
+          </p>
+        </div>
+      </div>
+    )
+  },
+  {
+    id: 'ux-mobile',
+    category: 'Interface',
+    title: 'Navegação e Usabilidade Mobile',
+    icon: Smartphone,
+    tags: ['mobile', 'celular', 'layout', 'abas', 'ícones', 'responsivo', 'gestos'],
+    content: (
+      <div className="space-y-4">
+        <p className="text-slate-600 leading-relaxed">
+          A interface foi redesenhada para oferecer a mesma potência do desktop com o conforto do uso por polegar no celular.
+        </p>
+
+        <div className="space-y-6 mt-4">
+          <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50">
+            <h4 className="font-black text-slate-800 flex items-center gap-2">
+              <Smartphone size={16} className="text-blue-600" />
+              Abas Adaptativas
+            </h4>
+            <p className="text-sm text-slate-600 mt-2">
+              Em telas menores, as abas de navegação exibem <strong>apenas ícones</strong> quando inativas para economizar espaço. Ao selecionar uma aba, ela se expande suavemente exibindo seu nome, facilitando o uso rápido sem poluição visual.
+            </p>
+          </div>
+
+          <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50">
+            <h4 className="font-black text-slate-800 flex items-center gap-2">
+              <MonitorPlay size={16} className="text-blue-600" />
+              Estilo "Pill" Premium
+            </h4>
+            <p className="text-sm text-slate-600 mt-2">
+              Todos os menus utilizam o novo design de "Pílula" com cores táticas, proporcionando uma transição visual mais moderna e consistente entre o Painel, Prestadores e Abastecimento.
+            </p>
+          </div>
         </div>
       </div>
     )
