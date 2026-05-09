@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {  Search, Book, Users, ScanFace, Fuel, FileText, AlertCircle, CheckCircle2, ChevronDown, MonitorPlay, Sparkles, ThumbsUp , BookOpen, Activity, Smartphone } from 'lucide-react';
+import {  Search, Book, Users, ScanFace, Fuel, FileText, AlertCircle, CheckCircle2, ChevronDown, MonitorPlay, Sparkles, ThumbsUp , BookOpen, Smartphone } from 'lucide-react';
 
 type Topic = {
   id: string;
@@ -10,9 +10,21 @@ type Topic = {
   tags: string[];
 };
 
-const Screenshot: React.FC<{ src: string; caption: string; blur?: boolean }> = ({ src, caption, blur }) => (
-  <figure className="my-6 rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-slate-50">
-    <img src={src} alt={caption} className={`w-full object-cover ${blur ? 'blur-xl' : ''}`} />
+const Screenshot: React.FC<{ src: string; caption: string; blurFace?: boolean }> = ({ src, caption, blurFace }) => (
+  <figure className="relative my-6 rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-slate-50">
+    <img src={src} alt={caption} className="w-full object-cover" />
+    {blurFace && (
+      <div 
+        className="absolute backdrop-blur-2xl bg-white/20 border border-white/30 rounded-xl shadow-2xl" 
+        style={{ 
+          top: '15%', 
+          left: '7%', 
+          width: '12%', 
+          height: '25%',
+          zIndex: 10 
+        }} 
+      />
+    )}
     <figcaption className="text-center text-xs text-slate-500 font-medium py-2 px-4 border-t border-slate-100 bg-white">{caption}</figcaption>
   </figure>
 );
@@ -70,7 +82,7 @@ const HELP_DATA: Topic[] = [
   {
     id: 'gerir-prestadores',
     category: 'Prestadores',
-    title: 'Gestão de Prestadores',
+    title: '1. Gestão e Cadastro',
     icon: Users,
     tags: ['prestador', 'cadastro', 'novo', 'listar', 'processo', 'edição', 'horas', 'encaminhamento', 'identidade', 'documento', 'folha'],
     content: (
@@ -96,13 +108,13 @@ const HELP_DATA: Topic[] = [
   {
     id: 'frequencia-ocr',
     category: 'Prestadores',
-    title: 'Lançar Frequência via Digitalização',
+    title: '2. Lançar Frequência (OCR)',
     icon: Sparkles,
     tags: ['digitalizar', 'folha', 'inteligência', 'frequência', 'horas', 'ponto', 'foto', 'ocr', 'leitura'],
     content: (
       <div className="space-y-4">
         <p className="text-slate-600 leading-relaxed">
-          Utilize a <strong>Leitura Inteligente (OCR)</strong> para ler folhas de frequência físicas. O sistema extrai automaticamente as datas e horários de entrada e saída.
+          Utilize a <strong>Leitura Inteligente (OCR)</strong> para processar folhas de frequência físicas. O sistema extrai automaticamente as datas e horários de entrada e saída.
         </p>
 
         <Screenshot src="/docs/PRESTADORES - DIGITALIZAR ACOMPANHAMENTO.png" caption="Digitalização — O sistema processa a imagem e sugere os lançamentos" />
@@ -118,8 +130,8 @@ const HELP_DATA: Topic[] = [
   },
   {
     id: 'biometria-face',
-    category: 'Biometria',
-    title: 'Check-in Facial e Perímetro',
+    category: 'Prestadores',
+    title: '3. Check-in Facial e Perímetro',
     icon: ScanFace,
     tags: ['biometria', 'checkin', 'rosto', 'facial', 'câmera', 'enrolment', 'cadastrar', 'celular', 'militar', 'registro', 'marca d\'água', 'perímetro', 'gps'],
     content: (
@@ -128,17 +140,59 @@ const HELP_DATA: Topic[] = [
           O registro biométrico facial garante que o prestador está presente fisicamente. Além do rosto, o sistema verifica se o dispositivo está dentro do <strong>perímetro geográfico</strong> autorizado (Quartel).
         </p>
 
-        <h3 className="text-lg font-black text-slate-800 mt-6">1. Cadastro Facial (Enrolment)</h3>
+        <h3 className="text-lg font-black text-slate-800 mt-6">Cadastro Facial (Enrolment)</h3>
         <p className="text-sm text-slate-600">O primeiro passo é mapear o rosto do prestador para identificação futura.</p>
         <Screenshot src="/docs/PRESTADORES - CADASTRAR ROSTO (BIOMETRIA FACIAL).png" caption="Cadastro de Rosto — Mapeamento biométrico inicial" />
 
-        <h3 className="text-lg font-black text-slate-800 mt-6">2. Check-in Facial</h3>
-        <p className="text-sm text-slate-600">O militar aponta a câmera e o sistema identifica o prestador instantaneamente.</p>
-        <Screenshot src="/docs/PRESTADORES - CHECKIN FACIAL.png" caption="Check-in — Reconhecimento e validação de presença" />
+        <h3 className="text-lg font-black text-slate-800 mt-6">Check-in em Tempo Real</h3>
+        <p className="text-sm text-slate-600">O militar aponta a câmera e o sistema identifica o prestador instantaneamente, validando também as coordenadas de GPS.</p>
+        <Screenshot src="/docs/PRESTADORES - CHECKIN FACIAL.png" caption="Check-in — Reconhecimento e validação de presença por rosto e perímetro" />
 
-        <h3 className="text-lg font-black text-slate-800 mt-6">3. Comprovação com Auditoria</h3>
-        <p className="text-sm text-slate-600">Cada registro gera um comprovante visual com marca d'água e link de localização GPS.</p>
-        <Screenshot src="/docs/PRESTADORES - REGISTRO DE FREQUENCA POR BIOMENTRIA FACIAL.png" caption="Histórico Biométrico — Registro auditável (rosto ocultado para privacidade)" blur={true} />
+        <h3 className="text-lg font-black text-slate-800 mt-6">Comprovação e Auditoria</h3>
+        <p className="text-sm text-slate-600">Cada registro gera um comprovante visual com marca d'água de data, hora, operador e link de localização.</p>
+        <Screenshot src="/docs/PRESTADORES - REGISTRO DE FREQUENCA POR BIOMENTRIA FACIAL.png" caption="Histórico Biométrico — Registro auditável com face protegida" blurFace={true} />
+      </div>
+    )
+  },
+  {
+    id: 'justificativas',
+    category: 'Prestadores',
+    title: '4. Justificativas de Falta',
+    icon: AlertCircle,
+    tags: ['falta', 'atestado', 'justificativa', 'ausência', 'médico', 'documento'],
+    content: (
+      <div className="space-y-4">
+        <p className="text-slate-600 leading-relaxed">
+          Quando o prestador não puder comparecer, o militar pode registrar a justificativa anexando o comprovante (ex: atestado médico).
+        </p>
+
+        <Screenshot src="/docs/PRESTADORES - JUSTIFICATIVA DE FALTA.png" caption="Justificativa — Registro de ausência com anexo de documento comprobatório" />
+
+        <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 mt-4">
+          <p className="text-sm text-amber-900 font-medium">
+            Justificativas não somam horas ao total cumprido, mas mantêm o histórico do prestador em dia para prestação de contas ao juizado.
+          </p>
+        </div>
+      </div>
+    )
+  },
+  {
+    id: 'historico-auditoria',
+    category: 'Prestadores',
+    title: '5. Histórico e Auditoria',
+    icon: FileText,
+    tags: ['histórico', 'log', 'auditoria', 'quem fez', 'alteração', 'lançamento', 'timeline'],
+    content: (
+      <div className="space-y-4">
+        <p className="text-slate-600 leading-relaxed">
+          Todas as ações realizadas no cadastro de um prestador são registradas em uma linha do tempo (Timeline) para auditoria.
+        </p>
+
+        <Screenshot src="/docs/PRESTADORES - HISTÓRICO DE REGISTROS.png" caption="Timeline de Auditoria — Log detalhado de todas as operações no cadastro" />
+
+        <p className="text-sm text-slate-600">
+          O sistema registra: <strong>O que</strong> foi feito, <strong>Quem</strong> fez e a <strong>Data/Hora</strong> exata, garantindo total transparência no processo.
+        </p>
       </div>
     )
   },
