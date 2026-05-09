@@ -15,12 +15,4 @@ root.render(
   </React.StrictMode>
 );
 
-// Remover Service Workers antigos que podem estar causando problemas
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(function(registrations) {
-    for(let registration of registrations) {
-      registration.unregister();
-      console.log('Service Worker desregistrado para evitar conflitos.');
-    }
-  });
-}
+// Service Workers são registrados no index.html para garantir carregamento antecipado

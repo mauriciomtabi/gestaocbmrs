@@ -72,24 +72,15 @@ const App: React.FC = () => {
   ];
 
   useEffect(() => {
-    // Forçar atualização da página no primeiro acesso do dia
-    const today = new Date().toLocaleDateString();
+    // 1. Verificação de primeiro acesso do dia (movida para o início)
+    const today = new Date().toLocaleDateString('pt-BR');
     const lastAccess = localStorage.getItem('lastAccessDate');
     
-    if (lastAccess !== today) {
-      localStorage.setItem('lastAccessDate', today);
-      window.location.reload();
-      return;
-    }
-
-    checkUserAndFetch();
-
-    // Safety fallback: force boot to finish after 15 seconds if it hangs
-    const fallbackTimer = setTimeout(() => {
-      setIsBooting(false);
-    }, 15000);
-
+    // 2. Inicialização do Auth Listener
+    // O onAuthStateChange dispara imediatamente com a sessão atual (INITIAL_SESSION)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`[Auth] Evento detectado: ${event}`);
+      
       if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
         setProviders([]);
@@ -97,19 +88,36 @@ const App: React.FC = () => {
         setFuelSupplies([]);
         setVehicles([]);
         setView('dashboard');
-      } else if (event === 'TOKEN_REFRESHED' && session) {
-        // Apenas no refresh do token. Login.tsx já chama onLogin diretamente ao fazer SIGNED_IN.
-        try {
-          await fetchData();
-        } catch (err) {
-          console.warn("Aviso ao atualizar dados:", err);
+        setIsBooting(false);
+      } else if (session) {
+        // Se temos uma sessão, verificamos se precisamos forçar um reload diário
+        // Fazemos isso APENAS se já estivermos autenticados para evitar loops no Login
+        if (lastAccess && lastAccess !== today) {
+          console.log("[App] Primeiro acesso do dia detectado. Atualizando sistema...");
+          localStorage.setItem('lastAccessDate', today);
+          // Pequeno delay para garantir que o storage foi gravado
+          setTimeout(() => window.location.reload(), 100);
+          return;
         }
+        
+        // Se não for reload, atualiza o storage silenciosamente se for nulo
+        if (!lastAccess) localStorage.setItem('lastAccessDate', today);
+
+        // Carrega o perfil e os dados
+        handleAuthSession(session);
+      } else {
+        // Sem sessão e sem evento de sign out (pode ser o boot inicial sem login)
+        setIsBooting(false);
       }
     });
 
+    // Safety fallback: force boot to finish after 15 seconds if it hangs
+    const fallbackTimer = setTimeout(() => {
+      setIsBooting(false);
+    }, 15000);
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Força uma atualização leve e verifica a sessão se o app voltar do background
         supabase.auth.getSession().then(({ data }) => {
           if (data.session) fetchData();
         });
@@ -124,10 +132,10 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const checkUserAndFetch = async () => {
+  const handleAuthSession = async (session: any) => {
     let progress = 0;
     const interval = setInterval(() => {
-      progress += Math.random() * 20;
+      progress += Math.random() * 15;
       if (progress > 90) progress = 90;
       setBootProgress(progress);
       const msgIdx = Math.floor((progress / 100) * bootMessages.length);
@@ -135,65 +143,54 @@ const App: React.FC = () => {
     }, 150);
 
     try {
-      // Obter sessão diretamente sem Promise.race para evitar locks pendentes
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      const meta = session.user.user_metadata;
       
-      if (sessionError) {
-        console.warn("Aviso ao obter sessão:", sessionError);
+      const operator: Operator = {
+        name: profile?.name || meta?.name || "Operador",
+        warName: profile?.war_name || meta?.war_name || "MILITAR",
+        cpf: profile?.cpf || meta?.cpf || "000.000.000-00",
+        email: profile?.email || session.user.email || "",
+        rank: profile?.rank || meta?.rank || "Soldado",
+        profilePhoto: profile?.profile_photo,
+        allowedScreens: profile?.allowed_screens || ['dashboard', 'fuel', 'face-checkin'],
+        isAdmin: profile?.is_admin || false
+      };
+
+      if (meta && (!profile?.war_name || !profile?.rank)) {
+        supabase.from('profiles').update({
+          war_name: operator.warName,
+          rank: operator.rank,
+          cpf: operator.cpf
+        }).eq('id', session.user.id).then();
       }
-      
-      if (session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
 
-        const meta = session.user.user_metadata;
-        
-        const operator: Operator = {
-          name: profile?.name || meta?.name || "Operador",
-          warName: profile?.war_name || meta?.war_name || "MILITAR",
-          cpf: profile?.cpf || meta?.cpf || "000.000.000-00",
-          email: profile?.email || session.user.email || "",
-          rank: profile?.rank || meta?.rank || "Soldado",
-          profilePhoto: profile?.profile_photo,
-          allowedScreens: profile?.allowed_screens || ['dashboard', 'fuel', 'face-checkin'],
-          isAdmin: profile?.is_admin || false
-        };
-
-        // Resync missing data to profile (solves the missing rank/warName bug caused by auth triggers)
-        if (meta && (!profile?.war_name || !profile?.rank)) {
-          supabase.from('profiles').update({
-            war_name: operator.warName,
-            rank: operator.rank,
-            cpf: operator.cpf
-          }).eq('id', session.user.id).then(); // Silent update in background
-        }
-
-        // If this is the master admin, forcefully give them properties to prevent database lockout
-        if (operator.email === 'mtabi.adm@gmail.com') {
-          operator.isAdmin = true;
-          operator.allowedScreens = ['dashboard', 'providers', 'face-checkin', 'fuel', 'reports', 'settings'];
-        }
-
-        setCurrentUser(operator);
-        
-        await fetchData().catch(err => console.warn("Aviso ao buscar dados:", err));
+      if (operator.email === 'mtabi.adm@gmail.com') {
+        operator.isAdmin = true;
+        operator.allowedScreens = ['dashboard', 'providers', 'face-checkin', 'fuel', 'reports', 'settings'];
       }
+
+      setCurrentUser(operator);
+      await fetchData();
       
-      setBootProgress(100);
-      setBootStatus("Acesso Autorizado.");
-      setTimeout(() => {
-        setIsBooting(false);
-        clearInterval(interval);
-      }, 800);
-    } catch (err) {
-      console.error("Erro no boot:", err);
-      setIsBooting(false);
       clearInterval(interval);
+      setBootProgress(100);
+      setBootStatus("Sistema Pronto.");
+      setTimeout(() => setIsBooting(false), 500);
+    } catch (err) {
+      console.error("Erro ao processar sessão:", err);
+      clearInterval(interval);
+      setIsBooting(false);
     }
   };
+
+  // Mantemos o checkUserAndFetch apenas como compatibilidade ou removemos se não for mais usado
+  // Neste caso, handleAuthSession substituiu a lógica principal.
 
   const fetchData = async (retryCount = 0) => {
     try {
