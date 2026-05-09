@@ -420,21 +420,21 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
           className={`group flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === 'geral' ? 'bg-slate-900 text-white shadow-lg scale-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 scale-95'}`}
         >
           <LayoutDashboard size={18} />
-          <span className="hidden md:inline group-hover:inline">Visão Geral</span>
+          <span className={activeTab === 'geral' ? 'inline' : 'hidden md:inline group-hover:inline'}>Visão Geral</span>
         </button>
         <button 
           onClick={() => setActiveTab('prestadores')}
           className={`group flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === 'prestadores' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 scale-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 scale-95'}`}
         >
           <Users size={18} />
-          <span className="hidden md:inline group-hover:inline">Prestadores</span>
+          <span className={activeTab === 'prestadores' ? 'inline' : 'hidden md:inline group-hover:inline'}>Prestadores</span>
         </button>
         <button 
           onClick={() => setActiveTab('abastecimento')}
           className={`group flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === 'abastecimento' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200 scale-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 scale-95'}`}
         >
           <Fuel size={18} />
-          <span className="hidden md:inline group-hover:inline">Abastecimento</span>
+          <span className={activeTab === 'abastecimento' ? 'inline' : 'hidden md:inline group-hover:inline'}>Abastecimento</span>
         </button>
       </div>
 

@@ -435,7 +435,7 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
           }`}
         >
           <Fuel size={18} />
-          Registros e Frota
+          <span className={mainTab === 'records' ? 'inline' : 'hidden md:inline group-hover:inline'}>Registros e Frota</span>
         </button>
         <button
           onClick={() => setMainTab('reports')}
@@ -444,7 +444,7 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
           }`}
         >
           <FileText size={18} />
-          Relatórios PDF
+          <span className={mainTab === 'reports' ? 'inline' : 'hidden md:inline group-hover:inline'}>Relatórios PDF</span>
         </button>
       </div>
 

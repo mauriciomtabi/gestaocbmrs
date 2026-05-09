@@ -131,7 +131,7 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
       className={`group flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === id ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 scale-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 scale-95'}`}
     >
       <Icon size={18} />
-      <span>{label}</span>
+      <span className={activeTab === id ? 'inline' : 'hidden md:inline group-hover:inline'}>{label}</span>
       <span className={`ml-1 text-[10px] ${activeTab === id ? 'text-white/70' : 'text-slate-400'}`}>({count})</span>
     </button>
   );
@@ -178,7 +178,7 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
           }`}
         >
           <Users size={18} />
-          Prestadores
+          <span className={mainTab === 'providers' ? 'inline' : 'hidden md:inline group-hover:inline'}>Prestadores</span>
         </button>
         <button
           onClick={() => setMainTab('reports')}
@@ -187,7 +187,7 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
           }`}
         >
           <FileText size={18} />
-          Ofício
+          <span className={mainTab === 'reports' ? 'inline' : 'hidden md:inline group-hover:inline'}>Ofício</span>
         </button>
       </div>
 
