@@ -10,9 +10,9 @@ type Topic = {
   tags: string[];
 };
 
-const Screenshot: React.FC<{ src: string; caption: string }> = ({ src, caption }) => (
+const Screenshot: React.FC<{ src: string; caption: string; blur?: boolean }> = ({ src, caption, blur }) => (
   <figure className="my-6 rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-slate-50">
-    <img src={src} alt={caption} className="w-full object-cover" />
+    <img src={src} alt={caption} className={`w-full object-cover ${blur ? 'blur-xl' : ''}`} />
     <figcaption className="text-center text-xs text-slate-500 font-medium py-2 px-4 border-t border-slate-100 bg-white">{caption}</figcaption>
   </figure>
 );
@@ -27,59 +27,42 @@ const HELP_DATA: Topic[] = [
     content: (
       <div className="space-y-6">
         <p className="text-slate-600 leading-relaxed">
-          O <strong>Painel de Controle</strong> (Dashboard) é a central de comando do Sistema de Gestão CBM.
-          Ele foi remodelado em <strong>três abas principais</strong> para organizar melhor as informações vitais e operacionais.
+          O <strong>Painel de Controle</strong> é a sua tela inicial. Ele centraliza os indicadores mais importantes do batalhão em tempo real, permitindo uma gestão rápida e visual.
         </p>
-
-        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex items-start gap-3">
-          <Sparkles className="text-emerald-600 shrink-0 mt-0.5" size={20} />
-          <p className="text-sm text-emerald-900 font-medium">
-            <strong>Navegação Contextual:</strong> Agora, ao clicar no botão "Painel" dentro dos módulos de Prestadores ou Abastecimento, o sistema te leva diretamente para a aba correspondente no Dashboard, sem resets.
-          </p>
-        </div>
 
         <div className="space-y-8 mt-6">
           <div className="border border-slate-200 rounded-3xl p-6 bg-white shadow-sm hover:shadow-md transition-all">
             <h3 className="text-lg font-black text-slate-800 mb-2 flex items-center gap-2">
               <span className="bg-slate-900 text-white w-6 h-6 flex items-center justify-center rounded-lg text-xs">1</span>
-              Aba: Visão Geral
+              Visão Geral
             </h3>
             <p className="text-sm text-slate-600 mb-4">
-              Nesta aba você tem acesso imediato ao <strong>Quadro de Alertas</strong> (dividido em colunas de urgência: Crítico, Atenção, Ativos e A Concluir), 
-              além de um grid completo listando o <strong>Fluxo de Atividade Recente</strong>. Ela é sua triagem rápida de pendências do dia.
+              Monitoramento imediato do <strong>Quadro de Alertas</strong> (Críticos, Atenção e Ativos) e o <strong>Fluxo de Atividade Recente</strong> de todos os módulos.
             </p>
-            <Screenshot src="/docs/painel-visao-geral.png" caption="Aba Visão Geral — Quadro de alertas com color-coding e fluxo recente" />
+            <Screenshot src="/docs/PAINEL - VISÃO GERAL.png" caption="Aba Visão Geral — Gestão de alertas e fluxo recente" />
           </div>
 
           <div className="border border-slate-200 rounded-3xl p-6 bg-white shadow-sm hover:shadow-md transition-all">
             <h3 className="text-lg font-black text-blue-800 mb-2 flex items-center gap-2">
               <span className="bg-blue-600 text-white w-6 h-6 flex items-center justify-center rounded-lg text-xs">2</span>
-              Aba: Prestadores
+              Estatísticas de Prestadores
             </h3>
             <p className="text-sm text-slate-600 mb-4">
-               Focada em estatísticas. Aqui você monitora os <strong>Indicadores de Desempenho</strong> gerais ou específicos de um prestador, 
-               visualizando o fluxo semanal de comparecimentos e a evolução histórica (força de trabalho convertida em horas e presenças).
+               Gráficos de comparecimento semanal, evolução histórica de horas e indicadores de desempenho da força de trabalho comunitária.
             </p>
-            <Screenshot src="/docs/painel-prestadores.png" caption="Aba Prestadores — Gráficos detalhados e evolução histórica do serviço comunitário" />
+            <Screenshot src="/docs/PAINEL - PRESTADORES.png" caption="Aba Prestadores — Monitoramento estatístico e histórico" />
           </div>
 
           <div className="border border-slate-200 rounded-3xl p-6 bg-white shadow-sm hover:shadow-md transition-all">
             <h3 className="text-lg font-black text-emerald-800 mb-2 flex items-center gap-2">
               <span className="bg-emerald-600 text-white w-6 h-6 flex items-center justify-center rounded-lg text-xs">3</span>
-              Aba: Abastecimento
+              Análise de Frota
             </h3>
             <p className="text-sm text-slate-600 mb-4">
-              Visão focada na <strong>Análise de Frota</strong>. Traz gráficos de gasto histórico em (R$), métricas quantitativas e identifica também "Viatura Eficiente" com base na média KM/L.
+              Controle financeiro de combustíveis, média de consumo por viatura (KM/L) e ranking de eficiência da frota.
             </p>
-            <Screenshot src="/docs/painel-abastecimento.png" caption="Aba Abastecimento — Controle financeiro e estatístico de combustíveis" />
+            <Screenshot src="/docs/PAINEL - ABASTECIMENTO.png" caption="Aba Abastecimento — Controle de gastos e eficiência de combustível" />
           </div>
-        </div>
-
-        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mt-4 flex items-start gap-3">
-          <CheckCircle2 className="text-blue-600 shrink-0 mt-0.5" size={20} />
-          <p className="text-sm text-blue-900 font-medium">
-            <strong>Dica de Produtividade:</strong> Use a aba "Visão Geral" diariamente como sua triagem. Resolva os alertas vermelhos e amarelos primeiro antes de iniciar novas tarefas.
-          </p>
         </div>
       </div>
     )
@@ -87,95 +70,48 @@ const HELP_DATA: Topic[] = [
   {
     id: 'gerir-prestadores',
     category: 'Prestadores',
-    title: 'Cadastro e Listagem de Prestadores',
+    title: 'Gestão de Prestadores',
     icon: Users,
     tags: ['prestador', 'cadastro', 'novo', 'listar', 'processo', 'edição', 'horas', 'encaminhamento', 'identidade', 'documento', 'folha'],
     content: (
       <div className="space-y-4">
         <p className="text-slate-600 leading-relaxed">
-          O módulo de <strong>Prestadores</strong> permite acompanhar todos os cidadãos que estão cumprindo Serviço Comunitário no quartel.
+          O módulo de <strong>Prestadores</strong> centraliza toda a ficha funcional dos cidadãos em serviço comunitário.
         </p>
 
-        <Screenshot src="/docs/prestadores-lista.png" caption="Lista de Prestadores — com filtros por período, busca e abas de status" />
+        <Screenshot src="/docs/PRESTADORES - PRESTADORES.png" caption="Lista de Prestadores — Organização por status (Ativos, Finalizados, Devolvidos)" />
 
-        <h3 className="text-lg font-black text-slate-800 mt-4">Como Criar um Novo Cadastro:</h3>
-        <ul className="list-decimal pl-5 space-y-2 text-slate-600">
-          <li>Clique no botão <strong>+ Novo Cadastro</strong> no canto superior direito.</li>
-          <li>Preencha os dados obrigatórios: Nome completo, Número do Processo e o total de horas a cumprir estabelecido pelo juiz.</li>
-          <li>
-            <strong>Folha de Encaminhamento e Documento de Identidade:</strong> É obrigatório anexar esses documentos ao cadastro.
-            Para facilitar, o sistema permite <strong>escanear diretamente pelo celular</strong> — basta clicar no botão de digitalização e apontar a câmera para o documento.
-            A tecnologia de Leitura Inteligente identifica automaticamente todos os campos (nome, número do processo, datas, entidade responsável) e preenche o formulário sem nenhuma digitação manual.
-          </li>
-          <li>Ao salvar, o sistema registra automaticamente na linha do tempo do prestador que o cadastro foi criado, quem o cadastrou e quando.</li>
-        </ul>
+        <h3 className="text-lg font-black text-slate-800 mt-6">Ficha do Prestador</h3>
+        <p className="text-sm text-slate-600">
+          Ao abrir um prestador, você tem uma visão 360º de sua situação, incluindo progresso de horas, documentos anexados e histórico de presenças.
+        </p>
+        <Screenshot src="/docs/PRESTADORES - ACOMPANHAMENTO PRESTADOR.png" caption="Ficha Detalhada — Acompanhamento em tempo real do progresso" />
 
-        <Screenshot src="/docs/prestador-cadastro.png" caption="Formulário de Cadastro — com campo para digitalização dos documentos" />
-
-        <h3 className="text-lg font-black text-slate-800 mt-6">Estados do Prestador:</h3>
-        <p className="text-slate-600">Os prestadores são distribuídos em três abas com status coloridos:</p>
-        <div className="space-y-3 mt-2">
-          <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border">
-            <span className="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-black">ATIVO</span>
-            <span className="text-sm text-slate-600">Em andamento, cumprindo a carga horária na unidade.</span>
-          </div>
-          <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border">
-            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs font-black">FINALIZADO</span>
-            <span className="text-sm text-slate-600">Completaram 100% do plano de horas.</span>
-          </div>
-          <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border">
-            <span className="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-black">DEVOLVIDO</span>
-            <span className="text-sm text-slate-600">Processo encerrado prematuramente por quebra disciplinar, abandono ou ofício do juizado.</span>
-          </div>
-        </div>
-
-        <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 mt-4">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={20} />
-            <p className="text-sm text-amber-900 font-medium">
-              <strong>Filtros Avançados:</strong> Use os seletores de Ano e Mês para filtrar a lista. Além disso, você pode ordenar por <strong>Maior ou Menor Progresso</strong> para identificar rapidamente quem está perto de concluir a carga horária.
-            </p>
-          </div>
-        </div>
+        <h3 className="text-lg font-black text-slate-800 mt-4">Novo Cadastro</h3>
+        <p className="text-sm text-slate-600 mb-4">O cadastro é simplificado, exigindo dados básicos do processo e anexos obrigatórios.</p>
+        <Screenshot src="/docs/PRESTADORES - CADASTRO DE PRESTADOR.png" caption="Cadastro — Inserção de dados do juizado e documentos" />
       </div>
     )
   },
   {
     id: 'frequencia-ocr',
     category: 'Prestadores',
-    title: 'Lançar Folha de Frequência (Leitura Inteligente)',
+    title: 'Lançar Frequência via Digitalização',
     icon: Sparkles,
     tags: ['digitalizar', 'folha', 'inteligência', 'frequência', 'horas', 'ponto', 'foto', 'ocr', 'leitura'],
     content: (
       <div className="space-y-4">
         <p className="text-slate-600 leading-relaxed">
-          Para registrar as horas cumpridas, o sistema utiliza tecnologia de <strong>Processamento Inteligente (Leitura Inteligente)</strong>,
-          responsável por ler o papel físico onde os horários foram registrados manualmente.
-          Isso elimina a necessidade de digitação e reduz erros de lançamento.
+          Utilize a <strong>Leitura Inteligente (OCR)</strong> para ler folhas de frequência físicas. O sistema extrai automaticamente as datas e horários de entrada e saída.
         </p>
 
-        <Screenshot src="/docs/ocr-modal.png" caption="Modal de Digitalização — câmera ou upload de imagem para leitura automática da folha" />
+        <Screenshot src="/docs/PRESTADORES - DIGITALIZAR ACOMPANHAMENTO.png" caption="Digitalização — O sistema processa a imagem e sugere os lançamentos" />
 
-        <h3 className="text-lg font-black text-slate-800 mt-4">Como Digitalizar uma Folha de Frequência:</h3>
-        <ul className="list-decimal pl-5 space-y-3 text-slate-600 mb-6">
-          <li>Acesse a ficha de um <strong>Prestador</strong> na lista.</li>
-          <li>Localize a aba <strong>Lançamentos e Horas</strong> e clique em <strong>Digitalizar Folha</strong>.</li>
-          <li>A câmera será aberta (em celulares) ou um seletor de arquivos aparecerá. Capture a foto da folha em um local <strong>bem iluminado</strong>, priorizando um enquadramento sem fundos irregulares.</li>
-          <li>Na tela de confirmação, ajuste o recorte se necessário para isolar apenas a tabela de registros.</li>
-          <li>Clique em <strong>Ler e Analisar</strong>. O sistema processará a imagem e extrairá automaticamente todos os dados de entrada, saída e data.</li>
-          <li>Confira o <strong>somatório total de horas</strong> exibido no topo — verifique se bate com seus cálculos. Você pode editar qualquer linha lida de forma incorreta antes de confirmar.</li>
-          <li>Clique em <strong>Salvar</strong>. A folha e os registros de tempo são lançados permanentemente no perfil do prestador.</li>
-        </ul>
-
-        <Screenshot src="/docs/ocr-resultado.png" caption="Resultado da Leitura — dados extraídos da folha prontos para conferência e salvamento" />
-
-        <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 mt-4">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={20} />
-            <p className="text-sm text-amber-900 font-medium">
-              Sempre confira os dados extraídos antes de confirmar o salvamento, principalmente em documentos com caligrafia muito irregular ou rasurada. A verificação do militar responsável continua sendo obrigatória.
-            </p>
-          </div>
+        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mt-4 flex items-start gap-3">
+          <CheckCircle2 className="text-blue-600 shrink-0 mt-0.5" size={20} />
+          <p className="text-sm text-blue-900 font-medium">
+            <strong>Dica:</strong> Após a leitura, você pode conferir e ajustar qualquer horário antes de confirmar o lançamento definitivo no sistema.
+          </p>
         </div>
       </div>
     )
@@ -183,90 +119,52 @@ const HELP_DATA: Topic[] = [
   {
     id: 'biometria-face',
     category: 'Biometria',
-    title: 'Check-in e Enrolment Facial',
+    title: 'Check-in Facial e Perímetro',
     icon: ScanFace,
-    tags: ['biometria', 'checkin', 'rosto', 'facial', 'câmera', 'enrolment', 'cadastrar', 'celular', 'militar', 'registro', 'marca d\'água'],
+    tags: ['biometria', 'checkin', 'rosto', 'facial', 'câmera', 'enrolment', 'cadastrar', 'celular', 'militar', 'registro', 'marca d\'água', 'perímetro', 'gps'],
     content: (
       <div className="space-y-4">
         <p className="text-slate-600 leading-relaxed">
-          O sistema disponibiliza um módulo de <strong>Check-in por Reconhecimento Facial</strong> para registrar entradas e saídas de prestadores de forma rápida, precisa e sem necessidade de papel.
-          O sistema funciona tanto em computadores quanto em <strong>dispositivos móveis (celulares e tablets)</strong>.
+          O registro biométrico facial garante que o prestador está presente fisicamente. Além do rosto, o sistema verifica se o dispositivo está dentro do <strong>perímetro geográfico</strong> autorizado (Quartel).
         </p>
 
-        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="text-blue-600 shrink-0 mt-0.5" size={20} />
-            <p className="text-sm text-blue-900 font-medium">
-              <strong>Importante:</strong> O check-in <strong>não é realizado pelo prestador de forma autônoma</strong>. Deve ser <strong>efetuado por um militar de serviço</strong>, que posicionará a câmera em direção ao rosto do prestador e confirmará o registro.
-            </p>
-          </div>
-        </div>
+        <h3 className="text-lg font-black text-slate-800 mt-6">1. Cadastro Facial (Enrolment)</h3>
+        <p className="text-sm text-slate-600">O primeiro passo é mapear o rosto do prestador para identificação futura.</p>
+        <Screenshot src="/docs/PRESTADORES - CADASTRAR ROSTO (BIOMETRIA FACIAL).png" caption="Cadastro de Rosto — Mapeamento biométrico inicial" />
 
-        <h3 className="text-lg font-black text-slate-800 mt-4">1. Enrolment — Cadastrando a Biometria</h3>
-        <p className="text-slate-600">
-          Para que o prestador seja identificado pela câmera, é necessário cadastrar previamente sua biometria facial.
-          Na página de detalhes do prestador, ao lado da foto de perfil, clique em <strong>Cadastrar Rosto</strong>.
-          O prestador deverá ser posicionado em frente à câmera até que as marcações de captura mapeiem sua geometria facial (processo de 3 a 5 segundos).
-          Após a confirmação, o vetor facial é salvo com segurança na nuvem.
-        </p>
+        <h3 className="text-lg font-black text-slate-800 mt-6">2. Check-in Facial</h3>
+        <p className="text-sm text-slate-600">O militar aponta a câmera e o sistema identifica o prestador instantaneamente.</p>
+        <Screenshot src="/docs/PRESTADORES - CHECKIN FACIAL.png" caption="Check-in — Reconhecimento e validação de presença" />
 
-        <Screenshot src="/docs/face-enrolment.png" caption="Tela de Cadastro de Biometria — posicionamento do rosto para mapeamento facial" />
-
-        <h3 className="text-lg font-black text-slate-800 mt-6">2. Como Realizar o Check-in</h3>
-        <p className="text-slate-600">
-          Com a câmera iniciada na tela de <strong>Check-in Facial</strong>, o militar de serviço posiciona o dispositivo em direção ao rosto do prestador.
-          O sistema identifica automaticamente a pessoa comparando com toda a base biométrica cadastrada.
-          Ao reconhecer, exibe o nome do prestador e oferece as opções de <strong>Registrar Entrada</strong> ou <strong>Registrar Saída</strong>, conforme o estado atual do prestador no dia.
-        </p>
-
-        <Screenshot src="/docs/face-checkin.png" caption="Check-in Facial — identificação do prestador e botões de entrada/saída" />
-
-        <h3 className="text-lg font-black text-slate-800 mt-6">3. Registro Automático com Comprovação</h3>
-        <p className="text-slate-600">
-          Após a confirmação do registro, as informações são inseridas <strong>automaticamente no cadastro do prestador</strong>.
-          Cada registro biométrico inclui:
-        </p>
-        <ul className="list-disc pl-5 space-y-2 text-slate-600 mt-2">
-          <li>Data e hora exatos do check-in.</li>
-          <li>Uma captura de tela com <strong>marca d'água</strong> contendo o tipo de registro (Entrada ou Saída), data, horário e o <strong>nome do militar operador</strong>.</li>
-          <li><strong>Localização Verificada:</strong> Cada foto inclui um link direto para o Google Maps com as coordenadas exatas de onde o check-in foi realizado, garantindo a integridade do registro.</li>
-          <li>Rótulo de justificativa <em>BIOMETRIA</em> no histórico do prestador.</li>
-          <li>As horas são calculadas e somadas ao total automaticamente assim que a saída é registrada.</li>
-        </ul>
-
-        <Screenshot src="/docs/face-comprovante.png" caption="Comprovante Biométrico — agora com marca d'água detalhada e link de localização para auditoria" />
+        <h3 className="text-lg font-black text-slate-800 mt-6">3. Comprovação com Auditoria</h3>
+        <p className="text-sm text-slate-600">Cada registro gera um comprovante visual com marca d'água e link de localização GPS.</p>
+        <Screenshot src="/docs/PRESTADORES - REGISTRO DE FREQUENCA POR BIOMENTRIA FACIAL.png" caption="Histórico Biométrico — Registro auditável (rosto ocultado para privacidade)" blur={true} />
       </div>
     )
   },
   {
     id: 'abastecimento',
     category: 'Gestão de Viaturas',
-    title: 'Gestão de Frotas e Abastecimentos',
+    title: 'Combustíveis e Frota',
     icon: Fuel,
-    tags: ['abastecimento', 'viatura', 'gasolina', 'combustível', 'kml', 'notas', 'cupons', 'bomba'],
+    tags: ['abastecimento', 'viatura', 'gasolina', 'combustível', 'kml', 'notas', 'cupons', 'bomba', 'frota'],
     content: (
       <div className="space-y-4">
         <p className="text-slate-600 leading-relaxed">
-          O módulo de controle de combustíveis serve para monitorar gastos e consumo de frota de forma fácil e rastreável,
-          interligando viaturas a cupons fiscais escaneados por Leitura Inteligente.
+          O módulo de <strong>Abastecimento</strong> foi dividido para separar a operação diária da geração de relatórios oficiais.
         </p>
 
-        <Screenshot src="/docs/abastecimento.png" caption="Módulo de Gestão de Frotas — lista de abastecimentos e controle de viaturas" />
-
-        <div className="space-y-6 mt-4">
-          <div className="border-l-4 border-blue-600 pl-4">
-            <h4 className="font-black text-slate-800">1. Cadastrando Viaturas</h4>
-            <p className="text-sm text-slate-600 mt-1">
-              Primeiro, defina quais são os veículos do batalhão diretamente nesta aba, informando placa, modelo, odômetro atual, ano e tipo de combustível (flex ou diesel).
-            </p>
+        <div className="space-y-8 mt-6">
+          <div className="border border-slate-200 rounded-3xl p-6 bg-white shadow-sm">
+            <h3 className="text-lg font-black text-slate-800 mb-2">Aba: Registro de Frota</h3>
+            <p className="text-sm text-slate-600 mb-4">Gestão das viaturas cadastradas e lançamento de novos cupons fiscais.</p>
+            <Screenshot src="/docs/ABASTECIMENTO - REGISTRO DE FROTA.png" caption="Registro de Frota — Controle de KM e lançamentos ativos" />
           </div>
 
-          <div className="border-l-4 border-blue-600 pl-4">
-            <h4 className="font-black text-slate-800">2. Digitalizando o Cupom Fiscal</h4>
-            <p className="text-sm text-slate-600 mt-1">
-              Esqueça digitar quantidade de litros, tipo e valor manualmente. Utilize a câmera para escanear o Cupom Fiscal diretamente pelo celular.
-              A Leitura Inteligente preenche automaticamente os valores, data, tipo de combustível e estabelecimento em instantes.
-            </p>
+          <div className="border border-slate-200 rounded-3xl p-6 bg-white shadow-sm">
+            <h3 className="text-lg font-black text-amber-800 mb-2">Aba: Relatório PDF</h3>
+            <p className="text-sm text-slate-600 mb-4">Consolidação de dados por período para prestação de contas oficial.</p>
+            <Screenshot src="/docs/ABASTECIMETNO - RELATORIO PDF.png" caption="Relatórios — Geração de PDF para controle de combustível" />
           </div>
         </div>
       </div>
@@ -274,105 +172,56 @@ const HELP_DATA: Topic[] = [
   },
   {
     id: 'relatorios-oficios',
-    category: 'Ofícios',
-    title: 'Emissão de Relatórios Padrão Judicial',
+    category: 'Relatórios',
+    title: 'Emissão de Ofícios',
     icon: FileText,
     tags: ['relatório', 'ofício', 'juiz', 'imprimir', 'papel', 'processos', 'horas cumpridas', 'pdf', 'número', 'responsável'],
     content: (
       <div className="space-y-4">
         <p className="text-slate-600 leading-relaxed">
-          O módulo de <strong>Relatórios</strong> elimina a necessidade de redigir ou montar documentos oficiais manualmente.
-          Todas as informações de registro de horas, datas e identificação do prestador são trazidas automaticamente para o documento.
+          O módulo de <strong>Ofícios</strong> agora está integrado diretamente na ficha de cada prestador, facilitando a emissão rápida de documentos para o juizado.
         </p>
 
-        <Screenshot src="/docs/relatorio.png" caption="Emissão de Ofício — documento gerado automaticamente com dados do prestador e horas consolidadas" />
-
-        <h3 className="text-lg font-black text-slate-800 mt-4">Como Emitir um Documento</h3>
-        <ul className="list-decimal pl-5 space-y-2 text-slate-600">
-          <li>Acesse a ficha do prestador ou o menu <strong>Relatórios</strong>.</li>
-          <li>Selecione o tipo de documento: <strong>Ofício de Finalização</strong> ou <strong>Ofício de Andamento</strong>.</li>
-          <li>Preencha apenas dois campos: <strong>Número do Ofício</strong> e <strong>Nome do Responsável pela assinatura</strong>.</li>
-          <li>Todas as demais informações — horas cumpridas, saldo restante, datas de entradas e saídas, dados do prestador e identificação da unidade — são preenchidas automaticamente pelo sistema.</li>
-          <li>Clique em <strong>Imprimir</strong> no navegador ou exporte diretamente como PDF, sem preocupação com bordas ou layouts desconfigurados.</li>
-        </ul>
+        <Screenshot src="/docs/PRESTADORES - OFÍCIO.png" caption="Ofício Judicial — Documento pronto para impressão com dados automáticos" />
 
         <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 mt-4 flex items-start gap-3">
           <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={20} />
           <p className="text-sm text-emerald-900 font-medium">
-            O documento é gerado com Brasão oficial, identificação da unidade, parágrafos formais padronizados e rodapé com campo para assinatura — pronto para ser encaminhado ao juizado.
+            O sistema preenche automaticamente as horas totais, saldo restante e parágrafos jurídicos baseados no status atual do prestador.
           </p>
         </div>
       </div>
     )
   },
   {
-    id: 'boot-system',
+    id: 'configuracoes',
     category: 'Sistema',
-    title: 'Inicialização e Atualização Automática',
-    icon: Activity,
-    tags: ['boot', 'iniciar', 'carregar', 'atualizar', 'v2', 'performance', 'erro de dados', 'branco'],
-    content: (
-      <div className="space-y-4">
-        <p className="text-slate-600 leading-relaxed">
-          O sistema conta com um motor de inicialização otimizado para garantir que todos os dados (Supabase) e permissões sejam carregados na sequência correta antes de liberar o acesso.
-        </p>
-
-        <div className="space-y-6 mt-4">
-          <div className="border-l-4 border-blue-600 pl-4">
-            <h4 className="font-black text-slate-800">1. Inicialização Sequencial</h4>
-            <p className="text-sm text-slate-600 mt-1">
-              Ao abrir o sistema, uma barra de progresso detalha cada etapa: Autenticação Militar, Sincronização de Banco de Dados e Calibração de IA. Isso evita o erro de "tela em branco" ou falta de dados no primeiro acesso diário.
-            </p>
-          </div>
-
-          <div className="border-l-4 border-blue-600 pl-4">
-            <h4 className="font-black text-slate-800">2. Atualização Diária Obrigatória</h4>
-            <p className="text-sm text-slate-600 mt-1">
-              Para garantir que você esteja sempre usando a versão mais recente e segura (PWA), o sistema detecta o primeiro acesso do dia e realiza uma atualização automática e silenciosa se houver mudanças pendentes.
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mt-4 flex items-start gap-3">
-          <CheckCircle2 className="text-blue-600 shrink-0 mt-0.5" size={20} />
-          <p className="text-sm text-blue-900 font-medium">
-            Se o sistema parecer "travado" no boot por mais de 15 segundos, ele possui um mecanismo de recuperação automática que forçará a entrada para não interromper o serviço.
-          </p>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: 'ux-mobile',
-    category: 'Interface',
-    title: 'Navegação e Usabilidade Mobile',
+    title: 'Configurações e Controle',
     icon: Smartphone,
-    tags: ['mobile', 'celular', 'layout', 'abas', 'ícones', 'responsivo', 'gestos'],
+    tags: ['perfil', 'usuários', 'militares', 'perímetro', 'quartel', 'gps', 'segurança'],
     content: (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <p className="text-slate-600 leading-relaxed">
-          A interface foi redesenhada para oferecer a mesma potência do desktop com o conforto do uso por polegar no celular.
+          As configurações agora são organizadas em três abas para maior clareza administrativa.
         </p>
 
-        <div className="space-y-6 mt-4">
-          <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50">
-            <h4 className="font-black text-slate-800 flex items-center gap-2">
-              <Smartphone size={16} className="text-blue-600" />
-              Abas Adaptativas
-            </h4>
-            <p className="text-sm text-slate-600 mt-2">
-              Em telas menores, as abas de navegação exibem <strong>apenas ícones</strong> quando inativas para economizar espaço. Ao selecionar uma aba, ela se expande suavemente exibindo seu nome, facilitando o uso rápido sem poluição visual.
-            </p>
+        <div className="space-y-8 mt-6">
+          <div className="border border-slate-200 rounded-3xl p-6 bg-white">
+            <h3 className="text-lg font-black text-slate-800 mb-2">1. Meu Perfil</h3>
+            <p className="text-sm text-slate-600 mb-4">Atualização de dados do militar operador e troca de senha.</p>
+            <Screenshot src="/docs/CONFIGURAÇÕES - PERFIL.png" caption="Perfil — Gestão de dados pessoais" />
           </div>
 
-          <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50">
-            <h4 className="font-black text-slate-800 flex items-center gap-2">
-              <MonitorPlay size={16} className="text-blue-600" />
-              Estilo "Pill" Premium
-            </h4>
-            <p className="text-sm text-slate-600 mt-2">
-              Todos os menus utilizam o novo design de "Pílula" com cores táticas, proporcionando uma transição visual mais moderna e consistente entre o Painel, Prestadores e Abastecimento.
-            </p>
+          <div className="border border-slate-200 rounded-3xl p-6 bg-white">
+            <h3 className="text-lg font-black text-blue-800 mb-2">2. Gestão de Usuários</h3>
+            <p className="text-sm text-slate-600 mb-4">Administração de permissões e cadastro de novos militares para acesso ao sistema.</p>
+            <Screenshot src="/docs/CONFIGURAÇÕES - GESTÃO DE USUÁRIOS.png" caption="Usuários — Controle de acesso administrativo" />
+          </div>
+
+          <div className="border border-slate-200 rounded-3xl p-6 bg-white">
+            <h3 className="text-lg font-black text-red-800 mb-2">3. Perímetro Operacional</h3>
+            <p className="text-sm text-slate-600 mb-4">Definição das coordenadas geográficas e raio de atuação para o Check-in Facial.</p>
+            <Screenshot src="/docs/CONIGURAÇÕES - PERÍMETRO.png" caption="Perímetro — Segurança via Geofencing (GPS)" />
           </div>
         </div>
       </div>
