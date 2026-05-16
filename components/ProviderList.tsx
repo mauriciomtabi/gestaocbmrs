@@ -326,7 +326,7 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
                           {provider.name || 'Sem Nome'}
                           {provider.status === 'active' && !evaluatedProviderIds.has(provider.id) && (
                             <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-600 text-[7px] font-black uppercase border border-amber-200" title="Avaliação mensal pendente">
-                              <ClipboardCheck size={8} /> Avaliar
+                              <ClipboardCheck size={8} /> <span className="hidden sm:inline">Avaliar</span>
                             </span>
                           )}
                         </h4>
