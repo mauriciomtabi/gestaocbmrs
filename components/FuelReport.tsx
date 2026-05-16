@@ -236,7 +236,7 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
         <div className="shadow-xl shrink-0 border border-slate-200 bg-white" style={{ width: '1122px', minHeight: '793px' }}>
           
           {/* O container que será efetivamente capturado (APENAS ESTILOS INLINE EM HEX/RGB PARA EVITAR OKLCH) */}
-          <div id="print-container" className="p-10 font-sans w-full h-full" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+          <div id="print-container" className="px-10 pt-10 font-sans w-full h-full" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
             
             {/* Cabeçalho */}
             <div className="flex justify-between items-start mb-6 w-full">
