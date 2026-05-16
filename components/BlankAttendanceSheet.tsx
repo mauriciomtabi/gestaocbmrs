@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Provider } from '../types';
+import { Provider, MonthlyEvaluation } from '../types';
 import { ArrowLeft, FileDown, Printer } from 'lucide-react';
 
 interface Props {
@@ -17,6 +17,17 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
   const currentDate = new Date();
   const [targetMonth, setTargetMonth] = useState(months[currentDate.getMonth()]);
   const [targetYear, setTargetYear] = useState(currentDate.getFullYear().toString());
+  const [evaluation, setEvaluation] = useState<MonthlyEvaluation | null>(null);
+
+  useEffect(() => {
+    const monthIndex = months.indexOf(targetMonth) + 1;
+    const year = parseInt(targetYear);
+    if (monthIndex > 0 && year > 0) {
+      import('../services/supabaseService').then(({ getMonthlyEvaluationForMonth }) => {
+        getMonthlyEvaluationForMonth(provider.id, year, monthIndex).then(setEvaluation).catch(() => setEvaluation(null));
+      });
+    }
+  }, [targetMonth, targetYear, provider.id]);
 
   const handleGeneratePDF = () => {
     const style = document.createElement('style');
@@ -246,22 +257,22 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
           <div className="space-y-1.5" style={{ fontSize: '11pt' }}>
             <div className="flex flex-col">
               <span>Faltas no período?</span>
-              <span>Sim ( &nbsp; ) &nbsp;&nbsp; Não ( &nbsp; )</span>
+              <span>Sim ({evaluation ? (evaluation.hadAbsences ? ' X ' : ' &nbsp; ') : ' &nbsp; '}) &nbsp;&nbsp; Não ({evaluation ? (!evaluation.hadAbsences ? ' X ' : ' &nbsp; ') : ' &nbsp; '})</span>
             </div>
 
             <div className="flex flex-col">
               <span>Apresentou bom comportamento?</span>
-              <span>Sim ( &nbsp; ) &nbsp;&nbsp; Não ( &nbsp; )</span>
+              <span>Sim ({evaluation ? (evaluation.goodBehavior ? ' X ' : ' &nbsp; ') : ' &nbsp; '}) &nbsp;&nbsp; Não ({evaluation ? (!evaluation.goodBehavior ? ' X ' : ' &nbsp; ') : ' &nbsp; '})</span>
             </div>
 
             <div className="flex flex-col">
               <span>Cometeu atos indisciplinares?</span>
-              <span>Sim ( &nbsp; ) &nbsp;&nbsp; Não ( &nbsp; )</span>
+              <span>Sim ({evaluation ? (evaluation.disciplinaryIssues ? ' X ' : ' &nbsp; ') : ' &nbsp; '}) &nbsp;&nbsp; Não ({evaluation ? (!evaluation.disciplinaryIssues ? ' X ' : ' &nbsp; ') : ' &nbsp; '})</span>
             </div>
 
             <div className="flex flex-col">
               <span>A qualidade do serviço prestado foi satisfatória?</span>
-              <span>Sim ( &nbsp; ) &nbsp;&nbsp; Não ( &nbsp; )</span>
+              <span>Sim ({evaluation ? (evaluation.satisfactoryService ? ' X ' : ' &nbsp; ') : ' &nbsp; '}) &nbsp;&nbsp; Não ({evaluation ? (!evaluation.satisfactoryService ? ' X ' : ' &nbsp; ') : ' &nbsp; '})</span>
             </div>
           </div>
 

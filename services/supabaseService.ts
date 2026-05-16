@@ -1,7 +1,7 @@
 
 
 import { createClient } from '@supabase/supabase-js';
-import { Provider, AttendanceRecord, AuditLog, FuelSupply, Vehicle, StationNickname } from '../types';
+import { Provider, AttendanceRecord, AuditLog, FuelSupply, Vehicle, StationNickname, MonthlyEvaluation } from '../types';
 import type { GeoPerimeter } from './geoService';
 
 const SUPABASE_URL = 'https://gsdweukrawfmgqprngyl.supabase.co';
@@ -698,4 +698,109 @@ export const uploadProfilePhoto = async (userId: string, base64DataUrl: string):
   
   // Bust cache by appending timestamp
   return `${data.publicUrl}?t=${Date.now()}`;
+};
+
+// --- Funções de Avaliação Mensal ---
+const mapEvaluationFromDB = (e: any): MonthlyEvaluation => ({
+  id: e.id,
+  providerId: e.provider_id,
+  year: e.year,
+  month: e.month,
+  hadAbsences: e.had_absences,
+  goodBehavior: e.good_behavior,
+  disciplinaryIssues: e.disciplinary_issues,
+  satisfactoryService: e.satisfactory_service,
+  observations: e.observations,
+  evaluatedBy: e.evaluated_by,
+  createdAt: e.created_at
+});
+
+const mapEvaluationToDB = (e: Partial<MonthlyEvaluation> & { evaluatedBy: string }) => ({
+  provider_id: e.providerId,
+  year: e.year,
+  month: e.month,
+  had_absences: e.hadAbsences ?? false,
+  good_behavior: e.goodBehavior ?? true,
+  disciplinary_issues: e.disciplinaryIssues ?? false,
+  satisfactory_service: e.satisfactoryService ?? true,
+  observations: e.observations || null,
+  evaluated_by: e.evaluatedBy
+});
+
+export const getMonthlyEvaluations = async (providerId: string): Promise<MonthlyEvaluation[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('monthly_evaluations')
+      .select('*')
+      .eq('provider_id', providerId)
+      .order('year', { ascending: false })
+      .order('month', { ascending: false });
+
+    if (error) {
+      if (error.code === 'PGRST205') return [];
+      throw error;
+    }
+    return (data || []).map(mapEvaluationFromDB);
+  } catch (err) {
+    console.error("Erro ao buscar avaliações mensais:", err);
+    return [];
+  }
+};
+
+export const getMonthlyEvaluationForMonth = async (providerId: string, year: number, month: number): Promise<MonthlyEvaluation | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('monthly_evaluations')
+      .select('*')
+      .eq('provider_id', providerId)
+      .eq('year', year)
+      .eq('month', month)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data ? mapEvaluationFromDB(data) : null;
+  } catch (err) {
+    console.error("Erro ao buscar avaliação do mês:", err);
+    return null;
+  }
+};
+
+export const saveMonthlyEvaluation = async (evaluation: Partial<MonthlyEvaluation> & { providerId: string; year: number; month: number; evaluatedBy: string }): Promise<MonthlyEvaluation | null> => {
+  try {
+    const dbData = mapEvaluationToDB(evaluation);
+
+    const { data, error } = await supabase
+      .from('monthly_evaluations')
+      .upsert([dbData], { onConflict: 'provider_id,year,month' })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Erro ao salvar avaliação mensal:", error);
+      throw error;
+    }
+    return data ? mapEvaluationFromDB(data) : null;
+  } catch (err) {
+    console.error("Erro ao salvar avaliação mensal:", err);
+    throw err;
+  }
+};
+
+export const getAllMonthlyEvaluationsForMonth = async (year: number, month: number): Promise<MonthlyEvaluation[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('monthly_evaluations')
+      .select('*')
+      .eq('year', year)
+      .eq('month', month);
+
+    if (error) {
+      if (error.code === 'PGRST205') return [];
+      throw error;
+    }
+    return (data || []).map(mapEvaluationFromDB);
+  } catch (err) {
+    console.error("Erro ao buscar avaliações do mês:", err);
+    return [];
+  }
 };

@@ -1,9 +1,10 @@
 
 export interface AuditLog {
   id: string;
+  providerId?: string;
   timestamp: string;
   userName: string;
-  action: 'CADASTRO' | 'DEVOLUÇÃO' | 'REATIVAÇÃO' | 'EDIÇÃO' | 'STATUS_ALTERADO' | 'PRESENÇA' | 'JUSTIFICATIVA';
+  action: 'CADASTRO' | 'DEVOLUÇÃO' | 'REATIVAÇÃO' | 'EDIÇÃO' | 'STATUS_ALTERADO' | 'PRESENÇA' | 'JUSTIFICATIVA' | 'AVALIAÇÃO';
   details: string;
 }
 
@@ -96,4 +97,18 @@ export interface MonthlySummary {
   totalWorkedMinutes: number;
   totalToFulfillMinutes: number;
   remainingMinutes: number;
+}
+
+export interface MonthlyEvaluation {
+  id: string;
+  providerId: string;
+  year: number;
+  month: number;
+  hadAbsences: boolean;
+  goodBehavior: boolean;
+  disciplinaryIssues: boolean;
+  satisfactoryService: boolean;
+  observations?: string;
+  evaluatedBy: string;
+  createdAt: string;
 }

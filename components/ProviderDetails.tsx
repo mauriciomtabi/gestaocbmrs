@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Provider, AttendanceRecord, AuditLog } from '../types';
+import { Provider, AttendanceRecord, AuditLog, MonthlyEvaluation } from '../types';
 import { formatMinutesToHHMM, formatDateBR, getDayOfWeekBR, getLatestVisit, calculateDuration, sanitizeObservations } from '../utils/timeUtils';
-import { ArrowLeft, Scan, Calendar, History, MapPin, Phone, Eye, Edit2, Trash2, X, Check, FileText, Download, Plus, Clock, LogOut, AlertCircle, Save, Upload, RefreshCw, File, ListFilter, ClipboardCheck, ShieldCheck, FileCheck, Edit3, Target, Gauge as GaugeIcon, ChevronLeft, ChevronRight, FileWarning, ZoomIn, ZoomOut, RotateCcw, ScanFace, Filter, Printer } from 'lucide-react';
+import { ArrowLeft, Scan, Calendar, History, MapPin, Phone, Eye, Edit2, Trash2, X, Check, FileText, Download, Plus, Clock, LogOut, AlertCircle, Save, Upload, RefreshCw, File, ListFilter, ClipboardCheck, ShieldCheck, FileCheck, Edit3, Target, Gauge as GaugeIcon, ChevronLeft, ChevronRight, FileWarning, ZoomIn, ZoomOut, RotateCcw, ScanFace, Filter, Printer, ThumbsUp, ThumbsDown, Star, AlertTriangle, Loader2, MessageSquare } from 'lucide-react';
 import AttendanceSheetOCR from './AttendanceSheetOCR';
 import BlankAttendanceSheet from './BlankAttendanceSheet';
 import FaceEnrollment from './FaceEnrollment';
@@ -86,8 +86,24 @@ const Speedometer = ({ percentage, value, label }: { percentage: number; value: 
 const ATTENDANCE_ITEMS_PER_PAGE = 50;
 
 const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpdateAttendance, onDeleteAttendance, onUpdateProvider, onEditProvider, currentUser = "Operador", setNotification }) => {
-  const [activeTab, setActiveTab] = useState<'attendance' | 'history'>('attendance');
+  const [activeTab, setActiveTab] = useState<'attendance' | 'evaluation' | 'history'>('attendance');
   const [isOcrOpen, setIsOcrOpen] = useState(false);
+
+  // Evaluation states
+  const currentDate = new Date();
+  const [evalYear, setEvalYear] = useState(currentDate.getFullYear());
+  const [evalMonth, setEvalMonth] = useState(currentDate.getMonth() + 1);
+  const [evalForm, setEvalForm] = useState({
+    hadAbsences: false,
+    goodBehavior: true,
+    disciplinaryIssues: false,
+    satisfactoryService: true,
+    observations: ''
+  });
+  const [evalSaving, setEvalSaving] = useState(false);
+  const [evalExistingId, setEvalExistingId] = useState<string | null>(null);
+  const [evaluations, setEvaluations] = useState<MonthlyEvaluation[]>([]);
+  const evalMonthNamesFull = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
   const [isJustificationOpen, setIsJustificationOpen] = useState(false);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
@@ -111,6 +127,89 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
       }).catch(() => {});
     });
   }, [provider.id]);
+
+  useEffect(() => {
+    if (activeTab === 'evaluation') {
+      loadEvaluations();
+    }
+  }, [activeTab, provider.id]);
+
+  useEffect(() => {
+    // When month/year changes, see if we already have an evaluation for it
+    const existing = evaluations.find(e => e.year === evalYear && e.month === evalMonth);
+    if (existing) {
+      setEvalExistingId(existing.id);
+      setEvalForm({
+        hadAbsences: existing.hadAbsences,
+        goodBehavior: existing.goodBehavior,
+        disciplinaryIssues: existing.disciplinaryIssues,
+        satisfactoryService: existing.satisfactoryService,
+        observations: existing.observations || ''
+      });
+    } else {
+      setEvalExistingId(null);
+      setEvalForm({
+        hadAbsences: false,
+        goodBehavior: true,
+        disciplinaryIssues: false,
+        satisfactoryService: true,
+        observations: ''
+      });
+    }
+  }, [evalYear, evalMonth, evaluations]);
+
+  const loadEvaluations = async () => {
+    try {
+      const { getMonthlyEvaluations } = await import('../services/supabaseService');
+      const data = await getMonthlyEvaluations(provider.id);
+      setEvaluations(data);
+    } catch (err) {
+      console.error('Error loading evaluations:', err);
+    }
+  };
+
+  const handleSaveEvaluation = async () => {
+    try {
+      setEvalSaving(true);
+      const { saveMonthlyEvaluation } = await import('../services/supabaseService');
+      const evalData: Omit<MonthlyEvaluation, 'id' | 'createdAt'> = {
+        providerId: provider.id,
+        year: evalYear,
+        month: evalMonth,
+        hadAbsences: evalForm.hadAbsences,
+        goodBehavior: evalForm.goodBehavior,
+        disciplinaryIssues: evalForm.disciplinaryIssues,
+        satisfactoryService: evalForm.satisfactoryService,
+        observations: evalForm.observations,
+        evaluatedBy: currentUser
+      };
+      
+      await saveMonthlyEvaluation(evalData);
+      
+      // Log audit
+      const newLog: AuditLog = {
+        id: crypto.randomUUID(),
+        providerId: provider.id,
+        action: 'AVALIAÇÃO',
+        details: `Avaliação mensal registrada para ${evalMonthNamesFull[evalMonth-1]}/${evalYear}`,
+        timestamp: new Date().toISOString(),
+        userName: currentUser
+      };
+      
+      onUpdateProvider({
+        ...provider,
+        history: [newLog, ...(provider.history || [])]
+      });
+
+      setNotification?.('Avaliação salva com sucesso!', 'success');
+      await loadEvaluations();
+    } catch (err) {
+      console.error('Error saving evaluation:', err);
+      setNotification?.('Erro ao salvar avaliação.', 'error');
+    } finally {
+      setEvalSaving(false);
+    }
+  };
   
   const handleDownload = async (dataUrl: string, filename: string) => {
     try {
@@ -569,6 +668,9 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
         <div className="flex border-b border-slate-100 bg-slate-50/50">
           <button onClick={() => setActiveTab('attendance')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === 'attendance' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-slate-400 hover:bg-slate-100'}`}><Calendar size={16} /> Lançamentos</button>
+          {provider.status === 'active' && (
+            <button onClick={() => setActiveTab('evaluation')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === 'evaluation' ? 'border-emerald-600 text-emerald-600 bg-white' : 'border-transparent text-slate-400 hover:bg-slate-100'}`}><ClipboardCheck size={16} /> Avaliação <span className="relative flex h-2 w-2 ml-1"><span className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 ${evalExistingId ? 'hidden' : ''}`}></span><span className={`relative inline-flex rounded-full h-2 w-2 ${evalExistingId ? 'bg-emerald-500' : 'bg-red-500'}`}></span></span></button>
+          )}
           <button onClick={() => setActiveTab('history')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 border-b-2 transition-all ${activeTab === 'history' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-slate-400 hover:bg-slate-100'}`}><ListFilter size={16} /> Auditoria</button>
         </div>
         
@@ -788,6 +890,202 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'evaluation' ? (
+          <div className="p-6 md:p-8 space-y-8">
+            {/* Evaluation Form */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <div className="p-5 bg-gradient-to-r from-emerald-50 to-white border-b border-emerald-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-emerald-600 p-2.5 rounded-xl text-white shadow-md shadow-emerald-200">
+                    <ClipboardCheck size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-slate-800 uppercase text-sm tracking-tight">Avaliação Mensal</h3>
+                    <p className="text-[10px] text-slate-400 font-bold">Responda as 4 perguntas obrigatórias — uma vez por mês</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
+                  <select
+                    value={evalMonth}
+                    onChange={e => setEvalMonth(Number(e.target.value))}
+                    className="bg-transparent border-none outline-none text-xs font-bold text-slate-700 px-2 py-1 cursor-pointer"
+                  >
+                    {evalMonthNamesFull.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+                  </select>
+                  <span className="text-slate-300 font-bold">/</span>
+                  <input
+                    type="number"
+                    value={evalYear}
+                    onChange={e => setEvalYear(Number(e.target.value))}
+                    className="bg-transparent border-none outline-none text-xs font-bold text-slate-700 w-16 text-center"
+                  />
+                </div>
+              </div>
+
+              <div className="p-6 space-y-5">
+                {/* Status badge */}
+                {evalExistingId ? (
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-200 text-[10px] font-black uppercase tracking-widest">
+                    <Check size={14} /> Avaliação já registrada para este mês — edite se necessário
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 text-amber-700 rounded-xl border border-amber-200 text-[10px] font-black uppercase tracking-widest">
+                    <AlertCircle size={14} /> Pendente — avaliação ainda não registrada
+                  </div>
+                )}
+
+                {/* Question 1: Faltas */}
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${evalForm.hadAbsences ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                      {evalForm.hadAbsences ? <AlertTriangle size={18} /> : <Check size={18} />}
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-700 text-xs uppercase tracking-tight">Faltas no período?</p>
+                      <p className="text-[10px] text-slate-400 font-medium">O prestador teve ausências neste mês?</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setEvalForm({ ...evalForm, hadAbsences: !evalForm.hadAbsences })}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 ${evalForm.hadAbsences ? 'bg-red-500' : 'bg-slate-200'}`}
+                  >
+                    <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 ${evalForm.hadAbsences ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                {/* Question 2: Bom comportamento */}
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${evalForm.goodBehavior ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                      {evalForm.goodBehavior ? <ThumbsUp size={18} /> : <ThumbsDown size={18} />}
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-700 text-xs uppercase tracking-tight">Apresentou bom comportamento?</p>
+                      <p className="text-[10px] text-slate-400 font-medium">Conduta e postura durante o período</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setEvalForm({ ...evalForm, goodBehavior: !evalForm.goodBehavior })}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 ${evalForm.goodBehavior ? 'bg-emerald-500' : 'bg-red-500'}`}
+                  >
+                    <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 ${evalForm.goodBehavior ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                {/* Question 3: Atos indisciplinares */}
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${evalForm.disciplinaryIssues ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                      {evalForm.disciplinaryIssues ? <AlertCircle size={18} /> : <ShieldCheck size={18} />}
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-700 text-xs uppercase tracking-tight">Cometeu atos indisciplinares?</p>
+                      <p className="text-[10px] text-slate-400 font-medium">Infrações, desrespeito ou condutas inadequadas</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setEvalForm({ ...evalForm, disciplinaryIssues: !evalForm.disciplinaryIssues })}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 ${evalForm.disciplinaryIssues ? 'bg-red-500' : 'bg-slate-200'}`}
+                  >
+                    <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 ${evalForm.disciplinaryIssues ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                {/* Question 4: Qualidade satisfatória */}
+                <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${evalForm.satisfactoryService ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                      {evalForm.satisfactoryService ? <Star size={18} /> : <ThumbsDown size={18} />}
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-700 text-xs uppercase tracking-tight">A qualidade do serviço foi satisfatória?</p>
+                      <p className="text-[10px] text-slate-400 font-medium">Desempenho geral nas tarefas atribuídas</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setEvalForm({ ...evalForm, satisfactoryService: !evalForm.satisfactoryService })}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 ${evalForm.satisfactoryService ? 'bg-emerald-500' : 'bg-red-500'}`}
+                  >
+                    <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 ${evalForm.satisfactoryService ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                {/* Observations */}
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block flex items-center gap-1.5">
+                    <MessageSquare size={12} /> Observações (opcional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={evalForm.observations}
+                    onChange={e => setEvalForm({ ...evalForm, observations: e.target.value })}
+                    placeholder="Anotações adicionais sobre o desempenho do prestador neste mês..."
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-emerald-100 outline-none transition-all text-sm resize-none"
+                  />
+                </div>
+
+                <button
+                  onClick={handleSaveEvaluation}
+                  disabled={evalSaving}
+                  className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-200 hover:bg-emerald-700 active:scale-[0.98] transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {evalSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                  {evalExistingId ? 'Atualizar Avaliação' : 'Salvar Avaliação'}
+                </button>
+              </div>
+            </div>
+
+            {/* Historico de avaliacoes */}
+            {evaluations.length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+                  <h3 className="font-black text-slate-800 text-xs uppercase tracking-widest flex items-center gap-2">
+                    <History size={16} className="text-emerald-600" /> Histórico de Avaliações
+                  </h3>
+                </div>
+                <div className="divide-y divide-slate-50">
+                  {evaluations.map(ev => {
+                    const isCurrentSelection = ev.year === evalYear && ev.month === evalMonth;
+                    return (
+                      <div
+                        key={ev.id}
+                        onClick={() => { setEvalYear(ev.year); setEvalMonth(ev.month); }}
+                        className={`p-4 hover:bg-slate-50 cursor-pointer transition-all ${isCurrentSelection ? 'bg-emerald-50/50 border-l-4 border-emerald-500' : ''}`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="font-black text-slate-700 text-xs uppercase tracking-tight">
+                            {evalMonthNamesFull[ev.month - 1]} / {ev.year}
+                          </span>
+                          <span className="text-[8px] font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 uppercase tracking-widest">
+                            {ev.evaluatedBy}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase ${!ev.hadAbsences ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                            {!ev.hadAbsences ? <Check size={10} /> : <X size={10} />} Sem Faltas
+                          </div>
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase ${ev.goodBehavior ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                            {ev.goodBehavior ? <Check size={10} /> : <X size={10} />} Comportamento
+                          </div>
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase ${!ev.disciplinaryIssues ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                            {!ev.disciplinaryIssues ? <Check size={10} /> : <X size={10} />} Disciplina
+                          </div>
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase ${ev.satisfactoryService ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                            {ev.satisfactoryService ? <Check size={10} /> : <X size={10} />} Serviço
+                          </div>
+                        </div>
+                        {ev.observations && (
+                          <p className="mt-2 text-[10px] text-slate-500 font-medium italic bg-slate-50 p-2 rounded-xl border border-slate-100">
+                            "{ev.observations}"
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

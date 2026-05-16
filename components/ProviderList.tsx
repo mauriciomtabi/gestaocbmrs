@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Provider, AttendanceRecord } from '../types';
-import { Plus, ChevronRight, Search, Calendar, Clock, Target, Hourglass, Percent, Filter, ChevronLeft, ArrowDownAZ, AlertCircle, Users, LayoutDashboard, FileText, FileCheck, CornerDownLeft } from 'lucide-react';
+import { Provider, AttendanceRecord, MonthlyEvaluation } from '../types';
+import { Plus, ChevronRight, Search, Calendar, Clock, Target, Hourglass, Percent, Filter, ChevronLeft, ArrowDownAZ, AlertCircle, Users, LayoutDashboard, FileText, FileCheck, CornerDownLeft, ClipboardCheck } from 'lucide-react';
 import { formatDateBR, getLatestVisit, formatMinutesToHHMM, getDaysInactivity, formatInactivityMessage } from '../utils/timeUtils';
 import ReportOfficial from './ReportOfficial';
 
@@ -40,6 +40,17 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
   const [selectedMonth, setSelectedMonth] = useState('Todos');
   const [sortOrder, setSortOrder] = useState<SortOption>('name-asc');
   const [currentPage, setCurrentPage] = useState(1);
+  const [evaluatedProviderIds, setEvaluatedProviderIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    // Load current month evaluations to show pending badges
+    const now = new Date();
+    import('../services/supabaseService').then(({ getAllMonthlyEvaluationsForMonth }) => {
+      getAllMonthlyEvaluationsForMonth(now.getFullYear(), now.getMonth() + 1).then(evals => {
+        setEvaluatedProviderIds(new Set(evals.map(e => e.providerId)));
+      }).catch(() => {});
+    });
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -311,7 +322,14 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-black text-slate-800 leading-tight truncate uppercase tracking-tight">{provider.name || 'Sem Nome'}</h4>
+                        <h4 className="font-black text-slate-800 leading-tight truncate uppercase tracking-tight flex items-center gap-2">
+                          {provider.name || 'Sem Nome'}
+                          {provider.status === 'active' && !evaluatedProviderIds.has(provider.id) && (
+                            <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-600 text-[7px] font-black uppercase border border-amber-200" title="Avaliação mensal pendente">
+                              <ClipboardCheck size={8} /> Avaliar
+                            </span>
+                          )}
+                        </h4>
                         <p className="text-[11px] text-slate-500 font-mono mt-0.5">PROC: {provider.processNumber || '-'}</p>
                         
                         {inactivityDays >= 7 && provider.status === 'active' && (
