@@ -196,6 +196,8 @@ const mapFuelSupplyFromDB = (f: any): FuelSupply => ({
   protocol: f.protocol,
   attachmentData: f.attachment_data,
   attachmentType: f.attachment_type,
+  ticketLogData: f.ticket_log_data,
+  ticketLogType: f.ticket_log_type,
   createdAt: f.created_at,
   history: (f.fuel_audit_logs || [])
     .map(mapAuditLogFromDB)
@@ -217,7 +219,9 @@ const mapFuelSupplyToDB = (f: FuelSupply) => ({
   attendant: f.attendant,
   protocol: f.protocol,
   attachment_data: f.attachmentData,
-  attachment_type: f.attachmentType
+  attachment_type: f.attachmentType,
+  ticket_log_data: f.ticketLogData,
+  ticket_log_type: f.ticketLogType
 });
 
 const mapVehicleFromDB = (v: any): Vehicle => ({
@@ -389,6 +393,7 @@ export const getFuelSupplies = async () => {
 
 export const saveFuelSupply = async (supply: FuelSupply) => {
   let attachmentUrl = supply.attachmentData;
+  let ticketLogUrl = supply.ticketLogData;
   
   if (supply.attachmentData && supply.attachmentData.startsWith('data:')) {
     const uploadedUrl = await uploadDocument(supply.attachmentData, `fuel_supplies/${supply.date.split('T')[0]}_${Date.now()}`);
@@ -396,8 +401,15 @@ export const saveFuelSupply = async (supply: FuelSupply) => {
       attachmentUrl = uploadedUrl;
     }
   }
+
+  if (supply.ticketLogData && supply.ticketLogData.startsWith('data:')) {
+    const uploadedUrl = await uploadDocument(supply.ticketLogData, `fuel_supplies/ticketlog_${supply.date.split('T')[0]}_${Date.now()}`);
+    if (uploadedUrl && !uploadedUrl.startsWith('data:')) {
+      ticketLogUrl = uploadedUrl;
+    }
+  }
   
-  const dbData = mapFuelSupplyToDB({ ...supply, attachmentData: attachmentUrl });
+  const dbData = mapFuelSupplyToDB({ ...supply, attachmentData: attachmentUrl, ticketLogData: ticketLogUrl });
   const { data: savedData, error } = await supabase.from('fuel_supplies').upsert([dbData]).select().single();
   
   if (error) {

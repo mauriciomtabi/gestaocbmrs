@@ -570,7 +570,16 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                           <button 
                             onClick={() => setViewingAttachment(s.attachmentData!)}
                             className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
-                            title="Ver Nota"
+                            title="Ver Nota Fiscal"
+                          >
+                            <Eye size={18} />
+                          </button>
+                        )}
+                        {s.ticketLogData && (
+                          <button 
+                            onClick={() => setViewingAttachment(s.ticketLogData!)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                            title="Ver Ticket Log"
                           >
                             <Eye size={18} />
                           </button>
@@ -660,7 +669,10 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                 </div>
                 <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                   {s.attachmentData && (
-                    <button onClick={() => setViewingAttachment(s.attachmentData!)} className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl"><Eye size={18}/></button>
+                    <button onClick={() => setViewingAttachment(s.attachmentData!)} title="Ver NF" className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl"><Eye size={18}/></button>
+                  )}
+                  {s.ticketLogData && (
+                    <button onClick={() => setViewingAttachment(s.ticketLogData!)} title="Ver Ticket Log" className="p-2.5 bg-blue-50 text-blue-600 rounded-xl"><Eye size={18}/></button>
                   )}
                   <button onClick={() => handleDelete(s.id)} className="p-2.5 bg-red-50 text-red-400 rounded-xl"><Trash2 size={18}/></button>
                 </div>
@@ -857,6 +869,104 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                             <label className={labelClasses}>Atendente</label>
                             <input type="text" value={formData.attendant} onChange={e => setFormData({...formData, attendant: e.target.value})} className={inputClasses} placeholder="Nome do Atendente" />
                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 md:col-span-3">
+                    <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                      Comprovantes
+                    </h4>
+                    <div className="flex flex-col md:flex-row gap-6">
+                      <div className="flex-1 space-y-2">
+                        <label className={labelClasses}>Nota Fiscal (NF)</label>
+                        <div className="relative border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 flex items-center justify-center overflow-hidden min-h-[120px] group hover:border-blue-300 transition-colors">
+                          {formData.attachmentData ? (
+                            <>
+                              {formData.attachmentData.includes('pdf') || formData.attachmentType?.includes('pdf') ? (
+                                <div className="flex flex-col items-center gap-2 text-slate-500">
+                                  <FileText size={32} />
+                                  <span className="text-[10px] font-bold uppercase">PDF Anexado</span>
+                                </div>
+                              ) : (
+                                <img src={formData.attachmentData} alt="NF" className="max-h-[120px] object-contain p-2" />
+                              )}
+                              <button 
+                                type="button"
+                                onClick={() => setFormData({...formData, attachmentData: undefined, attachmentType: undefined})}
+                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600 z-10"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          ) : (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400 p-4 text-center cursor-pointer" onClick={() => document.getElementById('nf-upload')?.click()}>
+                              <Camera size={24} className="group-hover:text-blue-500 transition-colors" />
+                              <span className="text-[10px] font-black uppercase tracking-widest group-hover:text-blue-500">Adicionar NF</span>
+                            </div>
+                          )}
+                          <input 
+                            id="nf-upload"
+                            type="file" 
+                            accept="image/*,application/pdf"
+                            capture="environment"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => setFormData({...formData, attachmentData: reader.result as string, attachmentType: file.type});
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex-1 space-y-2">
+                        <label className={labelClasses}>Recibo Ticket Log</label>
+                        <div className="relative border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 flex items-center justify-center overflow-hidden min-h-[120px] group hover:border-emerald-300 transition-colors">
+                          {formData.ticketLogData ? (
+                            <>
+                              {formData.ticketLogData.includes('pdf') || formData.ticketLogType?.includes('pdf') ? (
+                                <div className="flex flex-col items-center gap-2 text-slate-500">
+                                  <FileText size={32} />
+                                  <span className="text-[10px] font-bold uppercase">PDF Anexado</span>
+                                </div>
+                              ) : (
+                                <img src={formData.ticketLogData} alt="Ticket Log" className="max-h-[120px] object-contain p-2" />
+                              )}
+                              <button 
+                                type="button"
+                                onClick={() => setFormData({...formData, ticketLogData: undefined, ticketLogType: undefined})}
+                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600 z-10"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          ) : (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400 p-4 text-center cursor-pointer" onClick={() => document.getElementById('tl-upload')?.click()}>
+                              <Camera size={24} className="group-hover:text-emerald-500 transition-colors" />
+                              <span className="text-[10px] font-black uppercase tracking-widest group-hover:text-emerald-500">Adicionar Recibo TL</span>
+                            </div>
+                          )}
+                          <input 
+                            id="tl-upload"
+                            type="file" 
+                            accept="image/*,application/pdf"
+                            capture="environment"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => setFormData({...formData, ticketLogData: reader.result as string, ticketLogType: file.type});
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
                         </div>
                       </div>
                     </div>

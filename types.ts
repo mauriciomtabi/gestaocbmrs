@@ -86,6 +86,8 @@ export interface FuelSupply {
   protocol: string;
   attachmentData?: string; // Base64 da nota
   attachmentType?: string;
+  ticketLogData?: string; // Base64 do ticket log
+  ticketLogType?: string;
   history?: AuditLog[];
   createdAt: string;
 }
