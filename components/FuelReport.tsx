@@ -369,10 +369,8 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
                   key={`anexo-${s.id || idx}`}
                   style={{
                     pageBreakBefore: 'always',
-                    pageBreakAfter: 'always',
                     pageBreakInside: 'avoid',
                     breakBefore: 'page',
-                    breakAfter: 'page',
                     breakInside: 'avoid',
                     height: `${PAGE_H}px`,
                     maxHeight: `${PAGE_H}px`,
