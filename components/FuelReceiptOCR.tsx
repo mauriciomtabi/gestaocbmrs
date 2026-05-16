@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect, SyntheticEvent } from 'react';
+import React, { useState, useRef, SyntheticEvent } from 'react';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { X, Camera, Upload, Loader2, CheckCircle2, AlertCircle, FileText, Smartphone, Sparkles, Cpu, Receipt, ArrowRight, SkipForward } from 'lucide-react';
+import { X, Camera, Upload, Loader2, CheckCircle2, AlertCircle, FileText, Cpu, Receipt, ArrowRight, SkipForward } from 'lucide-react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { FuelSupply } from '../types';
 
@@ -23,59 +23,10 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showWebcam, setShowWebcam] = useState(false);
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
   
-  const videoRef = useRef<HTMLVideoElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-
-  const startWebcam = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
-      });
-      streamRef.current = stream;
-      setShowWebcam(true);
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play().catch(console.error);
-        }
-      }, 100);
-    } catch (err) {
-      console.error(err);
-      setError("Erro ao acessar a câmera. Verifique as permissões.");
-    }
-  };
-
-  const stopWebcam = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    setShowWebcam(false);
-  };
-
-  const capturePhoto = () => {
-    if (videoRef.current) {
-      const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        // MUDANÇA: Aumentada qualidade da compressão para 1.0 (máxima)
-        setPreview(canvas.toDataURL('image/jpeg', 1.0));
-        setCrop(undefined);
-        setCompletedCrop(null);
-        stopWebcam();
-        setError(null);
-        setStep('review');
-      }
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -93,40 +44,60 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
   };
 
   const getCroppedImageBase64 = async (): Promise<string | null> => {
-    if (!completedCrop || !imgRef.current || completedCrop.width === 0 || completedCrop.height === 0) {
-      return preview;
+    if (!imgRef.current) return preview;
+
+    const originalWidth = imgRef.current.naturalWidth;
+    const originalHeight = imgRef.current.naturalHeight;
+    
+    let cropX = 0;
+    let cropY = 0;
+    let cropWidth = originalWidth;
+    let cropHeight = originalHeight;
+
+    // Se houve interação com o Crop e selecionou uma área
+    if (completedCrop && completedCrop.width > 0 && completedCrop.height > 0) {
+      const scaleX = originalWidth / imgRef.current.width;
+      const scaleY = originalHeight / imgRef.current.height;
+      cropX = completedCrop.x * scaleX;
+      cropY = completedCrop.y * scaleY;
+      cropWidth = completedCrop.width * scaleX;
+      cropHeight = completedCrop.height * scaleY;
     }
 
-    const canvas = document.createElement('canvas');
-    const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
-    const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
+    // Calcula um teto máximo para a imagem não estourar payload JSON (108MP Cameras)
+    const MAX_DIMENSION = 2400;
+    let scaleRatio = 1;
+    if (Math.max(cropWidth, cropHeight) > MAX_DIMENSION) {
+        scaleRatio = MAX_DIMENSION / Math.max(cropWidth, cropHeight);
+    }
 
-    canvas.width = completedCrop.width * scaleX;
-    canvas.height = completedCrop.height * scaleY;
+    const finalWidth = cropWidth * scaleRatio;
+    const finalHeight = cropHeight * scaleRatio;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = finalWidth;
+    canvas.height = finalHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return preview;
 
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
     ctx.drawImage(
       imgRef.current,
-      completedCrop.x * scaleX,
-      completedCrop.y * scaleY,
-      completedCrop.width * scaleX,
-      completedCrop.height * scaleY,
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
       0,
       0,
-      canvas.width,
-      canvas.height
+      finalWidth,
+      finalHeight
     );
 
-    // MUDANÇA: Aumentada qualidade da compressão do crop para 1.0
-    return canvas.toDataURL('image/jpeg', 1.0);
+    // 0.95 preserva perfeitamente os pixels para o OCR sem explodir o peso base64
+    return canvas.toDataURL('image/jpeg', 0.95); 
   };
-
-  React.useEffect(() => {
-    return () => {
-      stopWebcam();
-    };
-  }, []);
 
   const handleSelectDoc = (type: DocType) => {
     setCurrentDocType(type);
@@ -143,7 +114,7 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
       const newImages = { ...images, [currentDocType]: finalImageBase64 };
       setImages(newImages);
       
-      // Verifica se falta algum documento
+      // Verifica se falta algum documento para dar continuidade automatizada
       if (currentDocType === 'nf' && !newImages.ticket) {
         setCurrentDocType('ticket');
         setPreview(null);
@@ -302,32 +273,15 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
 
   return (
     <div className="fixed inset-0 bg-slate-950/90 z-[3000] flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto">
-      <style>{`
-        @keyframes scan-fuel {
-          0% { top: 0%; opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { top: 100%; opacity: 0; }
-        }
-        .scan-line-fuel {
-          position: absolute;
-          width: 100%;
-          height: 4px;
-          background: linear-gradient(to bottom, transparent, #10b981, transparent);
-          box-shadow: 0 0 15px 2px rgba(16, 185, 129, 0.7);
-          z-index: 20;
-          animation: scan-fuel 3s linear infinite;
-        }
-      `}</style>
       <div className="bg-white w-full max-w-xl rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col my-auto border border-white/10">
         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-blue-50/50">
           <div className="flex items-center gap-3">
             <div className="bg-blue-600 p-2 rounded-xl text-white">
               <FileText size={20} />
             </div>
-            <h3 className="font-black text-blue-900 uppercase tracking-tight text-sm">Registro Documental Múltiplo</h3>
+            <h3 className="font-black text-blue-900 uppercase tracking-tight text-sm">Registro Documental</h3>
           </div>
-          <button onClick={() => { stopWebcam(); onCancel(); }} className="p-2.5 hover:bg-blue-100 text-blue-400 transition-colors rounded-full">
+          <button onClick={onCancel} className="p-2.5 hover:bg-blue-100 text-blue-400 transition-colors rounded-full">
             <X size={20} />
           </button>
         </div>
@@ -382,46 +336,37 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
 
           {step === 'capture' && (
             <div className="w-full flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300">
-              <div className="bg-blue-100 text-blue-800 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-xl mb-2">
-                Capturando {getDocTitle(currentDocType)}
+              <div className="bg-blue-100 text-blue-800 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-xl mb-6">
+                Enviando {getDocTitle(currentDocType)}
               </div>
               
-              {!showWebcam ? (
-                <div className="flex flex-col sm:flex-row w-full gap-3">
-                  <button onClick={startWebcam} className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl flex items-center justify-center gap-3 uppercase text-[10px]">
-                    <Camera size={18} /> Abrir Câmera
-                  </button>
-                  <button onClick={() => { const input = document.getElementById('fuel-file-input'); if (input) input.click(); }} className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl border flex items-center justify-center gap-3 uppercase text-[10px]">
-                    <Upload size={18} /> Fazer Upload
-                  </button>
-                  <input id="fuel-file-input" type="file" onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />
-                </div>
-              ) : (
-                <div className="w-full flex flex-col items-center gap-4">
-                  <div className="relative w-full max-w-sm aspect-[3/4] bg-black rounded-3xl overflow-hidden shadow-inner border-4 border-slate-900">
-                    <video ref={videoRef} playsInline autoPlay muted className="absolute inset-0 w-full h-full object-cover" />
-                    <div className="absolute inset-0 pointer-events-none border-2 border-white/20 m-4 rounded-xl border-dashed"></div>
-                  </div>
-                  <div className="flex gap-3 w-full max-w-sm mt-2">
-                    <button onClick={stopWebcam} className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl uppercase text-[10px]">Cancelar</button>
-                    <button onClick={capturePhoto} className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl flex items-center justify-center gap-2 uppercase text-[10px]">
-                      <Camera size={18} /> Tirar Foto
-                    </button>
-                  </div>
-                </div>
-              )}
+              <div className="flex flex-col sm:flex-row w-full gap-4">
+                <button onClick={() => { const input = document.getElementById('camera-input'); if (input) input.click(); }} className="flex-1 py-6 bg-blue-600 text-white font-black rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 uppercase text-xs hover:bg-blue-700 transition-all active:scale-95">
+                  <Camera size={32} /> Câmera do Dispositivo
+                </button>
+                <input id="camera-input" type="file" onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" />
+
+                <button onClick={() => { const input = document.getElementById('gallery-input'); if (input) input.click(); }} className="flex-1 py-6 bg-slate-100 text-slate-600 font-black rounded-3xl border border-slate-200 flex flex-col items-center justify-center gap-3 uppercase text-xs hover:bg-slate-200 transition-all active:scale-95">
+                  <Upload size={32} /> Escolher da Galeria
+                </button>
+                <input id="gallery-input" type="file" onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />
+              </div>
+              
+              <button onClick={() => setStep('select')} className="mt-4 text-slate-500 font-bold uppercase text-[10px] tracking-widest hover:text-slate-700 transition-colors">
+                Voltar para Seleção
+              </button>
             </div>
           )}
 
           {step === 'review' && preview && (
             <div className="w-full space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
               <div className="bg-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-xl mb-2 inline-block">
-                Revisão: {getDocTitle(currentDocType)}
+                Enquadramento: {getDocTitle(currentDocType)}
               </div>
               <div className="relative rounded-3xl overflow-hidden border bg-slate-50 flex items-center justify-center min-h-[300px]">
                 <div className="absolute top-4 left-0 w-full text-center z-10 pointer-events-none">
                   <p className="inline-block bg-emerald-900/80 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-lg backdrop-blur-sm animate-pulse">
-                    Ajuste as bordas
+                    Ajuste as bordas se necessário
                   </p>
                 </div>
                 <ReactCrop crop={crop} onChange={(c) => setCrop(c)} onComplete={(c) => setCompletedCrop(c)} className="flex items-center justify-center bg-slate-100">
@@ -440,10 +385,10 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
                 <button 
                   onClick={handleConfirmPhoto}
                   disabled={loading}
-                  className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl flex items-center justify-center gap-3 uppercase text-[10px] disabled:opacity-50"
+                  className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest disabled:opacity-50"
                 >
                   {loading ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
-                  Aprovar e Avançar
+                  Aprovar Enquadramento
                 </button>
                 
                 {/* Permite finalizar ignorando o segundo arquivo caso a pessoa não tenha */}
@@ -453,7 +398,7 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
                     disabled={loading}
                     className="w-full py-3 bg-white border border-slate-200 text-slate-500 font-bold rounded-2xl flex items-center justify-center gap-2 uppercase text-[10px] hover:bg-slate-50"
                   >
-                    <SkipForward size={14} /> Aprovar Foto e Finalizar (Ignorar o outro)
+                    <SkipForward size={14} /> Aprovar e Finalizar (Ignorar o outro)
                   </button>
                 )}
 
@@ -476,7 +421,7 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
                </div>
                <div>
                  <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight">Analisando Documentos</h4>
-                 <p className="text-slate-500 text-sm mt-2 font-medium">Processando arquivos e extraindo dados com inteligência artificial...</p>
+                 <p className="text-slate-500 text-sm mt-2 font-medium">Extraindo dados com inteligência artificial...</p>
                </div>
                <Loader2 className="animate-spin text-blue-500" size={32} />
             </div>
