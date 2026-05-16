@@ -128,7 +128,8 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
           logging: false,
           backgroundColor: '#ffffff' // Força background do canvas
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['css', 'legacy'] }
       };
 
       await html2pdf().set(opt).from(element).save();
@@ -353,35 +354,49 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
             </table>
 
             {/* Anexos */}
-            {filteredSupplies.some(s => s.attachmentData || s.ticketLogData) && (
-              <div style={{ pageBreakBefore: 'always', paddingTop: '20px' }}>
-                <h3 className="text-[16px] font-bold text-center mb-6 uppercase pb-2" style={{ borderBottom: '1px solid black' }}>Comprovantes e Tickets Log</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  {filteredSupplies.filter(s => s.attachmentData || s.ticketLogData).map((s, idx) => (
-                    <div key={`anexo-${s.id || idx}`} className="p-4 rounded-xl flex flex-col" style={{ border: '2px solid #e2e8f0', breakInside: 'avoid', pageBreakInside: 'avoid', marginBottom: '20px' }}>
-                      <div className="p-2 rounded-lg mb-4 text-center" style={{ backgroundColor: '#f1f5f9', color: '#000000' }}>
-                        <p className="font-bold text-[12px] uppercase">{getStationDisplayName(s.location, nicknameMap)}</p>
-                        <p className="text-[10px] uppercase font-bold">{new Date(s.date).toLocaleDateString('pt-BR')} - {formatPlate(s.plate)}</p>
+            {(() => {
+              const anexosList = filteredSupplies.filter(s => s.attachmentData || s.ticketLogData);
+              if (anexosList.length === 0) return null;
+
+              // Agrupa em chunks de 4 anexos (2 colunas x 2 linhas) para forçar quebra de página perfeita
+              const chunks = [];
+              for (let i = 0; i < anexosList.length; i += 4) {
+                chunks.push(anexosList.slice(i, i + 4));
+              }
+
+              return chunks.map((chunk, chunkIdx) => (
+                <div key={`chunk-${chunkIdx}`} style={{ paddingTop: '20px' }} className={chunkIdx === 0 ? "html2pdf__page-break" : ""}>
+                  {chunkIdx > 0 && <div className="html2pdf__page-break"></div>}
+                  <h3 className="text-[16px] font-bold text-center mb-6 uppercase pb-2" style={{ borderBottom: '1px solid black' }}>
+                    Comprovantes e Tickets Log {chunks.length > 1 ? `- Página ${chunkIdx + 1}` : ''}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-6">
+                    {chunk.map((s, idx) => (
+                      <div key={`anexo-${s.id || idx}`} className="p-4 rounded-xl flex flex-col" style={{ border: '2px solid #e2e8f0', breakInside: 'avoid', pageBreakInside: 'avoid', marginBottom: '20px' }}>
+                        <div className="p-2 rounded-lg mb-4 text-center" style={{ backgroundColor: '#f1f5f9', color: '#000000' }}>
+                          <p className="font-bold text-[12px] uppercase">{getStationDisplayName(s.location, nicknameMap)}</p>
+                          <p className="text-[10px] uppercase font-bold">{new Date(s.date).toLocaleDateString('pt-BR')} - {formatPlate(s.plate)}</p>
+                        </div>
+                        <div className="flex justify-around items-center gap-4 flex-1">
+                          {s.attachmentData && !s.attachmentData.includes('pdf') && !s.attachmentType?.includes('pdf') && (
+                            <div className="flex flex-col items-center justify-center flex-1" style={{ height: '280px' }}>
+                              <span className="text-[10px] font-bold mb-1 uppercase" style={{ color: '#64748b' }}>Nota Fiscal</span>
+                              <img src={s.attachmentData} alt="NF" className="object-contain" style={{ maxHeight: '250px', maxWidth: '100%' }} />
+                            </div>
+                          )}
+                          {s.ticketLogData && !s.ticketLogData.includes('pdf') && !s.ticketLogType?.includes('pdf') && (
+                            <div className="flex flex-col items-center justify-center flex-1" style={{ height: '280px' }}>
+                              <span className="text-[10px] font-bold mb-1 uppercase" style={{ color: '#64748b' }}>Ticket Log</span>
+                              <img src={s.ticketLogData} alt="TL" className="object-contain" style={{ maxHeight: '250px', maxWidth: '100%' }} />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex justify-around items-center gap-4 flex-1">
-                        {s.attachmentData && !s.attachmentData.includes('pdf') && !s.attachmentType?.includes('pdf') && (
-                          <div className="flex flex-col items-center flex-1">
-                            <span className="text-[10px] font-bold mb-1 uppercase" style={{ color: '#64748b' }}>Nota Fiscal</span>
-                            <img src={s.attachmentData} alt="NF" className="object-contain" style={{ maxHeight: '280px', maxWidth: '100%' }} />
-                          </div>
-                        )}
-                        {s.ticketLogData && !s.ticketLogData.includes('pdf') && !s.ticketLogType?.includes('pdf') && (
-                          <div className="flex flex-col items-center flex-1">
-                            <span className="text-[10px] font-bold mb-1 uppercase" style={{ color: '#64748b' }}>Ticket Log</span>
-                            <img src={s.ticketLogData} alt="TL" className="object-contain" style={{ maxHeight: '280px', maxWidth: '100%' }} />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              ));
+            })()}
             
           </div>
         </div>
