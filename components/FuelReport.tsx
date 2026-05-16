@@ -358,20 +358,17 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
               const anexosList = filteredSupplies.filter(s => s.attachmentData || s.ticketLogData);
               if (anexosList.length === 0) return null;
 
-              // Agrupa em chunks de 4 anexos (2 colunas x 2 linhas) para forçar quebra de página perfeita
+              // Agrupa em chunks de 2 anexos (1 linha inteira por página) para forçar quebra de página absolutamente segura
               const chunks = [];
-              for (let i = 0; i < anexosList.length; i += 4) {
-                chunks.push(anexosList.slice(i, i + 4));
+              for (let i = 0; i < anexosList.length; i += 2) {
+                chunks.push(anexosList.slice(i, i + 2));
               }
 
               return chunks.map((chunk, chunkIdx) => (
-                <React.Fragment key={`chunk-${chunkIdx}`}>
-                  <div className="html2pdf__page-break" style={{ pageBreakBefore: 'always', clear: 'both' }}></div>
-                  
-                  <div style={{ paddingTop: '20px' }}>
-                    <h3 className="text-[16px] font-bold text-center mb-6 uppercase pb-2" style={{ borderBottom: '1px solid black' }}>
-                      Comprovantes e Tickets Log {chunks.length > 1 ? `- Página ${chunkIdx + 1}` : ''}
-                    </h3>
+                <div key={`chunk-${chunkIdx}`} style={{ pageBreakBefore: 'always', clear: 'both', paddingTop: '20px' }}>
+                  <h3 className="text-[16px] font-bold text-center mb-6 uppercase pb-2" style={{ borderBottom: '1px solid black' }}>
+                    Comprovantes e Tickets Log {chunks.length > 1 ? `- Página ${chunkIdx + 1}` : ''}
+                  </h3>
                     <div className="grid grid-cols-2 gap-6">
                       {chunk.map((s, idx) => (
                         <div key={`anexo-${s.id || idx}`} className="p-4 rounded-xl flex flex-col" style={{ border: '2px solid #e2e8f0', breakInside: 'avoid', pageBreakInside: 'avoid', marginBottom: '20px', height: '320px' }}>
@@ -397,7 +394,6 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
                       ))}
                     </div>
                   </div>
-                </React.Fragment>
               ));
             })()}
             
