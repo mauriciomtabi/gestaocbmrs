@@ -358,42 +358,42 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
               const anexosList = filteredSupplies.filter(s => s.attachmentData || s.ticketLogData);
               if (anexosList.length === 0) return null;
 
-              // Agrupa em chunks de 2 anexos (1 linha inteira por página) para forçar quebra de página absolutamente segura
+              // Agrupa em chunks de 4 anexos (2 linhas x 2 colunas por página A4)
               const chunks = [];
-              for (let i = 0; i < anexosList.length; i += 2) {
-                chunks.push(anexosList.slice(i, i + 2));
+              for (let i = 0; i < anexosList.length; i += 4) {
+                chunks.push(anexosList.slice(i, i + 4));
               }
 
               return chunks.map((chunk, chunkIdx) => (
                 <div key={`chunk-${chunkIdx}`} style={{ pageBreakBefore: 'always', clear: 'both', paddingTop: '20px' }}>
-                  <h3 className="text-[16px] font-bold text-center mb-6 uppercase pb-2" style={{ borderBottom: '1px solid black' }}>
+                  <h3 className="text-[16px] font-bold text-center mb-4 uppercase pb-2" style={{ borderBottom: '1px solid black' }}>
                     Comprovantes e Tickets Log {chunks.length > 1 ? `- Página ${chunkIdx + 1}` : ''}
                   </h3>
-                    <div className="grid grid-cols-2 gap-6">
-                      {chunk.map((s, idx) => (
-                        <div key={`anexo-${s.id || idx}`} className="p-4 rounded-xl flex flex-col" style={{ border: '2px solid #e2e8f0', breakInside: 'avoid', pageBreakInside: 'avoid', marginBottom: '20px', height: '320px' }}>
-                          <div className="p-2 rounded-lg mb-2 text-center" style={{ backgroundColor: '#f1f5f9', color: '#000000' }}>
-                            <p className="font-bold text-[12px] uppercase">{getStationDisplayName(s.location, nicknameMap)}</p>
-                            <p className="text-[10px] uppercase font-bold">{new Date(s.date).toLocaleDateString('pt-BR')} - {formatPlate(s.plate)}</p>
-                          </div>
-                          <div className="flex justify-around items-center gap-4 flex-1 overflow-hidden">
-                            {s.attachmentData && !s.attachmentData.includes('pdf') && !s.attachmentType?.includes('pdf') && (
-                              <div className="flex flex-col items-center justify-center flex-1 h-full">
-                                <span className="text-[10px] font-bold mb-1 uppercase" style={{ color: '#64748b' }}>Nota Fiscal</span>
-                                <img src={s.attachmentData} alt="NF" className="object-contain" style={{ maxHeight: '200px', maxWidth: '100%' }} />
-                              </div>
-                            )}
-                            {s.ticketLogData && !s.ticketLogData.includes('pdf') && !s.ticketLogType?.includes('pdf') && (
-                              <div className="flex flex-col items-center justify-center flex-1 h-full">
-                                <span className="text-[10px] font-bold mb-1 uppercase" style={{ color: '#64748b' }}>Ticket Log</span>
-                                <img src={s.ticketLogData} alt="TL" className="object-contain" style={{ maxHeight: '200px', maxWidth: '100%' }} />
-                              </div>
-                            )}
-                          </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {chunk.map((s, idx) => (
+                      <div key={`anexo-${s.id || idx}`} className="p-3 rounded-xl flex flex-col" style={{ border: '2px solid #e2e8f0', breakInside: 'avoid', pageBreakInside: 'avoid', height: '200px' }}>
+                        <div className="p-1.5 rounded-lg mb-1.5 text-center" style={{ backgroundColor: '#f1f5f9', color: '#000000' }}>
+                          <p className="font-bold text-[10px] uppercase">{getStationDisplayName(s.location, nicknameMap)}</p>
+                          <p className="text-[9px] uppercase font-bold">{new Date(s.date).toLocaleDateString('pt-BR')} - {formatPlate(s.plate)}</p>
                         </div>
-                      ))}
-                    </div>
+                        <div className="flex justify-around items-center gap-2 flex-1 overflow-hidden">
+                          {s.attachmentData && !s.attachmentData.includes('pdf') && !s.attachmentType?.includes('pdf') && (
+                            <div className="flex flex-col items-center justify-center flex-1 h-full">
+                              <span className="text-[8px] font-bold mb-1 uppercase" style={{ color: '#64748b' }}>Nota Fiscal</span>
+                              <img src={s.attachmentData} alt="NF" className="object-contain" style={{ maxHeight: '130px', maxWidth: '100%' }} />
+                            </div>
+                          )}
+                          {s.ticketLogData && !s.ticketLogData.includes('pdf') && !s.ticketLogType?.includes('pdf') && (
+                            <div className="flex flex-col items-center justify-center flex-1 h-full">
+                              <span className="text-[8px] font-bold mb-1 uppercase" style={{ color: '#64748b' }}>Ticket Log</span>
+                              <img src={s.ticketLogData} alt="TL" className="object-contain" style={{ maxHeight: '130px', maxWidth: '100%' }} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                </div>
               ));
             })()}
             
