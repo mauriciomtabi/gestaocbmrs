@@ -27,7 +27,7 @@ const months = [
 const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'));
-  const [includeReturned, setIncludeReturned] = useState(true);
+  const [includeReturned, setIncludeReturned] = useState(false);
 
   const today = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit',
