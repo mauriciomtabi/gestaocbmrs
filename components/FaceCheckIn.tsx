@@ -59,6 +59,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
   const [matchedProvider, setMatchedProvider] = useState<{ providerId: string; providerName: string; providerPhoto?: string; distance: number } | null>(null);
   const [matchScore, setMatchScore] = useState(0);
   const noMatchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMatchedRef = useRef(false);
   const [showMobileHistory, setShowMobileHistory] = useState(false);
 
   // GPS / Geofencing state
@@ -198,6 +199,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
     if (navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
+          if (isMatchedRef.current) return; // Congela o GPS enquanto o rosto estiver identificado
           const position: GeoPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
           setGpsPosition(position);
           setGpsStatus('acquired');
@@ -218,6 +220,10 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
       startScanning();
     }
   }, [status, providerDescriptors]);
+
+  useEffect(() => {
+    isMatchedRef.current = !!matchedProvider;
+  }, [matchedProvider]);
 
 
 
