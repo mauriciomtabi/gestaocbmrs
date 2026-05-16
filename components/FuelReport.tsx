@@ -355,24 +355,24 @@ const FuelReport: React.FC<Props> = ({ supplies, vehicles, stationNicknames }) =
             {/* Anexos */}
             {filteredSupplies.some(s => s.attachmentData || s.ticketLogData) && (
               <div style={{ pageBreakBefore: 'always', paddingTop: '20px' }}>
-                <h3 className="text-[16px] font-bold text-center mb-6 uppercase border-b border-black pb-2">Comprovantes e Tickets Log</h3>
+                <h3 className="text-[16px] font-bold text-center mb-6 uppercase pb-2" style={{ borderBottom: '1px solid black' }}>Comprovantes e Tickets Log</h3>
                 <div className="grid grid-cols-2 gap-6">
                   {filteredSupplies.filter(s => s.attachmentData || s.ticketLogData).map((s, idx) => (
-                    <div key={`anexo-${s.id || idx}`} className="border-2 border-slate-200 p-4 rounded-xl flex flex-col" style={{ breakInside: 'avoid', pageBreakInside: 'avoid', marginBottom: '20px' }}>
-                      <div className="bg-slate-100 p-2 rounded-lg mb-4 text-center">
+                    <div key={`anexo-${s.id || idx}`} className="p-4 rounded-xl flex flex-col" style={{ border: '2px solid #e2e8f0', breakInside: 'avoid', pageBreakInside: 'avoid', marginBottom: '20px' }}>
+                      <div className="p-2 rounded-lg mb-4 text-center" style={{ backgroundColor: '#f1f5f9', color: '#000000' }}>
                         <p className="font-bold text-[12px] uppercase">{getStationDisplayName(s.location, nicknameMap)}</p>
                         <p className="text-[10px] uppercase font-bold">{new Date(s.date).toLocaleDateString('pt-BR')} - {formatPlate(s.plate)}</p>
                       </div>
                       <div className="flex justify-around items-center gap-4 flex-1">
                         {s.attachmentData && !s.attachmentData.includes('pdf') && !s.attachmentType?.includes('pdf') && (
                           <div className="flex flex-col items-center flex-1">
-                            <span className="text-[10px] font-bold mb-1 uppercase text-slate-500">Nota Fiscal</span>
+                            <span className="text-[10px] font-bold mb-1 uppercase" style={{ color: '#64748b' }}>Nota Fiscal</span>
                             <img src={s.attachmentData} alt="NF" className="object-contain" style={{ maxHeight: '280px', maxWidth: '100%' }} />
                           </div>
                         )}
                         {s.ticketLogData && !s.ticketLogData.includes('pdf') && !s.ticketLogType?.includes('pdf') && (
                           <div className="flex flex-col items-center flex-1">
-                            <span className="text-[10px] font-bold mb-1 uppercase text-slate-500">Ticket Log</span>
+                            <span className="text-[10px] font-bold mb-1 uppercase" style={{ color: '#64748b' }}>Ticket Log</span>
                             <img src={s.ticketLogData} alt="TL" className="object-contain" style={{ maxHeight: '280px', maxWidth: '100%' }} />
                           </div>
                         )}
