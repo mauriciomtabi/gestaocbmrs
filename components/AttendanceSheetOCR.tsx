@@ -41,10 +41,6 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
   const [msgIndex, setMsgIndex] = useState(0);
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
-  const [showWebcam, setShowWebcam] = useState(false);
-  const webcamVideoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -59,55 +55,9 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
     return () => clearInterval(interval);
   }, [loading]);
 
-  const startWebcam = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
-      });
-      streamRef.current = stream;
-      setShowWebcam(true);
-      setTimeout(() => {
-        if (webcamVideoRef.current) {
-          webcamVideoRef.current.srcObject = stream;
-          webcamVideoRef.current.play().catch(console.error);
-        }
-      }, 100);
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao acessar a câmera. Verifique as permissões.");
-    }
-  };
 
-  const stopWebcam = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    setShowWebcam(false);
-  };
 
-  const capturePhoto = () => {
-    if (webcamVideoRef.current) {
-      const canvas = document.createElement('canvas');
-      canvas.width = webcamVideoRef.current.videoWidth;
-      canvas.height = webcamVideoRef.current.videoHeight;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(webcamVideoRef.current, 0, 0, canvas.width, canvas.height);
-        setPreview(canvas.toDataURL('image/jpeg', 0.8));
-        setFileMeta({ name: 'camera-photo.jpg', type: 'image/jpeg' });
-        setCrop(undefined);
-        setCompletedCrop(null);
-        stopWebcam();
-      }
-    }
-  };
-
-  useEffect(() => {
-    return () => stopWebcam();
-  }, []);
-
-  const optimizeImage = (base64Str: string, maxWidth = 1600, quality = 0.75): Promise<string> => {
+  const optimizeImage = (base64Str: string, maxWidth = 4000, quality = 0.95): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.src = base64Str;
@@ -298,35 +248,7 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
         <div className="p-6">
           {step === 'upload' ? (
             <div className="space-y-6">
-              {showWebcam ? (
-                <div className="w-full flex flex-col items-center gap-4">
-                  <div className="relative w-full max-w-md aspect-[3/4] bg-black rounded-3xl overflow-hidden shadow-inner border-4 border-slate-900">
-                    <video 
-                      ref={webcamVideoRef} 
-                      playsInline 
-                      autoPlay 
-                      muted 
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 pointer-events-none border-2 border-white/20 m-4 rounded-xl border-dashed"></div>
-                  </div>
-                  <div className="flex gap-3 w-full max-w-md mt-2">
-                    <button 
-                      onClick={stopWebcam}
-                      className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl hover:bg-slate-200 transition-all uppercase text-[10px] tracking-widest"
-                    >
-                      Cancelar
-                    </button>
-                    <button 
-                      onClick={capturePhoto}
-                      className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center justify-center gap-2"
-                    >
-                      <Camera size={18} />
-                      Capturar
-                    </button>
-                  </div>
-                </div>
-              ) : !preview && !converting ? (
+              {!preview && !converting ? (
                 <div className="flex flex-col items-center text-center space-y-6 pt-4">
                   <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mb-2">
                     <Camera size={40} />
@@ -337,7 +259,10 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                   </div>
                   <div className="flex flex-col sm:flex-row w-full gap-3 pt-4">
                     <button 
-                      onClick={startWebcam}
+                      onClick={() => {
+                        const input = document.getElementById('camera-input');
+                        if (input) input.click();
+                      }}
                       className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest"
                     >
                       <Camera size={18} />
@@ -346,7 +271,7 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                     
                     <button 
                       onClick={() => {
-                        const input = document.getElementById('file-input');
+                        const input = document.getElementById('gallery-input');
                         if (input) input.click();
                       }} 
                       className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest border border-slate-200"
@@ -355,7 +280,8 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                       Fazer Upload
                     </button>
 
-                    <input id="file-input" type="file" onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />
+                    <input id="camera-input" type="file" onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" />
+                    <input id="gallery-input" type="file" onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />
                   </div>
                 </div>
               ) : (

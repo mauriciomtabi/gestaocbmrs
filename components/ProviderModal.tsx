@@ -1,6 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Save, UserPlus, Upload, Loader2, Edit3, FileText, CheckCircle2, Calculator, Sparkles, Cpu, AlertCircle } from 'lucide-react';
+import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+import { X, Save, UserPlus, Upload, Loader2, Edit3, FileText, CheckCircle2, Calculator, Sparkles, Cpu, AlertCircle, Camera } from 'lucide-react';
 import { Provider } from '../types';
 import { extractReferralData, detectFaceInDocument } from '../services/geminiService';
 import { sanitizeObservations } from '../utils/timeUtils';
@@ -140,7 +142,13 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
   }, [provider]);
 
   const referralInputRef = useRef<HTMLInputElement>(null);
+  const referralCameraInputRef = useRef<HTMLInputElement>(null);
   const identityInputRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  const [referralPreview, setReferralPreview] = useState<string | null>(null);
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
 
   const convertPdfToImage = async (file: File): Promise<string> => {
     const arrayBuffer = await file.arrayBuffer();
@@ -211,14 +219,80 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
     }
   };
 
+  const getCroppedImageBase64 = async (): Promise<string | null> => {
+    if (!completedCrop || !imgRef.current || completedCrop.width === 0 || completedCrop.height === 0) {
+      return referralPreview;
+    }
+
+    const canvas = document.createElement('canvas');
+    const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
+    const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
+
+    canvas.width = completedCrop.width * scaleX;
+    canvas.height = completedCrop.height * scaleY;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return referralPreview;
+
+    ctx.drawImage(
+      imgRef.current,
+      completedCrop.x * scaleX,
+      completedCrop.y * scaleY,
+      completedCrop.width * scaleX,
+      completedCrop.height * scaleY,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    return canvas.toDataURL('image/jpeg', 0.95);
+  };
+
+  const handleConfirmCrop = async () => {
+    const croppedBase64 = await getCroppedImageBase64();
+    if (!croppedBase64) return;
+    setReferralPreview(null);
+    setCrop(undefined);
+    setCompletedCrop(null);
+    processReferralBase64(croppedBase64);
+  };
+
+  const processReferralBase64 = async (base64: string) => {
+    setLoading(true);
+    setMsgIndex(0);
+    setCurrentMessages(processingMessages);
+    try {
+      const data = await extractReferralData(base64.split(',')[1], 'image/png');
+
   const handleIdentityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) processFile(file, true);
   };
 
-  const handleReferralChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleReferralChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) processFile(file, false);
+    if (!file) return;
+    setLoading(true);
+    try {
+      let base64 = '';
+      if (file.type === 'application/pdf') {
+        base64 = await convertPdfToImage(file);
+      } else {
+        base64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      }
+      setReferralPreview(base64);
+      setCrop(undefined);
+      setCompletedCrop(null);
+    } catch (err) {
+      console.error("Erro ao preparar imagem:", err);
+      alert("Erro ao ler o documento.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -329,7 +403,34 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
         </div>
 
         <div className="p-8 space-y-5 overflow-y-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-slate-50">
+          {referralPreview ? (
+            <div className="flex flex-col space-y-4">
+              <div className="bg-slate-100 rounded-2xl p-2 flex justify-center border border-slate-200">
+                <ReactCrop 
+                  crop={crop} 
+                  onChange={(c) => setCrop(c)} 
+                  onComplete={(c) => setCompletedCrop(c)}
+                  className="max-h-[60vh]"
+                >
+                  <img 
+                    ref={imgRef}
+                    src={referralPreview} 
+                    alt="Preview" 
+                    className="max-h-[60vh] object-contain w-full"
+                    onLoad={() => setCrop({ unit: '%', x: 5, y: 5, width: 90, height: 90 })}
+                  />
+                </ReactCrop>
+              </div>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setReferralPreview(null)} className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 rounded-2xl transition-all">Cancelar</button>
+                <button type="button" onClick={handleConfirmCrop} className="flex-1 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-xl hover:bg-blue-700 flex items-center justify-center gap-2">
+                  <CheckCircle2 size={18} /> Confirmar e Analisar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-slate-50">
             <div className="relative">
               <label className={labelClasses}>Documento de Identidade</label>
               <button 
@@ -352,16 +453,28 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
 
             <div>
               <label className={labelClasses}>Encaminhamento</label>
-              <button 
-                type="button" 
-                onClick={() => referralInputRef.current?.click()}
-                disabled={loading || isSubmitting}
-                className={`w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl border-2 border-dashed transition-all ${formData.referralDoc ? 'border-blue-200 bg-blue-50 text-blue-600' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100'} disabled:opacity-50 font-black text-[10px] uppercase`}
-              >
-                {loading ? <Loader2 size={18} className="animate-spin" /> : formData.referralDoc ? <FileText size={18} /> : <Sparkles size={18} />}
-                {formData.referralDoc ? 'Digitalizado' : 'Digitalizar'}
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => referralCameraInputRef.current?.click()}
+                  disabled={loading || isSubmitting}
+                  className={`flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded-2xl border-2 transition-all ${formData.referralDoc ? 'border-blue-200 bg-blue-50 text-blue-600' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100'} disabled:opacity-50 font-black text-[9px] uppercase`}
+                >
+                  <Camera size={18} />
+                  Câmera
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => referralInputRef.current?.click()}
+                  disabled={loading || isSubmitting}
+                  className={`flex-1 flex flex-col items-center justify-center gap-1 p-2 rounded-2xl border-2 border-dashed transition-all ${formData.referralDoc ? 'border-blue-200 bg-blue-50 text-blue-600' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100'} disabled:opacity-50 font-black text-[9px] uppercase`}
+                >
+                  <Upload size={18} />
+                  Upload
+                </button>
+              </div>
               <input type="file" ref={referralInputRef} onChange={handleReferralChange} accept="image/*,application/pdf" className="hidden" />
+              <input type="file" ref={referralCameraInputRef} onChange={handleReferralChange} accept="image/*" capture="environment" className="hidden" />
             </div>
           </div>
 
@@ -449,6 +562,8 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
               </button>
             </div>
           </form>
+          </>
+          )}
         </div>
       </div>
     </div>
