@@ -335,7 +335,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           </div>
           <div>
             <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Troca de Serviço</h1>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Registro e aprovação de permutas de escala.</p>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Registro e aprovação de trocas de escala.</p>
           </div>
         </div>
         <button
@@ -723,7 +723,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                 </div>
                 <div>
                   <h3 className="font-black text-slate-900 text-base uppercase">Nova Troca de Serviço</h3>
-                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mt-0.5">Preencha os dados da permuta</p>
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mt-0.5">Preencha os dados da troca</p>
                 </div>
               </div>
               <button

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Book, Users, ScanFace, Fuel, FileText, AlertCircle, CheckCircle2, ChevronDown, MonitorPlay, Sparkles, ThumbsUp, BookOpen, Smartphone, ArrowLeftRight } from 'lucide-react';
+import { Search, Book, Users, ScanFace, Fuel, FileText, AlertCircle, CheckCircle2, XCircle, ChevronDown, MonitorPlay, Sparkles, ThumbsUp, BookOpen, Smartphone, ArrowLeftRight } from 'lucide-react';
 import { Operator } from '../types';
 
 type Topic = {
@@ -296,15 +296,27 @@ const HELP_DATA: Topic[] = [
   {
     id: 'troca-servico',
     category: 'Escalas de Serviço',
-    title: 'Troca de Serviço (Permutas)',
+    title: 'Troca de Serviço',
     icon: ArrowLeftRight,
     allowedScreen: 'swaps',
-    tags: ['troca', 'serviço', 'escala', 'permuta', 'substituto', 'plantão', 'aprovar', 'reprovar', 'cancelar', 'militar'],
+    tags: ['troca', 'serviço', 'escala', 'permuta', 'substituto', 'plantão', 'aprovar', 'reprovar', 'cancelar', 'militar', 'aceite', 'aceitar', 'recusar', 'recusa'],
     content: (
       <div className="space-y-6">
         <p className="text-slate-600 leading-relaxed">
-          O módulo de <strong>Troca de Serviço</strong> permite aos militares registrar permutas de escalas de serviço e aos administradores avaliar e gerenciar essas solicitações com total transparência e auditoria.
+          O módulo de <strong>Troca de Serviço</strong> permite aos militares registrar trocas de escalas de serviço e aos administradores avaliar e gerenciar essas solicitações com total transparência e auditoria.
         </p>
+
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
+          <CheckCircle2 className="text-blue-600 shrink-0 mt-0.5" size={20} />
+          <div className="text-sm text-blue-900">
+            <strong>Fluxo de aprovação em 3 etapas:</strong>
+            <ol className="mt-2 space-y-1 list-decimal list-inside font-medium text-blue-800">
+              <li>Escalado registra a solicitação → vai para o <strong>Substituto</strong></li>
+              <li>Substituto <strong>aceita</strong> → vai para o <strong>Administrador</strong></li>
+              <li>Administrador <strong>aprova</strong> → troca confirmada</li>
+            </ol>
+          </div>
+        </div>
 
         <div className="space-y-8 mt-6">
           <div className="border border-slate-200 rounded-3xl p-6 bg-white shadow-sm hover:shadow-md transition-all">
@@ -313,31 +325,59 @@ const HELP_DATA: Topic[] = [
               Como Solicitar uma Troca
             </h3>
             <p className="text-sm text-slate-600 mb-4">
-              Clique no botão <strong>"Nova Solicitação"</strong>. No formulário, o seu nome aparecerá automaticamente como "Escalado (Você)". Selecione o <strong>Substituto</strong> digitando as iniciais para autocompletar com sugestões em tempo real, escolha a <strong>Função</strong> (CG, COV, Linha ou COBOM), defina a <strong>Data do Plantão</strong> e os <strong>Horários de início e fim</strong>, e clique em "Enviar Solicitação".
+              Clique no botão <strong>"Nova Solicitação"</strong>. No formulário, o seu nome aparecerá automaticamente como "Escalado (Você)". Selecione o <strong>Substituto</strong> digitando as iniciais para autocompletar com sugestões em tempo real, escolha a <strong>Função</strong> (CG, COV, Linha ou COBOM), defina a <strong>Data do Plantão</strong> e os <strong>Horários de início e fim</strong>, e clique em "Enviar Solicitação". A solicitação ficará com status <strong>"Aguardando Substituto"</strong> até que ele a aceite.
             </p>
-            <Screenshot src="/docs/TROCA_SERVICO - NOVA_SOLICITACAO.png" caption="Formulário de Nova Permuta — Registro dinâmico de troca com busca autocompletável" />
+            <Screenshot src="/docs/TROCA_SERVICO - NOVA_SOLICITACAO.png" caption="Formulário de Nova Troca de Serviço — Registro dinâmico com busca autocompletável" />
+          </div>
+
+          <div className="border border-amber-200 rounded-3xl p-6 bg-amber-50/60 shadow-sm hover:shadow-md transition-all">
+            <h3 className="text-lg font-black text-amber-900 mb-2 flex items-center gap-2">
+              <span className="bg-amber-500 text-white w-6 h-6 flex items-center justify-center rounded-lg text-xs">2</span>
+              Aceite do Substituto (Etapa Obrigatória)
+            </h3>
+            <p className="text-sm text-slate-700 mb-4">
+              Após o envio, a solicitação vai <strong>primeiro para o Substituto selecionado</strong>. A solicitação só será encaminhada para aprovação do Administrador após o aceite do Substituto.
+            </p>
+            <div className="space-y-3 text-sm text-slate-700 mb-4">
+              <div className="flex items-start gap-3 bg-white border border-amber-100 rounded-xl p-3">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-black shrink-0 mt-0.5 animate-pulse">!</span>
+                <p><strong>Notificação ao Substituto:</strong> Na aba <strong>"Minhas Solicitações"</strong>, o Substituto verá um badge laranja pulsante com a contagem de trocas aguardando seu aceite. Os botões <strong>"Aceitar"</strong> (verde) e <strong>"Recusar"</strong> (vermelho) aparecerão diretamente na linha da solicitação.</p>
+              </div>
+              <div className="flex items-start gap-3 bg-white border border-emerald-100 rounded-xl p-3">
+                <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={18} />
+                <p><strong>Se o Substituto Aceitar:</strong> Uma tela de confirmação exibirá todos os detalhes da troca (escalado, função, data, horário) antes do aceite definitivo. Após confirmar, o status muda para <strong>"Pendente"</strong> e a solicitação vai para a fila de aprovação do Administrador.</p>
+              </div>
+              <div className="flex items-start gap-3 bg-white border border-red-100 rounded-xl p-3">
+                <XCircle className="text-red-600 shrink-0 mt-0.5" size={18} />
+                <p><strong>Se o Substituto Recusar:</strong> O Substituto deverá informar obrigatoriamente o <strong>motivo da recusa</strong>. O status muda para <strong>"Recusado pelo Substituto"</strong> e o motivo ficará registrado para consulta do Escalado e do Administrador.</p>
+              </div>
+            </div>
+            <div className="bg-amber-100 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+              <AlertCircle className="text-amber-700 shrink-0 mt-0.5" size={16} />
+              <p className="text-xs text-amber-900 font-medium">A solicitação <strong>somente</strong> é encaminhada para aprovação do Administrador após o aceite do Substituto. Sem aceite, o Administrador não a receberá.</p>
+            </div>
           </div>
 
           <div className="border border-slate-200 rounded-3xl p-6 bg-white shadow-sm hover:shadow-md transition-all">
             <h3 className="text-lg font-black text-blue-800 mb-2 flex items-center gap-2">
-              <span className="bg-blue-600 text-white w-6 h-6 flex items-center justify-center rounded-lg text-xs">2</span>
+              <span className="bg-blue-600 text-white w-6 h-6 flex items-center justify-center rounded-lg text-xs">3</span>
               Acompanhamento e Cancelamento
             </h3>
             <p className="text-sm text-slate-600 mb-4">
-              Na aba <strong>"Minhas Solicitações"</strong>, você acompanha o status de seus pedidos (Pendente, Aprovado, Reprovado ou Cancelado). O titular da escala e os administradores podem cancelar um registro ativo (Pendente ou Aprovado) a qualquer momento clicando no botão <strong>"Cancelar"</strong> na coluna de Ações ou nos cards mobile. O sistema exibirá uma janela de confirmação nativa.
+              Na aba <strong>"Minhas Solicitações"</strong>, você acompanha o status de seus pedidos em tempo real. O titular da escala e os administradores podem cancelar um registro ativo (Aguardando Substituto, Pendente ou Aprovado) a qualquer momento clicando no botão <strong>"Cancelar"</strong> na coluna de Ações ou nos cards mobile. O sistema exibirá uma janela de confirmação antes do cancelamento definitivo.
             </p>
-            <Screenshot src="/docs/TROCA_SERVICO - MINHAS_SOLICITACOES.png" caption="Minhas Solicitações — Acompanhamento e cancelamento padrão com modal nativo" />
+            <Screenshot src="/docs/TROCA_SERVICO - MINHAS_SOLICITACOES.png" caption="Minhas Solicitações — Acompanhamento de status e cancelamento com modal de confirmação" />
           </div>
 
           <div className="border border-slate-200 rounded-3xl p-6 bg-white shadow-sm hover:shadow-md transition-all">
             <h3 className="text-lg font-black text-amber-800 mb-2 flex items-center gap-2">
-              <span className="bg-amber-600 text-white w-6 h-6 flex items-center justify-center rounded-lg text-xs">3</span>
-              Aprovação de Permutas (Administrador)
+              <span className="bg-amber-600 text-white w-6 h-6 flex items-center justify-center rounded-lg text-xs">4</span>
+              Aprovação Administrativa
             </h3>
             <p className="text-sm text-slate-600 mb-4">
-              Os administradores recebem um indicador vermelho com o número de pendências. Na aba <strong>"Aprovações"</strong>, eles avaliam os pedidos com opções rápidas de "Aprovar" ou "Reprovar" e registram observações oficiais. Em caso de cancelamento posterior, quem cancelou a permuta é registrado sob a coluna "Avaliação".
+              Somente após o aceite do Substituto, a solicitação aparece para os administradores na aba <strong>"Aprovações"</strong> com um indicador vermelho de pendências. Os administradores avaliam os pedidos com opções rápidas de <strong>"Aprovar"</strong> ou <strong>"Reprovar"</strong> e podem registrar observações oficiais. Todo o histórico de quem avaliou e quando fica registrado na coluna "Avaliação".
             </p>
-            <Screenshot src="/docs/TROCA_SERVICO - APROVACOES.png" caption="Aprovações — Painel administrativo para avaliação e auditoria" />
+            <Screenshot src="/docs/TROCA_SERVICO - APROVACOES.png" caption="Aprovações — Painel administrativo para avaliação e auditoria de trocas aceitas pelo substituto" />
           </div>
         </div>
       </div>
