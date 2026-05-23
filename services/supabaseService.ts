@@ -963,3 +963,16 @@ export const rejectServiceSwap = async (swapId: string, reason: string): Promise
   }
 };
 
+export const deleteUserProfile = async (userId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+    if (error) throw error;
+  } catch (err) {
+    console.error('Erro ao remover perfil do usuário:', err);
+    throw err;
+  }
+};
+

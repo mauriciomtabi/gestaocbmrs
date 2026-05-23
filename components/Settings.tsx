@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Operator } from '../types';
 import UserProfile from './UserProfile';
-import { Settings as SettingsIcon, Smartphone, UserCircle, ChevronRight, ShieldCheck, CheckCircle2, AlertCircle, MapPin, Navigation, Save, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Settings as SettingsIcon, Smartphone, UserCircle, ChevronRight, ShieldCheck, CheckCircle2, AlertCircle, MapPin, Navigation, Save, ToggleLeft, ToggleRight, Trash2, XCircle } from 'lucide-react';
 import packageJson from '../package.json';
 import { getCurrentPosition } from '../services/geoService';
 import GeoMapPicker from './GeoMapPicker';
@@ -332,6 +332,8 @@ const UserAccessControl: React.FC = () => {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [savingDefault, setSavingDefault] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; user: any | null }>({ isOpen: false, user: null });
+  const [deleting, setDeleting] = useState(false);
 
   const availableScreens = [
     { id: 'dashboard', label: 'Painel' },
@@ -404,6 +406,22 @@ const UserAccessControl: React.FC = () => {
       setStatusMessage({ type: 'error', text: "Erro ao salvar permissões do usuário." });
     } finally {
       setSavingId(null);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteModal.user) return;
+    setDeleting(true);
+    try {
+      const { deleteUserProfile } = await import('../services/supabaseService');
+      await deleteUserProfile(deleteModal.user.id);
+      setProfiles(prev => prev.filter(p => p.id !== deleteModal.user.id));
+      setStatusMessage({ type: 'success', text: `Usuário ${deleteModal.user.warName} removido com sucesso!` });
+      setDeleteModal({ isOpen: false, user: null });
+    } catch {
+      setStatusMessage({ type: 'error', text: 'Erro ao remover o usuário. Tente novamente.' });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -527,7 +545,7 @@ const UserAccessControl: React.FC = () => {
                 })}
               </div>
 
-              <div className="shrink-0 flex items-center">
+              <div className="shrink-0 flex items-center gap-2">
                 {p.hasUnsavedChanges ? (
                   <button 
                     onClick={() => saveUserAccess(p)}
@@ -541,12 +559,59 @@ const UserAccessControl: React.FC = () => {
                     Acessos Salvos
                   </div>
                 )}
+                <button
+                  onClick={() => setDeleteModal({ isOpen: true, user: p })}
+                  title="Remover usuário"
+                  className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-transparent hover:border-rose-200 transition-all"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             </div>
           ))}
         </div>
       </div>
 
+      {/* ── MODAL Confirmar Remoção de Usuário ── */}
+      {deleteModal.isOpen && deleteModal.user && (
+        <div className="fixed inset-0 bg-slate-950/80 z-[4000] flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95">
+            <div className="p-8 text-center space-y-6">
+              <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <Trash2 size={38} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Remover Usuário?</h3>
+                <p className="text-slate-500 text-sm mt-2 font-medium">
+                  O usuário abaixo perderá <strong>todo o acesso</strong> ao sistema permanentemente.
+                </p>
+                <div className="mt-4 bg-red-50 border border-red-100 rounded-2xl p-4">
+                  <p className="text-red-800 font-black text-sm uppercase tracking-tight">
+                    {deleteModal.user.rank} {deleteModal.user.warName}
+                  </p>
+                  <p className="text-red-500 text-xs font-medium mt-1">{deleteModal.user.email}</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteModal({ isOpen: false, user: null })}
+                  disabled={deleting}
+                  className="flex-1 py-4 text-slate-500 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-2xl transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteUser}
+                  disabled={deleting}
+                  className="flex-1 py-4 bg-red-600 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl shadow-xl shadow-red-200 hover:bg-red-700 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {deleting ? 'Removendo...' : 'Confirmar Remoção'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

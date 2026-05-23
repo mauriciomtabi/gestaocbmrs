@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ServiceSwap, Operator } from '../types';
 import { getServiceSwaps, createServiceSwap, evaluateServiceSwap, getAllProfiles, cancelServiceSwap, acceptServiceSwap, rejectServiceSwap } from '../services/supabaseService';
+import ServiceSwapReport from './ServiceSwapReport';
 import {
   Calendar,
   Clock,
@@ -70,6 +71,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
   const [saving, setSaving] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   const [evaluationModal, setEvaluationModal] = useState<{
     isOpen: boolean;
@@ -338,13 +340,24 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Registro e aprovação de trocas de escala.</p>
           </div>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-sm active:scale-95"
-        >
-          <Plus size={18} />
-          Nova Solicitação
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {currentUser.isAdmin && (
+            <button
+              onClick={() => setShowReport(true)}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-6 py-3 rounded-2xl transition-all shadow-xl shadow-slate-850/20 font-black text-sm active:scale-95"
+            >
+              <FileText size={18} />
+              Relatório PDF
+            </button>
+          )}
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-sm active:scale-95"
+          >
+            <Plus size={18} />
+            Nova Solicitação
+          </button>
+        </div>
       </header>
 
       {/* ── MAIN TABS ── */}
@@ -1061,6 +1074,15 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── REPORT DOCUMENT ── */}
+      {showReport && (
+        <ServiceSwapReport
+          swaps={enrichedSwaps}
+          currentUser={currentUser}
+          onClose={() => setShowReport(false)}
+        />
       )}
     </div>
   );
