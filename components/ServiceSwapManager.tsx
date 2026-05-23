@@ -86,6 +86,10 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
     horarioFim: '08:00',
   });
 
+  const [substituteSearch, setSubstituteSearch] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -109,6 +113,53 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
   const eligibleSubstitutes = useMemo(() =>
     profiles.filter(p => p.id !== currentUser.id),
   [profiles, currentUser]);
+
+  const filteredSubstitutes = useMemo(() => {
+    const query = substituteSearch.toLowerCase().trim();
+    if (!query) return eligibleSubstitutes;
+    return eligibleSubstitutes.filter(p => 
+      p.rank.toLowerCase().includes(query) ||
+      p.warName.toLowerCase().includes(query) ||
+      p.name.toLowerCase().includes(query)
+    );
+  }, [eligibleSubstitutes, substituteSearch]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+        if (!formData.substitutoId) {
+          setSubstituteSearch('');
+        } else {
+          const selected = profilesMap[formData.substitutoId];
+          if (selected) {
+            setSubstituteSearch(`${selected.rank} ${selected.warName} (${selected.name})`);
+          }
+        }
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [formData.substitutoId, profilesMap]);
+
+  const handleSelectSubstitute = (sub: Operator) => {
+    setFormData(prev => ({ ...prev, substitutoId: sub.id || '' }));
+    setSubstituteSearch(sub.id ? `${sub.rank} ${sub.warName} (${sub.name})` : '');
+    setIsDropdownOpen(false);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSubstituteSearch(val);
+    setFormData(prev => ({ ...prev, substitutoId: '' }));
+    setIsDropdownOpen(true);
+  };
+
+  const handleClearSelection = () => {
+    setSubstituteSearch('');
+    setFormData(prev => ({ ...prev, substitutoId: '' }));
+    setIsDropdownOpen(false);
+  };
 
   const enrichedSwaps = useMemo(() =>
     swaps.map(s => {
@@ -167,6 +218,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
         setNotification('Solicitação registrada com sucesso!', 'success');
         setIsModalOpen(false);
         setFormData({ substitutoId: '', funcao: 'Linha', data: '', horarioInicio: '08:00', horarioFim: '08:00' });
+        setSubstituteSearch('');
         await loadData();
       } else throw new Error('Erro no retorno da criação.');
     } catch (err: any) {
@@ -577,22 +629,56 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                   </div>
                 </div>
 
-                {/* Substituto */}
-                <div className="space-y-1.5">
+                {/* Substituto (com Autocomplete) */}
+                <div className="space-y-1.5" ref={dropdownRef}>
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Substituto *</label>
                   <div className="relative">
-                    <select
-                      required
-                      value={formData.substitutoId}
-                      onChange={e => setFormData({ ...formData, substitutoId: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-bold text-sm appearance-none"
-                    >
-                      <option value="" disabled>Selecione o substituto...</option>
-                      {eligibleSubstitutes.map(p => (
-                        <option key={p.id} value={p.id}>{p.rank} {p.warName} ({p.name})</option>
-                      ))}
-                    </select>
-                    <ArrowUpDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Digite para buscar o substituto..."
+                      value={substituteSearch}
+                      onChange={handleSearchChange}
+                      onFocus={() => setIsDropdownOpen(true)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-slate-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-bold text-sm"
+                    />
+                    
+                    {formData.substitutoId ? (
+                      <button
+                        type="button"
+                        onClick={handleClearSelection}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
+                        title="Limpar seleção"
+                      >
+                        <X size={16} />
+                      </button>
+                    ) : (
+                      <ArrowUpDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    )}
+
+                    <input type="hidden" value={formData.substitutoId} required />
+
+                    {/* Floating Dropdown Menu */}
+                    {isDropdownOpen && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-[1200] max-h-60 overflow-y-auto no-scrollbar animate-in fade-in slide-in-from-top-2 duration-200">
+                        {filteredSubstitutes.length === 0 ? (
+                          <div className="p-4 text-center text-slate-400 text-xs font-bold uppercase tracking-wider">
+                            Nenhum militar encontrado
+                          </div>
+                        ) : (
+                          filteredSubstitutes.map(p => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => handleSelectSubstitute(p)}
+                              className="w-full text-left px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all border-b border-slate-50 last:border-0 flex flex-col gap-0.5"
+                            >
+                              <span className="text-slate-900 font-black uppercase text-[11px]">{p.rank} {p.warName}</span>
+                              <span className="text-[10px] text-slate-400 font-medium">{p.name}</span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
