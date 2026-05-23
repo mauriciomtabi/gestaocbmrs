@@ -88,6 +88,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
 
   const [substituteSearch, setSubstituteSearch] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [cancelSwapId, setCancelSwapId] = useState<string | null>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   const loadData = async () => {
@@ -253,16 +254,18 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
     }
   };
 
-  const handleCancel = async (swapId: string) => {
-    if (!window.confirm('Tem certeza que deseja cancelar esta solicitação de troca?')) return;
+  const confirmCancel = async () => {
+    if (!cancelSwapId) return;
     try {
-      const result = await cancelServiceSwap(swapId);
+      const result = await cancelServiceSwap(cancelSwapId);
       if (result) {
         setNotification('Solicitação de troca cancelada com sucesso!', 'success');
         await loadData();
       } else throw new Error('Erro ao cancelar a troca.');
     } catch (err: any) {
       setNotification(err.message || 'Erro ao cancelar a solicitação.', 'error');
+    } finally {
+      setCancelSwapId(null);
     }
   };
 
@@ -462,36 +465,34 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                           <span className="text-[10px] text-slate-300 font-bold italic">—</span>
                         )}
                       </td>
-                      {(currentUser.isAdmin || filteredSwaps.some(s => s.escaladoId === currentUser.id && s.status === 'pendente')) && (
+                      {(currentUser.isAdmin || filteredSwaps.some(s => s.escaladoId === currentUser.id && ['pendente', 'aprovado'].includes(s.status))) && (
                         <td className="px-6 py-4">
-                          {swap.status === 'pendente' && (
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
-                              {currentUser.isAdmin && (
-                                <>
-                                  <button
-                                    onClick={() => setEvaluationModal({ isOpen: true, swap, action: 'aprovado', observation: '' })}
-                                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
-                                  >
-                                    <Check size={12} /> Aprovar
-                                  </button>
-                                  <button
-                                    onClick={() => setEvaluationModal({ isOpen: true, swap, action: 'reprovado', observation: '' })}
-                                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
-                                  >
-                                    <X size={12} /> Reprovar
-                                  </button>
-                                </>
-                              )}
-                              {swap.escaladoId === currentUser.id && (
+                          <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                            {swap.status === 'pendente' && currentUser.isAdmin && (
+                              <>
                                 <button
-                                  onClick={() => handleCancel(swap.id)}
-                                  className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
+                                  onClick={() => setEvaluationModal({ isOpen: true, swap, action: 'aprovado', observation: '' })}
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
                                 >
-                                  <XCircle size={12} /> Cancelar
+                                  <Check size={12} /> Aprovar
                                 </button>
-                              )}
-                            </div>
-                          )}
+                                <button
+                                  onClick={() => setEvaluationModal({ isOpen: true, swap, action: 'reprovado', observation: '' })}
+                                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
+                                >
+                                  <X size={12} /> Reprovar
+                                </button>
+                              </>
+                            )}
+                            {['pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin) && (
+                              <button
+                                onClick={() => setCancelSwapId(swap.id)}
+                                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
+                              >
+                                <XCircle size={12} /> Cancelar
+                              </button>
+                            )}
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -549,9 +550,9 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                     </div>
                   )}
 
-                  {swap.status === 'pendente' && (currentUser.isAdmin || swap.escaladoId === currentUser.id) && (
+                  {['pendente', 'aprovado'].includes(swap.status) && (currentUser.isAdmin || swap.escaladoId === currentUser.id) && (
                     <div className="flex flex-col gap-2 pt-1">
-                      {currentUser.isAdmin && (
+                      {swap.status === 'pendente' && currentUser.isAdmin && (
                         <div className="flex gap-2">
                           <button
                             onClick={() => setEvaluationModal({ isOpen: true, swap, action: 'aprovado', observation: '' })}
@@ -567,9 +568,9 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                           </button>
                         </div>
                       )}
-                      {swap.escaladoId === currentUser.id && (
+                      {(swap.escaladoId === currentUser.id || currentUser.isAdmin) && (
                         <button
-                          onClick={() => handleCancel(swap.id)}
+                          onClick={() => setCancelSwapId(swap.id)}
                           className="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5"
                         >
                           <XCircle size={13} /> Cancelar Solicitação
@@ -844,6 +845,29 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                   : evaluationModal.action === 'aprovado' ? 'Confirmar Aprovação' : 'Confirmar Reprovação'
                 }
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════
+          MODAL — Confirmação de Cancelamento
+      ════════════════════════════════════════ */}
+      {cancelSwapId && (
+        <div className="fixed inset-0 bg-slate-950/80 z-[4000] flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95">
+            <div className="p-8 text-center space-y-6">
+              <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <XCircle size={40} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Cancelar Registro?</h3>
+                <p className="text-slate-500 text-sm mt-2 font-medium">Esta ação é irreversível e alterará permanentemente o status da troca de serviço para cancelado.</p>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button onClick={() => setCancelSwapId(null)} className="flex-1 py-4 text-slate-500 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-2xl transition-all">Voltar</button>
+                <button onClick={confirmCancel} className="flex-1 py-4 bg-red-600 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl shadow-xl shadow-red-200 hover:bg-red-700 transition-all active:scale-95">Confirmar Cancelamento</button>
+              </div>
             </div>
           </div>
         </div>
