@@ -257,22 +257,22 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, onClose }) => {
           <div className="space-y-1.5" style={{ fontSize: '11pt' }}>
             <div className="flex flex-col">
               <span>Faltas no período?</span>
-              <span>Sim ({evaluation ? (evaluation.hadAbsences ? ' X ' : ' &nbsp; ') : ' &nbsp; '}) &nbsp;&nbsp; Não ({evaluation ? (!evaluation.hadAbsences ? ' X ' : ' &nbsp; ') : ' &nbsp; '})</span>
+              <span>Sim ( &nbsp; ) &nbsp;&nbsp; Não ( &nbsp; )</span>
             </div>
 
             <div className="flex flex-col">
               <span>Apresentou bom comportamento?</span>
-              <span>Sim ({evaluation ? (evaluation.goodBehavior ? ' X ' : ' &nbsp; ') : ' &nbsp; '}) &nbsp;&nbsp; Não ({evaluation ? (!evaluation.goodBehavior ? ' X ' : ' &nbsp; ') : ' &nbsp; '})</span>
+              <span>Sim ( &nbsp; ) &nbsp;&nbsp; Não ( &nbsp; )</span>
             </div>
 
             <div className="flex flex-col">
               <span>Cometeu atos indisciplinares?</span>
-              <span>Sim ({evaluation ? (evaluation.disciplinaryIssues ? ' X ' : ' &nbsp; ') : ' &nbsp; '}) &nbsp;&nbsp; Não ({evaluation ? (!evaluation.disciplinaryIssues ? ' X ' : ' &nbsp; ') : ' &nbsp; '})</span>
+              <span>Sim ( &nbsp; ) &nbsp;&nbsp; Não ( &nbsp; )</span>
             </div>
 
             <div className="flex flex-col">
               <span>A qualidade do serviço prestado foi satisfatória?</span>
-              <span>Sim ({evaluation ? (evaluation.satisfactoryService ? ' X ' : ' &nbsp; ') : ' &nbsp; '}) &nbsp;&nbsp; Não ({evaluation ? (!evaluation.satisfactoryService ? ' X ' : ' &nbsp; ') : ' &nbsp; '})</span>
+              <span>Sim ( &nbsp; ) &nbsp;&nbsp; Não ( &nbsp; )</span>
             </div>
           </div>
 

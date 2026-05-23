@@ -868,7 +868,7 @@ export const getServiceSwaps = async (): Promise<ServiceSwap[]> => {
 
 export const createServiceSwap = async (swap: Partial<ServiceSwap>): Promise<ServiceSwap | null> => {
   try {
-    const dbData = mapServiceSwapToDB(swap);
+    const dbData = mapServiceSwapToDB({ ...swap, status: 'aguardando_substituto' });
     const { data, error } = await supabase
       .from('service_swaps')
       .insert([dbData])
@@ -925,6 +925,40 @@ export const cancelServiceSwap = async (swapId: string): Promise<ServiceSwap | n
     return data ? mapServiceSwapFromDB(data) : null;
   } catch (err) {
     console.error("Erro ao cancelar troca de serviço:", err);
+    throw err;
+  }
+};
+
+export const acceptServiceSwap = async (swapId: string): Promise<ServiceSwap | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('service_swaps')
+      .update({ status: 'pendente' })
+      .eq('id', swapId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data ? mapServiceSwapFromDB(data) : null;
+  } catch (err) {
+    console.error("Erro ao aceitar troca de serviço:", err);
+    throw err;
+  }
+};
+
+export const rejectServiceSwap = async (swapId: string, reason: string): Promise<ServiceSwap | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('service_swaps')
+      .update({ status: 'recusado_substituto', observacao: reason })
+      .eq('id', swapId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data ? mapServiceSwapFromDB(data) : null;
+  } catch (err) {
+    console.error("Erro ao recusar troca de serviço:", err);
     throw err;
   }
 };

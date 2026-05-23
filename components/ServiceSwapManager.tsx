@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ServiceSwap, Operator } from '../types';
-import { getServiceSwaps, createServiceSwap, evaluateServiceSwap, getAllProfiles, cancelServiceSwap } from '../services/supabaseService';
+import { getServiceSwaps, createServiceSwap, evaluateServiceSwap, getAllProfiles, cancelServiceSwap, acceptServiceSwap, rejectServiceSwap } from '../services/supabaseService';
 import {
   Calendar,
   Clock,
@@ -33,6 +33,8 @@ type Funcao = typeof FUNCOES[number];
 
 const STATUS_LABELS: Record<string, string> = {
   todos: 'Todos',
+  aguardando_substituto: 'Aguardando Substituto',
+  recusado_substituto: 'Recusado pelo Substituto',
   pendente: 'Pendente',
   aprovado: 'Aprovado',
   reprovado: 'Reprovado',
@@ -51,11 +53,13 @@ const funcaoBadgeClass = (funcao: string) => {
 
 const statusBadgeClass = (status: string) => {
   switch (status) {
-    case 'pendente':  return 'bg-amber-50 text-amber-700 border border-amber-200';
-    case 'aprovado':  return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-    case 'reprovado': return 'bg-red-50 text-red-700 border border-red-200';
-    case 'cancelado': return 'bg-slate-100 text-slate-500 border border-slate-200';
-    default:          return 'bg-slate-50 text-slate-600';
+    case 'aguardando_substituto': return 'bg-sky-50 text-sky-700 border border-sky-200';
+    case 'recusado_substituto':   return 'bg-rose-50 text-rose-700 border border-rose-200';
+    case 'pendente':              return 'bg-amber-50 text-amber-700 border border-amber-200';
+    case 'aprovado':              return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+    case 'reprovado':             return 'bg-red-50 text-red-700 border border-red-200';
+    case 'cancelado':             return 'bg-slate-100 text-slate-500 border border-slate-200';
+    default:                      return 'bg-slate-50 text-slate-600';
   }
 };
 
@@ -75,8 +79,14 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
   }>({ isOpen: false, swap: null, action: 'aprovado', observation: '' });
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'todos' | 'pendente' | 'aprovado' | 'reprovado'>('todos');
+  const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [activeTab, setActiveTab] = useState<'todas' | 'minhas' | 'aprovar'>('todas');
+
+  const [rejectModal, setRejectModal] = useState<{
+    isOpen: boolean;
+    swapId: string | null;
+    reason: string;
+  }>({ isOpen: false, swapId: null, reason: '' });
 
   const [formData, setFormData] = useState({
     substitutoId: '',
@@ -178,6 +188,10 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
 
   const pendingCount = swaps.filter(s => s.status === 'pendente').length;
 
+  const mySubstitutionsPendingCount = useMemo(() => {
+    return swaps.filter(s => s.substitutoId === currentUser.id && s.status === 'aguardando_substituto').length;
+  }, [swaps, currentUser.id]);
+
   const filteredSwaps = useMemo(() => {
     return enrichedSwaps.filter(s => {
       if (activeTab === 'minhas' && s.escaladoId !== currentUser.id && s.substitutoId !== currentUser.id) return false;
@@ -212,11 +226,11 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
         data:          formData.data,
         horarioInicio: formData.horarioInicio,
         horarioFim:    formData.horarioFim,
-        status:        'pendente',
+        status:        'aguardando_substituto',
       } as Partial<ServiceSwap>);
 
       if (result) {
-        setNotification('Solicitação registrada com sucesso!', 'success');
+        setNotification('Solicitação enviada para aceite do substituto!', 'success');
         setIsModalOpen(false);
         setFormData({ substitutoId: '', funcao: 'Linha', data: '', horarioInicio: '08:00', horarioFim: '08:00' });
         setSubstituteSearch('');
@@ -269,6 +283,35 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
     }
   };
 
+  const handleAccept = async (swapId: string) => {
+    try {
+      const result = await acceptServiceSwap(swapId);
+      if (result) {
+        setNotification('Você aceitou a troca de serviço com sucesso!', 'success');
+        await loadData();
+      } else throw new Error('Erro ao aceitar a troca.');
+    } catch (err: any) {
+      setNotification(err.message || 'Erro ao aceitar a solicitação.', 'error');
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectModal.swapId || !rejectModal.reason.trim()) {
+      setNotification('Por favor, informe a justificativa da recusa.', 'error');
+      return;
+    }
+    try {
+      const result = await rejectServiceSwap(rejectModal.swapId, rejectModal.reason);
+      if (result) {
+        setNotification('Solicitação de troca recusada com sucesso.', 'success');
+        setRejectModal({ isOpen: false, swapId: null, reason: '' });
+        await loadData();
+      } else throw new Error('Erro ao recusar a troca.');
+    } catch (err: any) {
+      setNotification(err.message || 'Erro ao recusar a solicitação.', 'error');
+    }
+  };
+
   /* ─────────────── RENDER ─────────────── */
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 md:pb-0">
@@ -302,7 +345,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           <button
             key={id}
             onClick={() => { setActiveTab(id as any); setStatusFilter('todos'); }}
-            className={`group flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
+            className={`group relative flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
               activeTab === id
                 ? 'bg-slate-900 text-white shadow-lg scale-100'
                 : 'bg-slate-100 text-slate-500 hover:bg-slate-200 scale-95'
@@ -310,6 +353,11 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           >
             <Icon size={18} />
             <span className={activeTab === id ? 'inline' : 'hidden md:inline group-hover:inline'}>{label}</span>
+            {id === 'minhas' && mySubstitutionsPendingCount > 0 && (
+              <span className="ml-1.5 flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-amber-500 text-[9px] font-black text-white shadow shrink-0 animate-pulse">
+                {mySubstitutionsPendingCount}
+              </span>
+            )}
           </button>
         ))}
 
@@ -408,7 +456,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Escalado</th>
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Substituto</th>
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Avaliação</th>
-                  {(currentUser.isAdmin || filteredSwaps.some(s => s.escaladoId === currentUser.id && ['pendente', 'aprovado'].includes(s.status))) && (
+                  {(currentUser.isAdmin || filteredSwaps.some(s => s.escaladoId === currentUser.id || s.substitutoId === currentUser.id)) && (
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ações</th>
                   )}
                 </tr>
@@ -421,9 +469,10 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                     <tr key={swap.id} className="hover:bg-slate-50/50 transition-all group">
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${statusBadgeClass(swap.status)}`}>
-                          {swap.status === 'pendente'  && <Clock size={11} />}
+                          {(swap.status === 'pendente' || swap.status === 'aguardando_substituto') && <Clock size={11} />}
                           {swap.status === 'aprovado'  && <CheckCircle2 size={11} />}
-                          {swap.status === 'reprovado' && <XCircle size={11} />}
+                          {(swap.status === 'reprovado' || swap.status === 'recusado_substituto') && <XCircle size={11} />}
+                          {swap.status === 'cancelado' && <XCircle size={11} />}
                           {STATUS_LABELS[swap.status]}
                         </span>
                       </td>
@@ -451,7 +500,19 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        {swap.aprovadorName ? (
+                        {swap.status === 'recusado_substituto' ? (
+                          <div className="text-[10px] text-slate-500 font-bold space-y-0.5">
+                            <p className="flex items-center gap-1 text-red-600 font-black">
+                              <XCircle size={11} className="text-red-500" /> Recusado pelo Substituto
+                            </p>
+                            {swap.observacao && (
+                              <p className="flex items-start gap-1 italic text-slate-400">
+                                <MessageSquare size={10} className="shrink-0 mt-0.5" />
+                                {swap.observacao}
+                              </p>
+                            )}
+                          </div>
+                        ) : swap.aprovadorName ? (
                           <div className="text-[10px] text-slate-500 font-bold space-y-0.5">
                             <p className="flex items-center gap-1"><UserCheck size={11} className="text-slate-400" /> {swap.aprovadorName}</p>
                             {swap.observacao && (
@@ -465,9 +526,27 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                           <span className="text-[10px] text-slate-300 font-bold italic">—</span>
                         )}
                       </td>
-                      {(currentUser.isAdmin || filteredSwaps.some(s => s.escaladoId === currentUser.id && ['pendente', 'aprovado'].includes(s.status))) && (
+                      {(currentUser.isAdmin ||
+                        swap.escaladoId === currentUser.id ||
+                        (swap.status === 'aguardando_substituto' && isSubstituto)) && (
                         <td className="px-6 py-4">
                           <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                            {swap.status === 'aguardando_substituto' && isSubstituto && (
+                              <>
+                                <button
+                                  onClick={() => handleAccept(swap.id)}
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
+                                >
+                                  <Check size={12} /> Aceitar
+                                </button>
+                                <button
+                                  onClick={() => setRejectModal({ isOpen: true, swapId: swap.id, reason: '' })}
+                                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
+                                >
+                                  <X size={12} /> Recusar
+                                </button>
+                              </>
+                            )}
                             {swap.status === 'pendente' && currentUser.isAdmin && (
                               <>
                                 <button
@@ -484,7 +563,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                                 </button>
                               </>
                             )}
-                            {((['pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin)) ||
+                            {((['aguardando_substituto', 'pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin)) ||
                               (swap.status === 'reprovado' && currentUser.isAdmin)) && (
                               <button
                                 onClick={() => setCancelSwapId(swap.id)}
@@ -512,9 +591,10 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                 <div key={swap.id} className="p-5 space-y-3">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${statusBadgeClass(swap.status)}`}>
-                      {swap.status === 'pendente'  && <Clock size={11} />}
+                      {(swap.status === 'pendente' || swap.status === 'aguardando_substituto') && <Clock size={11} />}
                       {swap.status === 'aprovado'  && <CheckCircle2 size={11} />}
-                      {swap.status === 'reprovado' && <XCircle size={11} />}
+                      {(swap.status === 'reprovado' || swap.status === 'recusado_substituto') && <XCircle size={11} />}
+                      {swap.status === 'cancelado' && <XCircle size={11} />}
                       {STATUS_LABELS[swap.status]}
                     </span>
                     <span className={`inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${funcaoBadgeClass(swap.funcao)}`}>
@@ -536,8 +616,13 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                     </div>
                   </div>
 
-                  {(swap.aprovadorName || swap.observacao) && (
+                  {(swap.aprovadorName || swap.observacao || swap.status === 'recusado_substituto') && (
                     <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1">
+                      {swap.status === 'recusado_substituto' && (
+                        <p className="text-[10px] text-red-600 font-black flex items-center gap-1">
+                          <XCircle size={11} className="text-red-500" /> Recusado pelo Substituto
+                        </p>
+                      )}
                       {swap.aprovadorName && (
                         <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
                           <UserCheck size={11} className="text-slate-400" /> {swap.aprovadorName}
@@ -551,9 +636,27 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                     </div>
                   )}
 
-                  {((['pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin)) ||
+                  {((swap.status === 'aguardando_substituto' && isSubstituto) ||
+                    (swap.status === 'pendente' && currentUser.isAdmin) ||
+                    (['aguardando_substituto', 'pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin)) ||
                     (swap.status === 'reprovado' && currentUser.isAdmin)) && (
                     <div className="flex flex-col gap-2 pt-1">
+                      {swap.status === 'aguardando_substituto' && isSubstituto && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleAccept(swap.id)}
+                            className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                          >
+                            <Check size={13} /> Aceitar
+                          </button>
+                          <button
+                            onClick={() => setRejectModal({ isOpen: true, swapId: swap.id, reason: '' })}
+                            className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                          >
+                            <X size={13} /> Recusar
+                          </button>
+                        </div>
+                      )}
                       {swap.status === 'pendente' && currentUser.isAdmin && (
                         <div className="flex gap-2">
                           <button
@@ -570,7 +673,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                           </button>
                         </div>
                       )}
-                      {((['pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin)) ||
+                      {((['aguardando_substituto', 'pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin)) ||
                         (swap.status === 'reprovado' && currentUser.isAdmin)) && (
                         <button
                           onClick={() => setCancelSwapId(swap.id)}
@@ -870,6 +973,39 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
               <div className="flex gap-3 pt-4">
                 <button onClick={() => setCancelSwapId(null)} className="flex-1 py-4 text-slate-500 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-2xl transition-all">Voltar</button>
                 <button onClick={confirmCancel} className="flex-1 py-4 bg-red-600 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl shadow-xl shadow-red-200 hover:bg-red-700 transition-all active:scale-95">Confirmar Cancelamento</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════
+          MODAL — Recusa do Substituto (Justificativa)
+      ════════════════════════════════════════ */}
+      {rejectModal.isOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 z-[4000] flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95">
+            <div className="p-8 text-center space-y-6">
+              <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <XCircle size={40} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Recusar Solicitação?</h3>
+                <p className="text-slate-500 text-sm mt-2 font-medium">Por favor, informe a justificativa ou motivo para recusar esta troca de serviço.</p>
+              </div>
+              <div className="space-y-1.5 text-left">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Motivo da Recusa *</label>
+                <textarea
+                  value={rejectModal.reason}
+                  onChange={e => setRejectModal({ ...rejectModal, reason: e.target.value })}
+                  placeholder="Escreva o motivo da recusa..."
+                  rows={3}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-medium text-sm resize-none"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button onClick={() => setRejectModal({ isOpen: false, swapId: null, reason: '' })} className="flex-1 py-4 text-slate-500 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-2xl transition-all">Voltar</button>
+                <button onClick={handleReject} className="flex-1 py-4 bg-red-600 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl shadow-xl shadow-red-200 hover:bg-red-700 transition-all active:scale-95">Confirmar Recusa</button>
               </div>
             </div>
           </div>
