@@ -340,7 +340,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 md:pb-0">
 
       {/* ── HEADER ── */}
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
         <div className="flex items-center gap-4">
           <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-600/30">
             <ArrowLeftRight size={24} className="text-white" />
@@ -371,7 +371,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
       </header>
 
       {/* ── MAIN TABS ── */}
-      <div className="flex px-2 md:px-0 gap-2 border-b-2 border-slate-200 pb-4 overflow-x-auto no-scrollbar scroll-smooth">
+      <div className="flex px-2 md:px-0 gap-2 border-b-2 border-slate-200 pb-4 overflow-x-auto no-scrollbar scroll-smooth print:hidden">
         {[
           { id: 'todas',  label: 'Todas as Trocas',    icon: FileText },
           { id: 'minhas', label: 'Minhas Solicitações', icon: User },
@@ -416,7 +416,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
       </div>
 
       {/* ── FILTERS CARD ── */}
-      <div className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 items-start md:items-center">
+      <div className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 items-start md:items-center print:hidden">
         {/* Search */}
         <div className="relative flex-1 w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -459,12 +459,12 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
 
       {/* ── LIST ── */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-slate-100 shadow-sm gap-4">
+        <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-slate-100 shadow-sm gap-4 print:hidden">
           <Loader2 className="animate-spin text-blue-600" size={36} />
           <p className="text-slate-400 text-xs font-black uppercase tracking-wider">Carregando registros...</p>
         </div>
       ) : filteredSwaps.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm text-center px-6">
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm text-center px-6 print:hidden">
           <div className="bg-slate-100 p-5 rounded-full text-slate-300 mb-4">
             <ArrowLeftRight size={36} />
           </div>
@@ -478,7 +478,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden print:hidden">
           {/* Desktop Table */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-left border-collapse">

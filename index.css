@@ -49,8 +49,6 @@ body {
   #report-document {
     width: 100% !important;
     max-width: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
   }
 }
 

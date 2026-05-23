@@ -205,7 +205,7 @@ const ReportDocument: React.FC<DocProps> = ({
   return (
     <div
       id="report-document"
-      className="bg-white shadow-2xl rounded-2xl overflow-hidden print:shadow-none print:rounded-none"
+      className="bg-white shadow-2xl rounded-2xl overflow-hidden"
       style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
     >
       {/* ── HEADER ── */}
