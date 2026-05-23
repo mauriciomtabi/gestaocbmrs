@@ -88,6 +88,11 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
     reason: string;
   }>({ isOpen: false, swapId: null, reason: '' });
 
+  const [acceptModal, setAcceptModal] = useState<{
+    isOpen: boolean;
+    swap: (ServiceSwap & { escaladoName?: string; substitutoName?: string }) | null;
+  }>({ isOpen: false, swap: null });
+
   const [formData, setFormData] = useState({
     substitutoId: '',
     funcao: 'Linha' as Funcao,
@@ -283,11 +288,17 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
     }
   };
 
-  const handleAccept = async (swapId: string) => {
+  const handleAccept = (swap: (ServiceSwap & { escaladoName?: string; substitutoName?: string })) => {
+    setAcceptModal({ isOpen: true, swap });
+  };
+
+  const confirmAccept = async () => {
+    if (!acceptModal.swap) return;
     try {
-      const result = await acceptServiceSwap(swapId);
+      const result = await acceptServiceSwap(acceptModal.swap.id);
       if (result) {
         setNotification('Você aceitou a troca de serviço com sucesso!', 'success');
+        setAcceptModal({ isOpen: false, swap: null });
         await loadData();
       } else throw new Error('Erro ao aceitar a troca.');
     } catch (err: any) {
@@ -534,7 +545,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                             {swap.status === 'aguardando_substituto' && isSubstituto && (
                               <>
                                 <button
-                                  onClick={() => handleAccept(swap.id)}
+                                  onClick={() => handleAccept(swap)}
                                   className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
                                 >
                                   <Check size={12} /> Aceitar
@@ -644,7 +655,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                       {swap.status === 'aguardando_substituto' && isSubstituto && (
                         <div className="flex gap-2">
                           <button
-                            onClick={() => handleAccept(swap.id)}
+                            onClick={() => handleAccept(swap)}
                             className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5"
                           >
                             <Check size={13} /> Aceitar
@@ -1006,6 +1017,46 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
               <div className="flex gap-3 pt-4">
                 <button onClick={() => setRejectModal({ isOpen: false, swapId: null, reason: '' })} className="flex-1 py-4 text-slate-500 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-2xl transition-all">Voltar</button>
                 <button onClick={handleReject} className="flex-1 py-4 bg-red-600 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl shadow-xl shadow-red-200 hover:bg-red-700 transition-all active:scale-95">Confirmar Recusa</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════
+          MODAL — Confirmação de Aceite pelo Substituto
+      ════════════════════════════════════════ */}
+      {acceptModal.isOpen && acceptModal.swap && (
+        <div className="fixed inset-0 bg-slate-950/80 z-[4000] flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95">
+            <div className="p-8 text-center space-y-6">
+              <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircle2 size={40} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Aceitar Troca de Serviço?</h3>
+                <p className="text-slate-500 text-sm mt-2 font-medium">Você está assumindo o compromisso de tirar o serviço indicado na escala abaixo no lugar do militar solicitante.</p>
+              </div>
+              
+              {/* Detalhes da Troca */}
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2.5 text-left">
+                {[
+                  { label: 'Escalado',   value: acceptModal.swap.escaladoName },
+                  { label: 'Substituto', value: acceptModal.swap.substitutoName },
+                  { label: 'Função',     value: acceptModal.swap.funcao },
+                  { label: 'Data',       value: new Date(acceptModal.swap.data + 'T00:00:00').toLocaleDateString('pt-BR') },
+                  { label: 'Horário',    value: `${acceptModal.swap.horarioInicio}h → ${acceptModal.swap.horarioFim}h` },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex items-center justify-between gap-4">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{label}</span>
+                    <span className="text-xs font-bold text-slate-800 text-right">{value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setAcceptModal({ isOpen: false, swap: null })} className="flex-1 py-4 text-slate-500 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-2xl transition-all">Voltar</button>
+                <button onClick={confirmAccept} className="flex-1 py-4 bg-emerald-600 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl shadow-xl shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95">Confirmar Aceite</button>
               </div>
             </div>
           </div>
