@@ -18,6 +18,11 @@ body {
 }
 
 @media print {
+  @page {
+    size: landscape;
+    margin: 8mm 10mm;
+  }
+
   body {
     background-color: white !important;
     color: #0f172a !important;
@@ -29,9 +34,23 @@ body {
     print-color-adjust: exact !important;
   }
 
+  /* Repeat table headers on every page */
+  thead {
+    display: table-header-group !important;
+  }
+
   /* Optimize page breaks for table rows */
   tr {
-    page-break-inside: avoid;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Ensure container scales to full page width */
+  #report-document {
+    width: 100% !important;
+    max-width: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
   }
 }
 

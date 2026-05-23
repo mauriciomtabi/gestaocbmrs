@@ -288,7 +288,7 @@ const ReportDocument: React.FC<DocProps> = ({
               <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                 {[
                   'Status', 'Função', 'Data / Horário', 'Escalado',
-                  'Substituto', 'Etapa Substituto', 'Aprovação Admin',
+                  'Substituto', 'Etapa Substituto', 'Aprovador',
                 ].map(h => (
                   <th key={h} style={{
                     padding: '10px 14px', textAlign: 'left',
@@ -376,15 +376,15 @@ const ReportDocument: React.FC<DocProps> = ({
                     )}
                   </td>
 
-                  {/* Aprovação Admin */}
+                  {/* Aprovador */}
                   <td style={{ padding: '10px 14px', maxWidth: 180 }}>
                     {swap.aprovadorName ? (
                       <div>
                         <span style={{
                           display: 'block', fontWeight: 700, fontSize: 10,
-                          color: swap.status === 'aprovado' ? '#16a34a' : swap.status === 'reprovado' ? '#dc2626' : '#64748b',
+                          color: swap.status === 'aprovado' ? '#16a34a' : (swap.status === 'reprovado' || swap.status === 'cancelado') ? '#dc2626' : '#64748b',
                         }}>
-                          {swap.status === 'aprovado' ? '✓ ' : swap.status === 'reprovado' ? '✗ ' : ''}{swap.aprovadorName}
+                          {swap.status === 'aprovado' ? '✓ ' : (swap.status === 'reprovado' || swap.status === 'cancelado') ? '✗ ' : ''}{swap.aprovadorName}
                         </span>
                         {swap.observacao && !['recusado_substituto'].includes(swap.status) && (
                           <span style={{ color: '#64748b', fontSize: 9, fontStyle: 'italic', display: 'block', marginTop: 2 }}>

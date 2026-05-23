@@ -106,6 +106,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
   const [substituteSearch, setSubstituteSearch] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [cancelSwapId, setCancelSwapId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   const loadData = async () => {
@@ -277,8 +278,16 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
 
   const confirmCancel = async () => {
     if (!cancelSwapId) return;
+    if (currentUser.isAdmin && !cancelReason.trim()) {
+      setNotification('Por favor, informe o motivo do cancelamento.', 'error');
+      return;
+    }
     try {
-      const result = await cancelServiceSwap(cancelSwapId);
+      const result = await cancelServiceSwap(
+        cancelSwapId,
+        currentUser.isAdmin ? cancelReason.trim() : undefined,
+        currentUser.isAdmin ? currentUser.id : undefined
+      );
       if (result) {
         setNotification('Solicitação de troca cancelada com sucesso!', 'success');
         await loadData();
@@ -287,6 +296,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
       setNotification(err.message || 'Erro ao cancelar a solicitação.', 'error');
     } finally {
       setCancelSwapId(null);
+      setCancelReason('');
     }
   };
 
@@ -538,7 +548,19 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                           </div>
                         ) : swap.aprovadorName ? (
                           <div className="text-[10px] text-slate-500 font-bold space-y-0.5">
-                            <p className="flex items-center gap-1"><UserCheck size={11} className="text-slate-400" /> {swap.aprovadorName}</p>
+                            <p className="flex items-center gap-1">
+                              {swap.status === 'cancelado' ? (
+                                <>
+                                  <XCircle size={11} className="text-rose-500" />
+                                  <span className="text-rose-600">Cancelado por: {swap.aprovadorName}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <UserCheck size={11} className="text-slate-400" />
+                                  <span>{swap.aprovadorName}</span>
+                                </>
+                              )}
+                            </p>
                             {swap.observacao && (
                               <p className="flex items-start gap-1 italic text-slate-400">
                                 <MessageSquare size={10} className="shrink-0 mt-0.5" />
@@ -649,7 +671,17 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                       )}
                       {swap.aprovadorName && (
                         <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
-                          <UserCheck size={11} className="text-slate-400" /> {swap.aprovadorName}
+                          {swap.status === 'cancelado' ? (
+                            <>
+                              <XCircle size={11} className="text-rose-500" />
+                              <span className="text-rose-600">Cancelado por: {swap.aprovadorName}</span>
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck size={11} className="text-slate-400" />
+                              <span>{swap.aprovadorName}</span>
+                            </>
+                          )}
                         </p>
                       )}
                       {swap.observacao && (
@@ -992,10 +1024,28 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
               </div>
               <div>
                 <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Cancelar Registro?</h3>
-                <p className="text-slate-500 text-sm mt-2 font-medium">Esta ação é irreversível e alterará permanentemente o status da troca de serviço para cancelado.</p>
+                <p className="text-slate-500 text-sm mt-2 font-medium">
+                  {currentUser.isAdmin
+                    ? 'Por favor, informe a justificativa ou motivo para cancelar esta troca de serviço.'
+                    : 'Esta ação é irreversível e alterará permanentemente o status da troca de serviço para cancelado.'}
+                </p>
               </div>
+
+              {currentUser.isAdmin && (
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Motivo do Cancelamento *</label>
+                  <textarea
+                    value={cancelReason}
+                    onChange={e => setCancelReason(e.target.value)}
+                    placeholder="Escreva o motivo do cancelamento..."
+                    rows={3}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-medium text-sm resize-none"
+                  />
+                </div>
+              )}
+
               <div className="flex gap-3 pt-4">
-                <button onClick={() => setCancelSwapId(null)} className="flex-1 py-4 text-slate-500 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-2xl transition-all">Voltar</button>
+                <button onClick={() => { setCancelSwapId(null); setCancelReason(''); }} className="flex-1 py-4 text-slate-500 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-2xl transition-all">Voltar</button>
                 <button onClick={confirmCancel} className="flex-1 py-4 bg-red-600 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl shadow-xl shadow-red-200 hover:bg-red-700 transition-all active:scale-95">Confirmar Cancelamento</button>
               </div>
             </div>

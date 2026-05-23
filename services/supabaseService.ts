@@ -910,13 +910,24 @@ export const evaluateServiceSwap = async (
   }
 };
 
-export const cancelServiceSwap = async (swapId: string): Promise<ServiceSwap | null> => {
+export const cancelServiceSwap = async (
+  swapId: string,
+  reason?: string,
+  approverId?: string
+): Promise<ServiceSwap | null> => {
   try {
+    const updateData: any = { status: 'cancelado' };
+    if (reason) {
+      updateData.observacao = reason;
+    }
+    if (approverId) {
+      updateData.aprovador_id = approverId;
+      updateData.data_aprovacao = new Date().toISOString();
+    }
+
     const { data, error } = await supabase
       .from('service_swaps')
-      .update({
-        status: 'cancelado'
-      })
+      .update(updateData)
       .eq('id', swapId)
       .select()
       .single();
@@ -928,6 +939,7 @@ export const cancelServiceSwap = async (swapId: string): Promise<ServiceSwap | n
     throw err;
   }
 };
+
 
 export const acceptServiceSwap = async (swapId: string): Promise<ServiceSwap | null> => {
   try {
