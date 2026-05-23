@@ -81,7 +81,20 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
   }>({ isOpen: false, swap: null, action: 'aprovado', observation: '' });
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('todos');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const statusFilterDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (statusFilterDropdownRef.current && !statusFilterDropdownRef.current.contains(e.target as Node)) {
+        setIsStatusDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'todas' | 'minhas' | 'aprovar'>('todas');
 
   const [rejectModal, setRejectModal] = useState<{
@@ -204,7 +217,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
     return enrichedSwaps.filter(s => {
       if (activeTab === 'minhas' && s.escaladoId !== currentUser.id && s.substitutoId !== currentUser.id) return false;
       if (activeTab === 'aprovar' && s.status !== 'pendente') return false;
-      if (statusFilter !== 'todos' && s.status !== statusFilter) return false;
+      if (statusFilter.length > 0 && !statusFilter.includes(s.status)) return false;
       if (searchTerm.trim() !== '') {
         const q = searchTerm.toLowerCase();
         return (
@@ -378,7 +391,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
         ].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
-            onClick={() => { setActiveTab(id as any); setStatusFilter('todos'); }}
+            onClick={() => { setActiveTab(id as any); setStatusFilter([]); }}
             className={`group relative flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
               activeTab === id
                 ? 'bg-slate-900 text-white shadow-lg scale-100'
@@ -397,7 +410,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
 
         {currentUser.isAdmin && (
           <button
-            onClick={() => { setActiveTab('aprovar'); setStatusFilter('pendente'); }}
+            onClick={() => { setActiveTab('aprovar'); setStatusFilter(['pendente']); }}
             className={`group relative flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
               activeTab === 'aprovar'
                 ? 'bg-amber-600 text-white shadow-lg shadow-amber-200 scale-100'
@@ -429,27 +442,80 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           />
         </div>
 
-        {/* Status Filter (hidden on "aprovar" tab) */}
+        {/* Status Multiselect (hidden on "aprovar" tab) */}
         {activeTab !== 'aprovar' && (
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-2xl border border-slate-100 w-full md:w-auto">
-            <Filter size={14} className="text-slate-400 shrink-0" />
-            <span className="hidden sm:inline text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value as any)}
-              className="bg-transparent border-0 text-xs font-bold text-slate-600 outline-none cursor-pointer"
+          <div className="relative w-full md:w-auto" ref={statusFilterDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+              className="flex items-center justify-between md:justify-start gap-2 bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors px-4 py-3 rounded-2xl w-full md:w-auto text-xs font-bold text-slate-700"
             >
-              {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                <option key={val} value={val}>{label}</option>
-              ))}
-            </select>
+              <div className="flex items-center gap-2">
+                <Filter size={14} className="text-slate-400 shrink-0" />
+                <span className="hidden sm:inline text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Status:</span>
+                <span>
+                  {statusFilter.length === 0
+                    ? 'Todos'
+                    : statusFilter.length === 1
+                    ? STATUS_LABELS[statusFilter[0]]
+                    : `${statusFilter.length} Selecionados`}
+                </span>
+              </div>
+              <ChevronRight
+                size={14}
+                className={`text-slate-400 transition-transform ${isStatusDropdownOpen ? 'rotate-90' : ''} ml-1`}
+              />
+            </button>
+
+            {isStatusDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 p-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="flex items-center justify-between border-b border-slate-50 pb-2 mb-1">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filtrar Status</span>
+                  {statusFilter.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter([])}
+                      className="text-[9px] font-black text-blue-600 hover:text-blue-800 uppercase tracking-wider"
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
+                
+                <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+                  {Object.entries(STATUS_LABELS).filter(([val]) => val !== 'todos').map(([val, label]) => {
+                    const isChecked = statusFilter.includes(val);
+                    return (
+                      <label
+                        key={val}
+                        className="flex items-center gap-2.5 px-2.5 py-2 hover:bg-slate-50 rounded-xl cursor-pointer transition-colors text-xs font-bold text-slate-700"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            if (isChecked) {
+                              setStatusFilter(statusFilter.filter(v => v !== val));
+                            } else {
+                              setStatusFilter([...statusFilter, val]);
+                            }
+                          }}
+                          className="w-3.5 h-3.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
+                        />
+                        <span>{label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Clear filters */}
-        {(searchTerm !== '' || statusFilter !== 'todos') && (
+        {(searchTerm !== '' || statusFilter.length > 0) && (
           <button
-            onClick={() => { setSearchTerm(''); setStatusFilter('todos'); }}
+            onClick={() => { setSearchTerm(''); setStatusFilter([]); }}
             className="text-[10px] font-black text-blue-600 hover:text-blue-800 uppercase px-2 shrink-0"
           >
             Limpar
