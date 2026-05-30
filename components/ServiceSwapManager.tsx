@@ -347,7 +347,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           data:          formData.dataPagamento,
           horarioInicio: formData.horarioInicioPagamento,
           horarioFim:    formData.horarioFimPagamento,
-          status:        'aguardando_substituto',
+          status:        'pendente', // Aceita automaticamente, aguardando aprovação administrativa!
         } as Partial<ServiceSwap>);
       } else {
         await createServiceSwap({
@@ -357,7 +357,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           data:          null as any,
           horarioInicio: null as any,
           horarioFim:    null as any,
-          status:        'aguardando_substituto',
+          status:        'pendente', // Aceita automaticamente, aguardando aprovação administrativa!
         } as any);
       }
 
@@ -398,6 +398,23 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
         evaluationModal.observation,
       );
       if (result) {
+        // Encontrar a troca de devolução casada (B -> A) que está pendente de aprovação
+        const originalSwap = evaluationModal.swap;
+        const linkedSwap = swaps.find(s => 
+          s.escaladoId === originalSwap.substitutoId &&
+          s.substitutoId === originalSwap.escaladoId &&
+          s.funcao === originalSwap.funcao &&
+          s.status === 'pendente'
+        );
+        if (linkedSwap) {
+          await evaluateServiceSwap(
+            linkedSwap.id,
+            evaluationModal.action,
+            currentUser.id,
+            `Avaliado de forma casada com a troca principal: ${evaluationModal.observation || ''}`
+          );
+        }
+
         setNotification(
           `Troca ${evaluationModal.action === 'aprovado' ? 'aprovada' : 'reprovada'} com sucesso!`,
           'success',
@@ -419,12 +436,29 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
       return;
     }
     try {
+      const originalSwap = swaps.find(s => s.id === cancelSwapId);
       const result = await cancelServiceSwap(
         cancelSwapId,
         currentUser.isAdmin ? cancelReason.trim() : undefined,
         currentUser.isAdmin ? currentUser.id : undefined
       );
       if (result) {
+        if (originalSwap) {
+          // Encontrar a troca de devolução casada (B -> A) e cancelar também!
+          const linkedSwap = swaps.find(s => 
+            s.escaladoId === originalSwap.substitutoId &&
+            s.substitutoId === originalSwap.escaladoId &&
+            s.funcao === originalSwap.funcao &&
+            ['aguardando_substituto', 'pendente', 'aprovado'].includes(s.status)
+          );
+          if (linkedSwap) {
+            await cancelServiceSwap(
+              linkedSwap.id,
+              currentUser.isAdmin ? `Cancelada devido ao cancelamento da troca principal: ${cancelReason.trim()}` : 'Cancelada devido ao cancelamento da troca principal',
+              currentUser.isAdmin ? currentUser.id : undefined
+            );
+          }
+        }
         setNotification('Solicitação de troca cancelada com sucesso!', 'success');
         await loadData();
       } else throw new Error('Erro ao cancelar a troca.');
@@ -460,8 +494,21 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
       return;
     }
     try {
+      const originalSwap = swaps.find(s => s.id === rejectModal.swapId);
       const result = await rejectServiceSwap(rejectModal.swapId, rejectModal.reason);
       if (result) {
+        if (originalSwap) {
+          // Encontrar a troca de devolução casada (B -> A) e recusar também!
+          const linkedSwap = swaps.find(s => 
+            s.escaladoId === originalSwap.substitutoId &&
+            s.substitutoId === originalSwap.escaladoId &&
+            s.funcao === originalSwap.funcao &&
+            s.status === 'pendente'
+          );
+          if (linkedSwap) {
+            await rejectServiceSwap(linkedSwap.id, `Recusada devido à recusa da troca principal: ${rejectModal.reason}`);
+          }
+        }
         setNotification('Solicitação de troca recusada com sucesso.', 'success');
         setRejectModal({ isOpen: false, swapId: null, reason: '' });
         await loadData();

@@ -875,7 +875,7 @@ export const getServiceSwaps = async (): Promise<ServiceSwap[]> => {
 
 export const createServiceSwap = async (swap: Partial<ServiceSwap>): Promise<ServiceSwap | null> => {
   try {
-    const dbData = mapServiceSwapToDB({ ...swap, status: 'aguardando_substituto' });
+    const dbData = mapServiceSwapToDB({ ...swap, status: swap.status || 'aguardando_substituto' });
     const { data, error } = await supabase
       .from('service_swaps')
       .insert([dbData])
@@ -1033,8 +1033,7 @@ export const updateServiceSwapDetails = async (
       .update({
         data: data,
         horario_inicio: horarioInicio,
-        horario_fim: horarioFim,
-        status: 'aguardando_substituto'
+        horario_fim: horarioFim
       })
       .eq('id', swapId)
       .select()
