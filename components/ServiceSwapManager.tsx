@@ -1027,204 +1027,184 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           </p>
         </div>
       ) : (
-        <div className="space-y-4 print:hidden">
-          {filteredUnifiedSwaps.map(u => {
-            const isIdaEscalado = u.ida.escaladoId === currentUser.id;
-            const isIdaSubstituto = u.ida.substitutoId === currentUser.id;
-            const isVoltaEscalado = u.volta ? u.volta.escaladoId === currentUser.id : false;
-            const isVoltaSubstituto = u.volta ? u.volta.substitutoId === currentUser.id : false;
-            const isUserInvolved = isIdaEscalado || isIdaSubstituto || isVoltaEscalado || isVoltaSubstituto;
-            
-            return (
-              <div 
-                key={u.id}
-                className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300"
-              >
-                {/* Card Header */}
-                <div className="bg-slate-50/70 px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${statusBadgeClass(u.status)}`}>
-                      {(u.status === 'pendente' || u.status === 'aguardando_substituto') && <Clock size={11} />}
-                      {u.status === 'aprovado'  && <CheckCircle2 size={11} />}
-                      {(u.status === 'reprovado' || u.status === 'recusado_substituto') && <XCircle size={11} />}
-                      {u.status === 'cancelado' && <XCircle size={11} />}
-                      {STATUS_LABELS[u.status]}
-                    </span>
-                    <span className={`inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${funcaoBadgeClass(u.funcao)}`}>
-                      {u.funcao}
-                    </span>
-                    {u.volta && u.volta.data === '1970-01-01' && u.status !== 'reprovado' && u.status !== 'cancelado' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-md text-[8px] font-black uppercase tracking-wider animate-pulse">
-                        ⚠️ Pagamento Pendente
-                      </span>
-                    )}
-                  </div>
+        <div className="print:hidden">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-900 text-white">
+                    <th className="px-4 py-3.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap">Escalado</th>
+                    <th className="px-4 py-3.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap">Substituto</th>
+                    <th className="px-4 py-3.5 text-[9px] font-black uppercase tracking-widest text-center whitespace-nowrap">Função</th>
+                    <th className="px-4 py-3.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap">Data</th>
+                    <th className="px-4 py-3.5 text-[9px] font-black uppercase tracking-widest whitespace-nowrap">Horário</th>
+                    <th className="px-4 py-3.5 text-[9px] font-black uppercase tracking-widest text-center whitespace-nowrap">Obs.</th>
+                    <th className="px-4 py-3.5 text-[9px] font-black uppercase tracking-widest text-center whitespace-nowrap">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredUnifiedSwaps.map(u => {
+                    const isIdaEscalado    = u.ida.escaladoId  === currentUser.id;
+                    const isIdaSubstituto  = u.ida.substitutoId === currentUser.id;
+                    const isVoltaEscalado  = u.volta ? u.volta.escaladoId  === currentUser.id : false;
+                    const isVoltaSubstituto= u.volta ? u.volta.substitutoId === currentUser.id : false;
+                    const isUserInvolved   = isIdaEscalado || isIdaSubstituto || isVoltaEscalado || isVoltaSubstituto;
 
-                  {/* Admin Evaluation Details */}
-                  {u.ida.dataAprovacao && (
-                    <div className="text-[10px] text-slate-400 font-bold max-w-xs truncate">
-                      Aprovador: <span className="text-slate-600 font-extrabold">{u.ida.aprovadorName || 'Administrador'}</span>
-                      {u.ida.observacao && <span className="italic block mt-0.5">"{u.ida.observacao}"</span>}
-                    </div>
-                  )}
+                    const isAprovado  = u.status === 'aprovado';
+                    const isAguardando= u.status === 'aguardando_substituto';
+                    const isPendente  = u.status === 'pendente';
+                    const isRecusado  = u.status === 'recusado_substituto';
+                    const isReprovado = u.status === 'reprovado';
+                    const isCancelado = u.status === 'cancelado';
+                    const dimRow      = isCancelado || isReprovado;
 
-                  {/* Substitute Rejection Details */}
-                  {u.status === 'recusado_substituto' && u.ida.observacao && (
-                    <div className="text-[10px] text-slate-400 font-bold max-w-xs truncate">
-                      Recusado por: <span className="text-slate-600 font-extrabold">{u.ida.substitutoName || 'Substituto'}</span>
-                      <span className="italic block mt-0.5">"{u.ida.observacao}"</span>
-                    </div>
-                  )}
+                    const shortStatus = isAprovado   ? 'OK'
+                                      : isPendente   ? 'Pend.'
+                                      : isAguardando ? 'Ag. Sub.'
+                                      : isRecusado   ? 'Recusado'
+                                      : isReprovado  ? 'Repr.'
+                                      : 'Canc.';
 
-                  {/* Card Actions (Aprovação / Cancelamento) */}
-                  <div className="flex items-center gap-2">
-                    {u.status === 'aguardando_substituto' && u.ida.substitutoId === currentUser.id && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleAccept(u.ida)}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1 shadow-sm shadow-emerald-500/10"
-                        >
-                          <Check size={12} /> Aceitar Troca
-                        </button>
-                        <button
-                          onClick={() => setRejectModal({ isOpen: true, swapId: u.ida.id, reason: '' })}
-                          className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1 shadow-sm shadow-red-500/10"
-                        >
-                          <X size={12} /> Recusar Troca
-                        </button>
-                      </div>
-                    )}
+                    const obs = u.status === 'recusado_substituto' && u.ida.observacao
+                      ? `Motivo: ${u.ida.observacao}`
+                      : u.ida.dataAprovacao && u.ida.aprovadorName
+                      ? `Autor.: ${u.ida.aprovadorName}`
+                      : '';
 
-                    {u.status === 'pendente' && currentUser.isAdmin && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setEvaluationModal({ isOpen: true, swap: u.ida, action: 'aprovado', observation: '' })}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1 shadow-sm shadow-emerald-500/10"
-                        >
-                          <Check size={12} /> Aprovar Solicitação
-                        </button>
-                        <button
-                          onClick={() => setEvaluationModal({ isOpen: true, swap: u.ida, action: 'reprovado', observation: '' })}
-                          className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1 shadow-sm shadow-red-500/10"
-                        >
-                          <X size={12} /> Reprovar Solicitação
-                        </button>
-                      </div>
-                    )}
-                    
-                    {u.status !== 'cancelado' && (currentUser.isAdmin || (isUserInvolved && ['aguardando_substituto', 'pendente'].includes(u.status))) && (
-                      <button
-                        onClick={() => setCancelSwapId(u.ida.id)}
-                        className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
-                      >
-                        <XCircle size={12} /> Cancelar Solicitação
-                      </button>
-                    )}
-                  </div>
-                </div>
+                    return (
+                      <React.Fragment key={u.id}>
+                        {/* ── IDA ROW ─────────────────────────────────────── */}
+                        <tr className={`border-l-4 border-l-blue-500 hover:bg-blue-50/30 transition-colors ${dimRow ? 'opacity-50' : ''}`}>
+                          <td className="px-4 py-2.5 whitespace-nowrap">
+                            <span className="text-[8px] font-black text-blue-500 uppercase block leading-none mb-0.5">📤 Escalado</span>
+                            <span className="text-xs font-bold text-slate-800">{u.ida.escaladoName}</span>
+                          </td>
+                          <td className="px-4 py-2.5 whitespace-nowrap">
+                            <span className="text-[8px] font-black text-indigo-500 uppercase block leading-none mb-0.5">Substituto</span>
+                            <span className="text-xs font-bold text-slate-800">{u.ida.substitutoName}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-center">
+                            <span className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${funcaoBadgeClass(u.funcao)}`}>{u.funcao}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-xs font-bold text-slate-700 whitespace-nowrap">
+                            {u.ida.data && u.ida.data !== '1970-01-01'
+                              ? new Date(u.ida.data + 'T00:00:00').toLocaleDateString('pt-BR')
+                              : '—'}
+                          </td>
+                          <td className="px-4 py-2.5 text-xs font-bold text-slate-600 whitespace-nowrap">
+                            {u.ida.horarioInicio}h × {u.ida.horarioFim}h
+                          </td>
+                          <td className="px-4 py-2.5 text-center max-w-[160px]">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${statusBadgeClass(u.status)}`}>
+                                {isAprovado   && <CheckCircle2 size={9} />}
+                                {(isRecusado || isReprovado || isCancelado) && <XCircle size={9} />}
+                                {(isAguardando || isPendente) && <Clock size={9} />}
+                                {shortStatus}
+                              </span>
+                              {obs && (
+                                <span className="text-[8px] text-slate-400 font-medium italic truncate max-w-[140px]" title={obs}>{obs}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            <div className="flex items-center justify-center gap-1 flex-wrap">
+                              {u.status === 'aguardando_substituto' && u.ida.substitutoId === currentUser.id && (
+                                <>
+                                  <button onClick={() => handleAccept(u.ida)} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm">
+                                    <Check size={10} /> Aceitar
+                                  </button>
+                                  <button onClick={() => setRejectModal({ isOpen: true, swapId: u.ida.id, reason: '' })} className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm">
+                                    <X size={10} /> Recusar
+                                  </button>
+                                </>
+                              )}
+                              {u.status === 'pendente' && currentUser.isAdmin && (
+                                <>
+                                  <button onClick={() => setEvaluationModal({ isOpen: true, swap: u.ida, action: 'aprovado', observation: '' })} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm">
+                                    <Check size={10} /> Aprovar
+                                  </button>
+                                  <button onClick={() => setEvaluationModal({ isOpen: true, swap: u.ida, action: 'reprovado', observation: '' })} className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm">
+                                    <X size={10} /> Repr.
+                                  </button>
+                                </>
+                              )}
+                              {u.status !== 'cancelado' && (currentUser.isAdmin || (isUserInvolved && ['aguardando_substituto', 'pendente'].includes(u.status))) && (
+                                <button onClick={() => setCancelSwapId(u.ida.id)} title="Cancelar Solicitação" className="p-1 bg-rose-50 hover:bg-rose-100 text-rose-500 border border-rose-200 rounded-md transition-all active:scale-95">
+                                  <XCircle size={12} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
 
-                {/* Card Body Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-                  
-                  {/* Lado Esquerdo: IDA */}
-                  <div className="p-5 border-l-4 border-l-blue-500 bg-blue-500/[0.02] space-y-3">
-                    <div className="flex items-center justify-between border-b border-blue-100/50 pb-2">
-                      <span className="text-[11px] font-black uppercase text-blue-700 tracking-wider flex items-center gap-1.5 bg-blue-50 border border-blue-200/50 px-2.5 py-1 rounded-full shadow-sm">
-                        📤 ESCALADO
-                      </span>
-                      <span className="text-[9px] text-slate-400 font-bold">
-                        Criado em: {new Date(u.ida.createdAt).toLocaleDateString('pt-BR')} por {u.ida.escaladoName}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="block text-[9px] font-black uppercase text-blue-600 bg-blue-50 border border-blue-200/30 px-2 py-0.5 rounded-md inline-block mb-1 tracking-wider">ESCALADO</span>
-                        <span className="text-xs font-bold text-slate-700 block">{u.ida.escaladoName}</span>
-                      </div>
-                      <div>
-                        <span className="block text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 border border-indigo-200/30 px-2 py-0.5 rounded-md inline-block mb-1 tracking-wider">SUBSTITUTO</span>
-                        <span className="text-xs font-bold text-slate-700 block">{u.ida.substitutoName}</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Data / Horário</span>
-                      <span className="block text-xs font-bold text-slate-800">
-                        {new Date(u.ida.data + 'T00:00:00').toLocaleDateString('pt-BR')}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-bold">
-                        {u.ida.horarioInicio}h → {u.ida.horarioFim}h
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Lado Direito: VOLTA */}
-                  {u.volta ? (
-                    <div className="p-5 border-l-4 border-l-purple-500 bg-purple-500/[0.02] space-y-3">
-                      <div className="flex items-center justify-between border-b border-purple-100/50 pb-2">
-                        <span className="text-[11px] font-black uppercase text-purple-700 tracking-wider flex items-center gap-1.5 bg-purple-50 border border-purple-200/50 px-2.5 py-1 rounded-full shadow-sm">
-                          📥 SUBSTITUTO
-                        </span>
-                        
-                        {/* Devolução Action Button */}
-                        {u.volta.data === '1970-01-01' && ['pendente', 'aprovado'].includes(u.status) && (isUserInvolved || currentUser.isAdmin) && (
-                          <button
-                            onClick={() => setPaymentModal({
-                              isOpen: true,
-                              swap: u.volta!,
-                              dataPagamento: '',
-                              horarioInicioPagamento: '08:00',
-                              horarioFimPagamento: '08:00'
-                            })}
-                            className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1.5"
-                          >
-                            <Calendar size={10} /> Definir Data
-                          </button>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-1 gap-4">
-                        <div>
-                          <span className="block text-[9px] font-black uppercase text-purple-600 bg-purple-50 border border-purple-200/30 px-2 py-0.5 rounded-md inline-block mb-1 tracking-wider">SUBSTITUTO</span>
-                          <span className="text-xs font-bold text-slate-700 block">{u.volta.substitutoName}</span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">Data / Horário</span>
-                        {u.volta.data === '1970-01-01' ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-wider animate-pulse mt-1">
-                            ⚠️ A Pagar (Definir)
-                          </span>
+                        {/* ── VOLTA ROW ────────────────────────────────────── */}
+                        {u.volta ? (
+                          <tr className={`border-l-4 border-l-purple-400 bg-purple-500/[0.03] hover:bg-purple-50/40 transition-colors border-b-2 border-b-slate-200 ${dimRow ? 'opacity-50' : ''}`}>
+                            <td className="px-4 py-2.5 whitespace-nowrap">
+                              <span className="text-[8px] font-black text-purple-500 uppercase block leading-none mb-0.5">↩ Devolução — Escalado</span>
+                              <span className="text-xs font-bold text-slate-700">{u.volta.escaladoName}</span>
+                            </td>
+                            <td className="px-4 py-2.5 whitespace-nowrap">
+                              <span className="text-[8px] font-black text-purple-400 uppercase block leading-none mb-0.5">Substituto</span>
+                              <span className="text-xs font-bold text-slate-700">{u.volta.substitutoName}</span>
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              <span className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${funcaoBadgeClass(u.funcao)}`}>{u.funcao}</span>
+                            </td>
+                            <td className="px-4 py-2.5 whitespace-nowrap">
+                              {u.volta.data === '1970-01-01' ? (
+                                <span className="text-amber-600 text-[9px] font-black uppercase animate-pulse flex items-center gap-1">
+                                  <Clock size={9} /> A Definir
+                                </span>
+                              ) : (
+                                <span className="text-xs font-bold text-slate-700">
+                                  {new Date(u.volta.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 text-xs font-bold text-slate-600 whitespace-nowrap">
+                              {u.volta.data === '1970-01-01' ? '—' : `${u.volta.horarioInicio}h × ${u.volta.horarioFim}h`}
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              {u.volta.data === '1970-01-01' ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
+                                  <Clock size={9} /> A Pagar
+                                </span>
+                              ) : (
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${statusBadgeClass(u.status)}`}>
+                                  {isAprovado && <CheckCircle2 size={9} />}
+                                  {shortStatus}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 text-center">
+                              {u.volta.data === '1970-01-01' && ['pendente', 'aprovado'].includes(u.status) && (isUserInvolved || currentUser.isAdmin) && (
+                                <button
+                                  onClick={() => setPaymentModal({ isOpen: true, swap: u.volta!, dataPagamento: '', horarioInicioPagamento: '08:00', horarioFimPagamento: '08:00' })}
+                                  className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
+                                >
+                                  <Calendar size={10} /> Definir Data
+                                </button>
+                              )}
+                            </td>
+                          </tr>
                         ) : (
-                          <>
-                            <span className="block text-xs font-bold text-slate-800">
-                              {new Date(u.volta.data + 'T00:00:00').toLocaleDateString('pt-BR')}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-bold">
-                              {u.volta.horarioInicio}h → {u.volta.horarioFim}h
-                            </span>
-                          </>
+                          <tr className="border-b-2 border-b-slate-200"><td colSpan={7} className="py-0"></td></tr>
                         )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-5 bg-slate-50 flex items-center justify-center text-slate-400 text-xs font-bold italic">
-                      Sem devolução casada.
-                    </div>
-                  )}
-                  
-                </div>
-              </div>
-            );
-          })}
-          
-          {/* Footer count */}
-          <div className="px-6 py-4 bg-white rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {filteredUnifiedSwaps.length} solicitação{filteredUnifiedSwaps.length !== 1 ? 'ões casadas' : 'ão casada'}
-            </p>
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                {filteredUnifiedSwaps.length} registro{filteredUnifiedSwaps.length !== 1 ? 's' : ''}
+              </p>
+            </div>
           </div>
         </div>
       )}
