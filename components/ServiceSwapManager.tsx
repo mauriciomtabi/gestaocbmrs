@@ -334,6 +334,16 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
 
         s1.pairId = s2.id;
         s2.pairId = s1.id;
+
+        // Sobrescrever a data e horários da volta caso o banco esteja com '1970-01-01' (a pagar),
+        // mas a ida correspondente tenha dataPagamento preenchida pelo próprio usuário via RLS
+        const ida = s1IsIda ? s1 : s2;
+        const volta = s1IsIda ? s2 : s1;
+        if (volta.data === '1970-01-01' && ida.dataPagamento && ida.dataPagamento !== '1970-01-01') {
+          volta.data = ida.dataPagamento;
+          volta.horarioInicio = ida.horarioInicioPagamento || '08:00';
+          volta.horarioFim = ida.horarioFimPagamento || '08:00';
+        }
       }
     }
 
@@ -660,59 +670,76 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
 
     setSavingPayment(true);
     try {
-      let result;
-      if (paymentModal.swap.data === '1970-01-01') {
-        // Se o próprio swap clicado for a linha em branco, atualizamos ele diretamente!
-        result = await updateServiceSwapDetails(
-          paymentModal.swap.id,
-          paymentModal.dataPagamento,
-          paymentModal.horarioInicioPagamento,
-          paymentModal.horarioFimPagamento
-        );
-      } else {
-        // Procurar pela linha de devolução pré-cadastrada vazia por proximidade temporal
-        const existingReturnSwap = swaps.find(s => 
-          s.id !== paymentModal.swap.id &&
-          s.escaladoId === paymentModal.swap.substitutoId &&
-          s.substitutoId === paymentModal.swap.escaladoId &&
-          s.funcao === paymentModal.swap.funcao &&
-          s.data === '1970-01-01' &&
-          Math.abs(new Date(s.createdAt).getTime() - new Date(paymentModal.swap.createdAt).getTime()) < 15000
-        );
+      const selectedSwap = paymentModal.swap;
+      
+      // Encontrar a outra perna da troca casada (Ida <-> Volta)
+      const linkedSwap = swaps.find(s => 
+        s.id !== selectedSwap.id &&
+        s.escaladoId === selectedSwap.substitutoId &&
+        s.substitutoId === selectedSwap.escaladoId &&
+        s.funcao === selectedSwap.funcao &&
+        Math.abs(new Date(s.createdAt).getTime() - new Date(selectedSwap.createdAt).getTime()) < 15000
+      );
 
-        if (existingReturnSwap) {
-          // Se já existe a linha em branco, apenas atualizamos a data e os horários nela!
-          result = await updateServiceSwapDetails(
-            existingReturnSwap.id,
+      // Identificar quem é a Ida e quem é a Volta na relação por proximidade temporal
+      let s1IsIda = true;
+      if (selectedSwap.data === '1970-01-01') {
+        s1IsIda = false;
+      } else if (linkedSwap && linkedSwap.data === '1970-01-01') {
+        s1IsIda = true;
+      } else if (linkedSwap) {
+        s1IsIda = selectedSwap.data <= linkedSwap.data;
+      }
+
+      const idaSwap = s1IsIda ? selectedSwap : linkedSwap;
+      const voltaSwap = s1IsIda ? linkedSwap : selectedSwap;
+
+      let success = false;
+
+      // 1. Sempre tentar salvar na tabela de pagamento da Ida (onde o usuário tem permissão RLS pois é o original escalado_id)
+      if (idaSwap) {
+        try {
+          await updateServiceSwapPayment(
+            idaSwap.id,
             paymentModal.dataPagamento,
             paymentModal.horarioInicioPagamento,
             paymentModal.horarioFimPagamento
           );
-        } else {
-          // Fallback: cria uma nova linha caso não exista a linha pré-cadastrada
-          result = await createServiceSwap({
-            escaladoId:    paymentModal.swap.substitutoId, // Invertido!
-            substitutoId:  paymentModal.swap.escaladoId,   // Invertido!
-            funcao:        paymentModal.swap.funcao,
-            data:          paymentModal.dataPagamento,
-            horarioInicio: paymentModal.horarioInicioPagamento,
-            horarioFim:    paymentModal.horarioFimPagamento,
-            status:        'pendente',
-          } as Partial<ServiceSwap>);
+          success = true;
+        } catch (err) {
+          console.warn("Erro RLS ao atualizar pagamento na perna de Ida (tolerado):", err);
         }
       }
 
-      if (result) {
-        setNotification('Devolução registrada com sucesso!', 'success');
-        setPaymentModal({
-          isOpen: false,
-          swap: null,
-          dataPagamento: '',
-          horarioInicioPagamento: '08:00',
-          horarioFimPagamento: '08:00'
-        });
-        await loadData();
-      } else throw new Error('Erro ao salvar as informações de devolução.');
+      // 2. Tentar também atualizar a Volta diretamente no banco para sincronização
+      if (voltaSwap) {
+        try {
+          await updateServiceSwapDetails(
+            voltaSwap.id,
+            paymentModal.dataPagamento,
+            paymentModal.horarioInicioPagamento,
+            paymentModal.horarioFimPagamento
+          );
+          success = true;
+        } catch (err) {
+          console.warn("Erro RLS ao atualizar detalhes na perna de Volta (tolerado pois o useMemo resolverá):", err);
+        }
+      }
+
+      // Se nenhum dos updates de banco deu certo, aí sim disparamos o erro
+      if (!success) {
+        throw new Error("Não foi possível salvar a devolução devido a permissões de escrita do banco.");
+      }
+
+      setNotification('Devolução registrada com sucesso!', 'success');
+      setPaymentModal({
+        isOpen: false,
+        swap: null,
+        dataPagamento: '',
+        horarioInicioPagamento: '08:00',
+        horarioFimPagamento: '08:00'
+      });
+      await loadData();
     } catch (err: any) {
       setNotification(err.message || 'Erro ao registrar a devolução de plantão.', 'error');
     } finally {
@@ -990,8 +1017,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                       </div>
                     )}
                     
-                    {((['aguardando_substituto', 'pendente', 'aprovado'].includes(u.status) && (isUserInvolved || currentUser.isAdmin)) ||
-                      (u.status === 'reprovado' && currentUser.isAdmin)) && (
+                    {u.status !== 'cancelado' && (currentUser.isAdmin || (isUserInvolved && ['aguardando_substituto', 'pendente'].includes(u.status))) && (
                       <button
                         onClick={() => setCancelSwapId(u.ida.id)}
                         className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
