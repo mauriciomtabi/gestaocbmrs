@@ -1,5 +1,5 @@
 {
-  "name": "Gestão CBM Sapucaia do Sul",
+  "name": "Gestão CBM RS",
   "description": "Sistema completo para gestão, incluindo captura de documentos via câmera, leitura de folhas de frequência e geração de relatórios oficiais.",
   "requestFramePermissions": [
     "camera"

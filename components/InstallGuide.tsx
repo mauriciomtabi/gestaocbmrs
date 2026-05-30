@@ -32,8 +32,8 @@ const InstallGuide: React.FC<Props> = ({ onClose }) => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Gestão CBM - Sapucaia do Sul',
-          text: 'Sistema de Gestão | CBM Sapucaia do Sul/RS',
+          title: 'Gestão CBM RS',
+          text: 'Sistema de Gestão | CBM RS',
           url: appUrl,
         });
       } catch (error) {

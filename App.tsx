@@ -410,8 +410,7 @@ const App: React.FC = () => {
             </div>
           </div>
           <div className="text-center space-y-4">
-            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase">Gestão <span className="text-red-500">CBM</span></h1>
-            <p className="text-blue-400 font-bold tracking-[0.2em] uppercase text-xs -mt-2">Sapucaia do Sul</p>
+            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase">Gestão CBM <span className="text-red-500">RS</span></h1>
             <div className="mt-8 flex flex-col items-center gap-4">
               <div className="w-64 h-1 bg-white/5 rounded-full overflow-hidden border border-white/5">
                 <div className="h-full bg-blue-600 transition-all duration-300 ease-out" style={{ width: `${bootProgress}%` }}></div>
@@ -449,8 +448,7 @@ const App: React.FC = () => {
           <div className="flex items-center gap-4">
             <img src="https://i.postimg.cc/T1nny2hc/Brasao-cbmrs.png" alt="Logo Gestão CBM" className="w-14 h-14 object-contain" />
             <div>
-              <h1 className="text-xl font-black tracking-tight uppercase leading-tight text-white">Gestão <span className="text-red-400">CBM</span></h1>
-              <p className="text-[8px] font-bold text-blue-400 uppercase tracking-widest">Sapucaia do Sul</p>
+              <h1 className="text-xl font-black tracking-tight uppercase leading-tight text-white">Gestão CBM <span className="text-red-400">RS</span></h1>
             </div>
           </div>
         </div>

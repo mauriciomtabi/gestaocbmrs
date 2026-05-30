@@ -1,7 +1,7 @@
 {
-  "name": "Gestão CBM - Sapucaia do Sul",
-  "short_name": "Gestão CBM",
-  "description": "Sistema de Gestão | CBM Sapucaia do Sul/RS",
+  "name": "Gestão CBM RS",
+  "short_name": "Gestão CBM RS",
+  "description": "Sistema de Gestão | CBM RS",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

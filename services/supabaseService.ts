@@ -1021,4 +1021,31 @@ export const updateServiceSwapPayment = async (
   }
 };
 
+export const updateServiceSwapDetails = async (
+  swapId: string,
+  data: string,
+  horarioInicio: string,
+  horarioFim: string
+): Promise<ServiceSwap | null> => {
+  try {
+    const { data: updated, error } = await supabase
+      .from('service_swaps')
+      .update({
+        data: data,
+        horario_inicio: horarioInicio,
+        horario_fim: horarioFim,
+        status: 'aguardando_substituto'
+      })
+      .eq('id', swapId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return updated ? mapServiceSwapFromDB(updated) : null;
+  } catch (err) {
+    console.error("Erro ao atualizar detalhes da troca:", err);
+    throw err;
+  }
+};
+
 

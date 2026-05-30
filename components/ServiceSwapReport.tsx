@@ -72,6 +72,7 @@ const ServiceSwapReport: React.FC<Props> = ({ swaps, currentUser, onClose }) => 
 
   const dateFiltered = useMemo(() => {
     return swaps.filter(s => {
+      if (!s.data) return true; // Mantém trocas sem data no relatório
       if (dateFrom && s.data < dateFrom) return false;
       if (dateTo   && s.data > dateTo)   return false;
       return true;
@@ -82,13 +83,17 @@ const ServiceSwapReport: React.FC<Props> = ({ swaps, currentUser, onClose }) => 
     return dateFiltered.filter(s => {
       if (statusFilter.length > 0 && !statusFilter.includes(s.status)) return false;
       return true;
-    }).sort((a, b) => b.data.localeCompare(a.data));
+    }).sort((a, b) => {
+      const dateA = a.data || '';
+      const dateB = b.data || '';
+      return dateB.localeCompare(dateA);
+    });
   }, [dateFiltered, statusFilter]);
 
   const handlePrint = () => window.print();
 
   const fmtDate = (d: string) =>
-    new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
+    d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : 'A definir';
 
   const emitDate = new Date().toLocaleString('pt-BR');
 

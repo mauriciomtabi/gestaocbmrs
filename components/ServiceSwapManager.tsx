@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ServiceSwap, Operator } from '../types';
-import { getServiceSwaps, createServiceSwap, evaluateServiceSwap, getAllProfiles, cancelServiceSwap, acceptServiceSwap, rejectServiceSwap, updateServiceSwapPayment } from '../services/supabaseService';
+import { getServiceSwaps, createServiceSwap, evaluateServiceSwap, getAllProfiles, cancelServiceSwap, acceptServiceSwap, rejectServiceSwap, updateServiceSwapPayment, updateServiceSwapDetails } from '../services/supabaseService';
 import ServiceSwapReport from './ServiceSwapReport';
 import {
   Calendar,
@@ -338,7 +338,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
         status:        'aguardando_substituto',
       } as Partial<ServiceSwap>);
 
-      // 2. Se a devolução foi informada, criar a troca invertida (B -> A)
+      // 2. Se a devolução foi informada, criar a troca invertida (B -> A) já preenchida. Caso contrário, criar a linha em branco para preenchimento posterior.
       if (informarPagamentoAgora && formData.dataPagamento) {
         await createServiceSwap({
           escaladoId:    formData.substitutoId, // Invertido!
@@ -349,6 +349,16 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           horarioFim:    formData.horarioFimPagamento,
           status:        'aguardando_substituto',
         } as Partial<ServiceSwap>);
+      } else {
+        await createServiceSwap({
+          escaladoId:    formData.substitutoId, // Invertido!
+          substitutoId:  formData.escaladoId,   // Invertido!
+          funcao:        formData.funcao,
+          data:          null as any,
+          horarioInicio: null as any,
+          horarioFim:    null as any,
+          status:        'aguardando_substituto',
+        } as any);
       }
 
       if (result) {
@@ -479,18 +489,38 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
 
     setSavingPayment(true);
     try {
-      const result = await createServiceSwap({
-        escaladoId:    paymentModal.swap.substitutoId, // Invertido!
-        substitutoId:  paymentModal.swap.escaladoId,   // Invertido!
-        funcao:        paymentModal.swap.funcao,
-        data:          paymentModal.dataPagamento,
-        horarioInicio: paymentModal.horarioInicioPagamento,
-        horarioFim:    paymentModal.horarioFimPagamento,
-        status:        'aguardando_substituto',
-      } as Partial<ServiceSwap>);
+      // Procurar pela linha de devolução pré-cadastrada vazia (que tem o escalado e substituto invertidos, mesma função e sem data)
+      const existingReturnSwap = swaps.find(s => 
+        s.escaladoId === paymentModal.swap.substitutoId &&
+        s.substitutoId === paymentModal.swap.escaladoId &&
+        s.funcao === paymentModal.swap.funcao &&
+        !s.data
+      );
+
+      let result;
+      if (existingReturnSwap) {
+        // Se já existe a linha em branco, apenas atualizamos a data e os horários nela!
+        result = await updateServiceSwapDetails(
+          existingReturnSwap.id,
+          paymentModal.dataPagamento,
+          paymentModal.horarioInicioPagamento,
+          paymentModal.horarioFimPagamento
+        );
+      } else {
+        // Fallback: cria uma nova linha caso não exista a linha pré-cadastrada
+        result = await createServiceSwap({
+          escaladoId:    paymentModal.swap.substitutoId, // Invertido!
+          substitutoId:  paymentModal.swap.escaladoId,   // Invertido!
+          funcao:        paymentModal.swap.funcao,
+          data:          paymentModal.dataPagamento,
+          horarioInicio: paymentModal.horarioInicioPagamento,
+          horarioFim:    paymentModal.horarioFimPagamento,
+          status:        'aguardando_substituto',
+        } as Partial<ServiceSwap>);
+      }
 
       if (result) {
-        setNotification('Devolução registrada com sucesso como uma nova solicitação de troca!', 'success');
+        setNotification('Devolução registrada com sucesso!', 'success');
         setPaymentModal({
           isOpen: false,
           swap: null,
@@ -742,10 +772,10 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                       </td>
                       <td className="px-6 py-4">
                         <span className="block text-xs font-bold text-slate-800">
-                          {new Date(swap.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                          {swap.data ? new Date(swap.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'A definir'}
                         </span>
                         <span className="text-[10px] text-slate-400 font-bold">
-                          {swap.horarioInicio}h → {swap.horarioFim}h
+                          {swap.horarioInicio && swap.horarioFim ? `${swap.horarioInicio}h → ${swap.horarioFim}h` : 'Horário a definir'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -886,7 +916,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                       {swap.funcao}
                     </span>
                     <span className="text-xs font-bold text-slate-500">
-                      {new Date(swap.data + 'T00:00:00').toLocaleDateString('pt-BR')} · {swap.horarioInicio}h→{swap.horarioFim}h
+                      {swap.data ? new Date(swap.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'A definir'} · {swap.horarioInicio && swap.horarioFim ? `${swap.horarioInicio}h→${swap.horarioFim}h` : 'Horário a definir'}
                     </span>
                   </div>
 
@@ -1321,7 +1351,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                   { label: 'Escalado',   value: evaluationModal.swap.escaladoName },
                   { label: 'Substituto', value: evaluationModal.swap.substitutoName },
                   { label: 'Função',     value: evaluationModal.swap.funcao },
-                  { label: 'Data',       value: new Date(evaluationModal.swap.data + 'T00:00:00').toLocaleDateString('pt-BR') },
+                  { label: 'Data',       value: evaluationModal.swap.data ? new Date(evaluationModal.swap.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'A definir' },
                   { label: 'Horário',    value: `${evaluationModal.swap.horarioInicio}h → ${evaluationModal.swap.horarioFim}h` },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-center justify-between gap-4">
@@ -1467,7 +1497,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                   { label: 'Escalado',   value: acceptModal.swap.escaladoName },
                   { label: 'Substituto', value: acceptModal.swap.substitutoName },
                   { label: 'Função',     value: acceptModal.swap.funcao },
-                  { label: 'Data',       value: new Date(acceptModal.swap.data + 'T00:00:00').toLocaleDateString('pt-BR') },
+                  { label: 'Data',       value: acceptModal.swap.data ? new Date(acceptModal.swap.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'A definir' },
                   { label: 'Horário',    value: `${acceptModal.swap.horarioInicio}h → ${acceptModal.swap.horarioFim}h` },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-center justify-between gap-4">
@@ -1527,7 +1557,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                 <div className="flex justify-between">
                   <span className="text-slate-400">Função/Plantão:</span>
                   <span className="font-bold text-slate-800">
-                    {paymentModal.swap.funcao} em {new Date(paymentModal.swap.data + 'T00:00:00').toLocaleDateString('pt-BR')} ({paymentModal.swap.horarioInicio}h → {paymentModal.swap.horarioFim}h)
+                    {paymentModal.swap.funcao} em {paymentModal.swap.data ? new Date(paymentModal.swap.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'A definir'} ({paymentModal.swap.horarioInicio && paymentModal.swap.horarioFim ? `${paymentModal.swap.horarioInicio}h → ${paymentModal.swap.horarioFim}h` : 'Horário a definir'})
                   </span>
                 </div>
               </div>

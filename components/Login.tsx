@@ -264,11 +264,8 @@ const Login: React.FC<Props> = ({ onLogin }) => {
             />
           </div>
           <h1 className="text-2xl font-black text-white tracking-tighter uppercase">
-            Gestão <span className="text-red-500">CBM</span>
+            Gestão CBM <span className="text-red-500">RS</span>
           </h1>
-          <p className="text-blue-400 text-[10px] font-black mt-1 uppercase tracking-[0.3em] flex items-center gap-2">
-            Sapucaia do Sul
-          </p>
         </div>
 
         <div className="bg-white/5 backdrop-blur-2xl rounded-[2.5rem] p-8 border border-white/10 shadow-2xl transition-all duration-500 overflow-hidden">
