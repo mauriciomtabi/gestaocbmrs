@@ -177,6 +177,16 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
           ? `Analise esta nota fiscal de manutenção/revisão/troca de óleo e extraia os seguintes dados em formato JSON.
           IMPORTANTE: Como se trata de uma manutenção/revisão, extraia a lista completa de peças, lubrificantes, filtros e serviços adquiridos.
           Extraia a data e hora EXATAMENTE como constam na nota.
+
+          REGRA CRÍTICA DE IDIOMA: Todos os textos de descrição de itens devem ser escritos em PORTUGUÊS DO BRASIL com acentuação correta.
+          Use SEMPRE os caracteres acentuados corretos. Exemplos obrigatórios:
+          - "ÓLEO" (nunca "OLEO", nunca "LEO", nunca "█LEO")
+          - "ÓLEO DO MOTOR" (nunca "OLEO DO MOTOR")
+          - "FILTRO ÓLEO" (nunca "FILTRO OLEO" ou "FILTRO LEO")
+          - "MANUTENÇÃO" (nunca "MANUTENCAO")
+          - "REVISÃO" (nunca "REVISAO")
+          - "FLUÍDO" (nunca "FLUIDO")
+          - "ÁGUA" (nunca "AGUA")
           
           - data: Data e hora da manutenção (formato ISO local YYYY-MM-DDTHH:mm, ignore fuso horário)
           - local: Nome do estabelecimento/oficina/posto
@@ -192,7 +202,7 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
           - protocol: Número do protocolo ou da nota fiscal (se disponível)
           - totalValue: Valor total pago de todas as peças/serviços somados (número)
           - items: Lista de peças, produtos ou serviços adquiridos. Cada item deve conter:
-            * description: Descrição/nome do produto ou serviço (ex: Filtro Óleo, Óleo 5w30, Filtro Ar)
+            * description: Descrição/nome do produto ou serviço COM ACENTUAÇÃO CORRETA em português (ex: "Filtro Óleo", "Óleo Motor 5W30", "Filtro Ar Condicionado", "Fluído de Freio")
             * quantity: Quantidade adquirida (número, ex: 1, 11.5)
             * unitValue: Valor unitário (número)
             * totalValue: Valor total do item (número)
@@ -297,22 +307,41 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
 
       const cleanOcrText = (text: string): string => {
         if (!text) return '';
-        // 1. Substituir caracteres quebrados conhecidos e caixas de erro do OCR.
-        let clean = text.replace(/[\uFFFD\u25A0-\u25FF\u007F-\u009F]/g, '');
         
-        // 2. Corrigir padrões com LEO, incluindo caracteres especiais residuais
-        clean = clean.replace(/[^A-Za-z0-9\sÀ-ÿ]?LEO\b/gi, 'ÓLEO');
+        // 1. Remover todos os caracteres de controle, caixas, blocos e caracteres especiais de OCR quebrado.
+        // Isso cobre: U+0000-001F, U+007F-009F (controles), U+00AD (soft hyphen),
+        // U+2000-206F (pontuação especial), U+25A0-25FF (formas geométricas/blocos), U+FFFD (replacement char)
+        let clean = text
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')   // controles
+          .replace(/[\u00AD]/g, '')                          // soft hyphen
+          .replace(/[\u25A0-\u25FF]/g, '')                   // formas geométricas (█ □ ▯ etc.)
+          .replace(/[\uFFF0-\uFFFF]/g, '')                   // specials (U+FFFD etc.)
+          .replace(/[^\x20-\x7E\xC0-\xFF\u0100-\u017E]/g, ' '); // manter apenas ASCII imprimível + Latin Extended
+
+        // 2. Corrigir "ÓLEO" - o OCR frequentemente emite o Ó como caractere inválido ou apenas omite.
+        //    Padrões: "█LEO", " LEO", "OLEO", "LEO" (palavra sozinha), "FILTRO LEO" etc.
+        //    Usa lookbehind para não substituir quando precedido de letra normal (ex: "FILEO" não existe, mas "FILÓ" sim)
+        clean = clean.replace(/(?<![A-Za-zÀ-ÿ])(\s*[^A-Za-z0-9ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ]*)LEO\b/gi, (_match, prefix) => {
+          return (prefix || '').replace(/\S/g, '').trimStart() + 'ÓLEO';
+        });
+        // Fallback simples para "OLEO" e "OLEOS" sem acento
         clean = clean.replace(/\bOLEO\b/gi, 'ÓLEO');
         clean = clean.replace(/\bOLEOS\b/gi, 'ÓLEOS');
-        
-        // 3. Outras palavras comuns de abastecimento/manutenção
+
+        // 3. Palavras comuns de manutenção/abastecimento sem acentos
         clean = clean.replace(/\bDISEL\b/gi, 'DIESEL');
+        clean = clean.replace(/\bFILTRO\s+DISEL\b/gi, 'FILTRO DIESEL');
         clean = clean.replace(/\bAGUA\b/gi, 'ÁGUA');
         clean = clean.replace(/\bVEICULO\b/gi, 'VEÍCULO');
         clean = clean.replace(/\bCONVENIO\b/gi, 'CONVÊNIO');
-        
-        // 4. Espaços duplicados
+        clean = clean.replace(/\bMANUTENCAO\b/gi, 'MANUTENÇÃO');
+        clean = clean.replace(/\bREVISAO\b/gi, 'REVISÃO');
+        clean = clean.replace(/\bTROCA\s+OLEO\b/gi, 'TROCA ÓLEO');
+        clean = clean.replace(/\bTROCA\s+OLEO\b/gi, 'TROCA ÓLEO');
+
+        // 4. Normalizar espaços duplicados
         clean = clean.replace(/\s+/g, ' ').trim();
+
         return clean.toUpperCase();
       };
 
