@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { FuelSupply, AuditLog, Vehicle, StationNickname } from '../types';
 import { getFuelSupplies, saveFuelSupply, deleteFuelSupply, saveFuelAuditLog, saveVehicle, deleteVehicle, saveStationNickname } from '../services/supabaseService';
-import { Plus, Search, Filter, Calendar, MapPin, Fuel, User, Car, Hash, DollarSign, Eye, Trash2, X, Save, Loader2, Camera, FileText, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, History, Edit3, Clock, Download, ZoomIn, ZoomOut, RotateCcw, Upload, Image as ImageIcon, Tag, LayoutDashboard, Wrench } from 'lucide-react';
+import { Plus, Search, Filter, Calendar, MapPin, Fuel, User, Car, Hash, DollarSign, Eye, Trash2, X, Save, Loader2, Camera, FileText, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, History, Edit3, Clock, Download, ZoomIn, ZoomOut, RotateCcw, Upload, Image as ImageIcon, Tag, LayoutDashboard, Wrench, Pencil } from 'lucide-react';
 import { normalizeFuelType, getStationDisplayName } from '../utils/fuelUtils';
 import FuelReceiptOCR from './FuelReceiptOCR';
 import FuelReport from './FuelReport';
@@ -43,6 +43,12 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemQty, setNewItemQty] = useState<number>(1);
   const [newItemPrice, setNewItemPrice] = useState<number>(0);
+
+  // Estado de edição inline de item
+  const [editingItemIdx, setEditingItemIdx] = useState<number | null>(null);
+  const [editItemDesc, setEditItemDesc] = useState('');
+  const [editItemQty, setEditItemQty] = useState<number>(1);
+  const [editItemPrice, setEditItemPrice] = useState<number>(0);
 
   const nicknameMap = useMemo(() => {
     return stationNicknames.reduce((acc, curr) => {
@@ -957,38 +963,125 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                                 </td>
                               </tr>
                             ) : (
-                              formData.items.map((item, idx) => (
-                                <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                                  <td className="px-4 py-3 text-xs font-bold text-slate-700 uppercase">{item.description}</td>
-                                  <td className="px-4 py-3 text-xs text-slate-600 text-center font-bold">
-                                    {item.quantity.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 3 })}
-                                  </td>
-                                  <td className="px-4 py-3 text-xs text-slate-600 text-right font-medium">
-                                    R$ {item.unitValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  </td>
-                                  <td className="px-4 py-3 text-xs font-black text-slate-900 text-right">
-                                    R$ {item.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  </td>
-                                  <td className="px-4 py-3 text-center">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const updatedItems = (formData.items || []).filter((_, i) => i !== idx);
-                                        const total = updatedItems.reduce((sum, it) => sum + (Number(it.totalValue) || 0), 0);
-                                        setFormData({
-                                          ...formData,
-                                          items: updatedItems,
-                                          totalValue: total
-                                        });
-                                      }}
-                                      className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                      title="Remover Item"
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))
+                              formData.items.map((item, idx) => {
+                                const isEditing = editingItemIdx === idx;
+                                if (isEditing) {
+                                  const editTotal = (editItemQty || 0) * (editItemPrice || 0);
+                                  return (
+                                    <tr key={idx} className="bg-blue-50/40 border border-blue-200">
+                                      <td className="p-2">
+                                        <input
+                                          type="text"
+                                          value={editItemDesc}
+                                          onChange={e => setEditItemDesc(e.target.value)}
+                                          autoFocus
+                                          className="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-blue-200"
+                                        />
+                                      </td>
+                                      <td className="p-2">
+                                        <input
+                                          type="number"
+                                          step="any"
+                                          value={editItemQty}
+                                          onChange={e => setEditItemQty(parseFloat(e.target.value) || 0)}
+                                          className="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl text-xs font-bold text-center outline-none focus:ring-2 focus:ring-blue-200"
+                                        />
+                                      </td>
+                                      <td className="p-2">
+                                        <input
+                                          type="number"
+                                          step="any"
+                                          value={editItemPrice === 0 ? '' : editItemPrice}
+                                          onChange={e => setEditItemPrice(parseFloat(e.target.value) || 0)}
+                                          className="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl text-xs font-bold text-right outline-none focus:ring-2 focus:ring-blue-200"
+                                        />
+                                      </td>
+                                      <td className="px-4 py-3 text-xs font-black text-blue-700 text-right">
+                                        R$ {editTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      </td>
+                                      <td className="p-2 text-center">
+                                        <div className="flex items-center justify-center gap-1">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              if (!editItemDesc.trim()) return;
+                                              const qty = Number(editItemQty);
+                                              const price = Number(editItemPrice);
+                                              const updatedItems = (formData.items || []).map((it, i) =>
+                                                i === idx
+                                                  ? { description: editItemDesc.trim().toUpperCase(), quantity: qty, unitValue: price, totalValue: qty * price }
+                                                  : it
+                                              );
+                                              const total = updatedItems.reduce((sum, it) => sum + (Number(it.totalValue) || 0), 0);
+                                              setFormData({ ...formData, items: updatedItems, totalValue: total });
+                                              setEditingItemIdx(null);
+                                            }}
+                                            className="p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                                            title="Confirmar edição"
+                                          >
+                                            <CheckCircle2 size={14} />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => setEditingItemIdx(null)}
+                                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                            title="Cancelar edição"
+                                          >
+                                            <X size={14} />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                }
+                                return (
+                                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
+                                    <td className="px-4 py-3 text-xs font-bold text-slate-700 uppercase">{item.description}</td>
+                                    <td className="px-4 py-3 text-xs text-slate-600 text-center font-bold">
+                                      {item.quantity.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 3 })}
+                                    </td>
+                                    <td className="px-4 py-3 text-xs text-slate-600 text-right font-medium">
+                                      R$ {item.unitValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </td>
+                                    <td className="px-4 py-3 text-xs font-black text-slate-900 text-right">
+                                      R$ {item.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                      <div className="flex items-center justify-center gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditingItemIdx(idx);
+                                            setEditItemDesc(item.description);
+                                            setEditItemQty(item.quantity);
+                                            setEditItemPrice(item.unitValue);
+                                          }}
+                                          className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                                          title="Editar Item"
+                                        >
+                                          <Pencil size={13} />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const updatedItems = (formData.items || []).filter((_, i) => i !== idx);
+                                            const total = updatedItems.reduce((sum, it) => sum + (Number(it.totalValue) || 0), 0);
+                                            setFormData({
+                                              ...formData,
+                                              items: updatedItems,
+                                              totalValue: total
+                                            });
+                                          }}
+                                          className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                          title="Remover Item"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })
                             )}
                             
                             {/* Linha de Inputs para adicionar novo item */}
