@@ -321,8 +321,13 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           s1IsIda = false;
         } else if (s2.data === '1970-01-01') {
           s1IsIda = true;
+        } else if (s1.data !== s2.data) {
+          // Datas diferentes: IDA tem a data mais antiga
+          s1IsIda = s1.data < s2.data;
         } else {
-          s1IsIda = s1.data <= s2.data;
+          // Mesma data: IDA é o registro criado primeiro (createdAt menor)
+          // Isso garante que quando há devolução no mesmo dia, a ordem correta é mantida
+          s1IsIda = new Date(s1.createdAt).getTime() <= new Date(s2.createdAt).getTime();
         }
 
         if (s1IsIda) {
