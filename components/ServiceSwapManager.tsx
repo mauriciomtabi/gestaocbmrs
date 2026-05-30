@@ -878,7 +878,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
       {/* ── FILTERS CARD ── */}
       <div className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 items-start md:items-center print:hidden">
         {/* Search */}
-        <div className="relative flex-1 w-full">
+        <div className="relative flex-1 w-full md:max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             type="text"
@@ -896,7 +896,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
             type="date"
             value={dateFilter}
             onChange={e => setDateFilter(e.target.value)}
-            className="pl-12 pr-8 py-3 bg-slate-50 border border-slate-100 hover:bg-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all text-xs font-bold text-slate-700 w-full md:w-[160px] cursor-pointer"
+            className="pl-12 pr-8 py-3 bg-slate-50 border border-slate-100 hover:bg-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all text-xs md:text-sm font-bold text-slate-700 w-full md:w-[220px] cursor-pointer"
             title="Filtrar por Data"
           />
           {dateFilter && (
