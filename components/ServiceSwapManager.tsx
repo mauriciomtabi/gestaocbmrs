@@ -24,6 +24,15 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
+interface UnifiedSwapRequest {
+  id: string;
+  funcao: 'CG' | 'COV' | 'Linha' | 'COBOM';
+  status: 'aguardando_substituto' | 'recusado_substituto' | 'pendente' | 'aprovado' | 'reprovado' | 'cancelado';
+  createdAt: string;
+  ida: ServiceSwap & { escaladoName?: string; substitutoName?: string; aprovadorName?: string };
+  volta?: ServiceSwap & { escaladoName?: string; substitutoName?: string; aprovadorName?: string };
+}
+
 interface Props {
   currentUser: Operator;
   setNotification: (msg: string, type: 'success' | 'error') => void;
@@ -331,35 +340,92 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
     return mapped;
   }, [swaps, profilesMap]);
 
-  const pendingCount = swaps.filter(s => s.status === 'pendente').length;
+  const unifiedSwaps = useMemo(() => {
+    const list: UnifiedSwapRequest[] = [];
+    const processedIds = new Set<string>();
+
+    for (let i = 0; i < enrichedSwaps.length; i++) {
+      const s1 = enrichedSwaps[i];
+      if (processedIds.has(s1.id)) continue;
+
+      if (s1.pairType !== 'solo' && s1.pairId) {
+        const s2 = enrichedSwaps.find(item => item.id === s1.pairId);
+        if (s2 && !processedIds.has(s2.id)) {
+          const ida = s1.pairType === 'ida' ? s1 : s2;
+          const volta = s1.pairType === 'volta' ? s1 : s2;
+
+          list.push({
+            id: ida.id,
+            funcao: s1.funcao,
+            status: s1.status as any,
+            createdAt: s1.createdAt,
+            ida,
+            volta,
+          });
+
+          processedIds.add(s1.id);
+          processedIds.add(s2.id);
+          continue;
+        }
+      }
+
+      list.push({
+        id: s1.id,
+        funcao: s1.funcao,
+        status: s1.status as any,
+        createdAt: s1.createdAt,
+        ida: s1,
+      });
+      processedIds.add(s1.id);
+    }
+
+    return list;
+  }, [enrichedSwaps]);
+
+  const pendingCount = useMemo(() => {
+    return unifiedSwaps.filter(u => u.status === 'pendente').length;
+  }, [unifiedSwaps]);
 
   const totalPendingPaybacksCount = useMemo(() => {
-    return swaps.filter(s => s.data === '1970-01-01' && s.status !== 'reprovado' && s.status !== 'cancelado').length;
-  }, [swaps]);
+    return unifiedSwaps.filter(u => u.volta && u.volta.data === '1970-01-01' && u.status !== 'reprovado' && u.status !== 'cancelado').length;
+  }, [unifiedSwaps]);
 
   const mySubstitutionsPendingCount = useMemo(() => {
     return swaps.filter(s => s.substitutoId === currentUser.id && s.status === 'aguardando_substituto').length;
   }, [swaps, currentUser.id]);
 
-  const filteredSwaps = useMemo(() => {
-    return enrichedSwaps.filter(s => {
-      if (showPendingPaybacksOnly && s.data !== '1970-01-01') return false;
-      if (activeTab === 'minhas' && s.escaladoId !== currentUser.id && s.substitutoId !== currentUser.id) return false;
-      if (activeTab === 'aprovar' && s.status !== 'pendente') return false;
-      if (statusFilter.length > 0 && !statusFilter.includes(s.status)) return false;
+  const filteredUnifiedSwaps = useMemo(() => {
+    return unifiedSwaps.filter(u => {
+      if (activeTab === 'minhas') {
+        const isUserInvolvedInIda = u.ida.escaladoId === currentUser.id || u.ida.substitutoId === currentUser.id;
+        const isUserInvolvedInVolta = u.volta ? (u.volta.escaladoId === currentUser.id || u.volta.substitutoId === currentUser.id) : false;
+        if (!isUserInvolvedInIda && !isUserInvolvedInVolta) return false;
+      }
+      if (activeTab === 'aprovar' && u.status !== 'pendente') return false;
+      if (statusFilter.length > 0 && !statusFilter.includes(u.status)) return false;
+      if (showPendingPaybacksOnly) {
+        if (!u.volta || u.volta.data !== '1970-01-01') return false;
+      }
       if (searchTerm.trim() !== '') {
         const q = searchTerm.toLowerCase();
-        return (
-          s.escaladoName?.toLowerCase().includes(q) ||
-          s.substitutoName?.toLowerCase().includes(q) ||
-          s.funcao.toLowerCase().includes(q) ||
-          s.observacao?.toLowerCase().includes(q) ||
-          s.data.includes(q)
-        );
+        const matchesIda = 
+          u.ida.escaladoName?.toLowerCase().includes(q) ||
+          u.ida.substitutoName?.toLowerCase().includes(q) ||
+          u.ida.data.includes(q);
+        const matchesVolta = u.volta ? (
+          u.volta.escaladoName?.toLowerCase().includes(q) ||
+          u.volta.substitutoName?.toLowerCase().includes(q) ||
+          u.volta.data.includes(q)
+        ) : false;
+        const matchesGeneral = 
+          u.funcao.toLowerCase().includes(q) ||
+          u.ida.observacao?.toLowerCase().includes(q);
+
+        if (!matchesIda && !matchesVolta && !matchesGeneral) return false;
       }
       return true;
     });
-  }, [enrichedSwaps, activeTab, statusFilter, searchTerm, currentUser.id, showPendingPaybacksOnly]);
+  }, [unifiedSwaps, activeTab, statusFilter, searchTerm, currentUser.id, showPendingPaybacksOnly]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -849,12 +915,12 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           <Loader2 className="animate-spin text-blue-600" size={36} />
           <p className="text-slate-400 text-xs font-black uppercase tracking-wider">Carregando registros...</p>
         </div>
-      ) : filteredSwaps.length === 0 ? (
+      ) : filteredUnifiedSwaps.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm text-center px-6 print:hidden">
           <div className="bg-slate-100 p-5 rounded-full text-slate-300 mb-4">
             <ArrowLeftRight size={36} />
           </div>
-          <h3 className="text-slate-700 font-black text-sm uppercase mb-1">Nenhuma troca encontrada</h3>
+          <h3 className="text-slate-700 font-black text-sm uppercase mb-1">Nenhuma solicitação encontrada</h3>
           <p className="text-slate-400 text-xs max-w-sm font-medium">
             {activeTab === 'minhas'
               ? 'Você ainda não possui solicitações de troca de serviço.'
@@ -864,359 +930,183 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden print:hidden">
-          {/* Desktop Table */}
-          <div className="hidden lg:block overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/70 border-b border-slate-100">
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Função</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Data / Horário</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Escalado</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Substituto</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Avaliação</th>
-                  {(currentUser.isAdmin || filteredSwaps.some(s => s.escaladoId === currentUser.id || s.substitutoId === currentUser.id)) && (
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ações</th>
+        <div className="space-y-4 print:hidden">
+          {filteredUnifiedSwaps.map(u => {
+            const isIdaEscalado = u.ida.escaladoId === currentUser.id;
+            const isIdaSubstituto = u.ida.substitutoId === currentUser.id;
+            const isVoltaEscalado = u.volta ? u.volta.escaladoId === currentUser.id : false;
+            const isVoltaSubstituto = u.volta ? u.volta.substitutoId === currentUser.id : false;
+            const isUserInvolved = isIdaEscalado || isIdaSubstituto || isVoltaEscalado || isVoltaSubstituto;
+            
+            return (
+              <div 
+                key={u.id}
+                className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300"
+              >
+                {/* Card Header */}
+                <div className="bg-slate-50/70 px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${statusBadgeClass(u.status)}`}>
+                      {(u.status === 'pendente' || u.status === 'aguardando_substituto') && <Clock size={11} />}
+                      {u.status === 'aprovado'  && <CheckCircle2 size={11} />}
+                      {(u.status === 'reprovado' || u.status === 'recusado_substituto') && <XCircle size={11} />}
+                      {u.status === 'cancelado' && <XCircle size={11} />}
+                      {STATUS_LABELS[u.status]}
+                    </span>
+                    <span className={`inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${funcaoBadgeClass(u.funcao)}`}>
+                      {u.funcao}
+                    </span>
+                    {u.volta && u.volta.data === '1970-01-01' && u.status !== 'reprovado' && u.status !== 'cancelado' && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-md text-[8px] font-black uppercase tracking-wider animate-pulse">
+                        ⚠️ Pagamento Pendente
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Admin Evaluation Details */}
+                  {u.ida.dataAprovacao && (
+                    <div className="text-[10px] text-slate-400 font-bold max-w-xs truncate">
+                      Aprovador: <span className="text-slate-600 font-extrabold">{u.ida.aprovadorName || 'Administrador'}</span>
+                      {u.ida.observacao && <span className="italic block mt-0.5">"{u.ida.observacao}"</span>}
+                    </div>
                   )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filteredSwaps.map(swap => {
-                  const isEscalado   = swap.escaladoId   === currentUser.id;
-                  const isSubstituto = swap.substitutoId === currentUser.id;
-                  return (
-                    <tr 
-                      key={swap.id} 
-                      className={`hover:bg-slate-50/60 transition-all group ${
-                        swap.pairType === 'ida' ? 'bg-blue-500/[0.06] hover:bg-blue-500/[0.1]' : 
-                        swap.pairType === 'volta' ? 'bg-purple-500/[0.06] hover:bg-purple-500/[0.1]' : ''
-                      }`}
-                    >
-                      <td className={`px-6 py-4 ${
-                        swap.pairType === 'ida' ? 'border-l-4 border-l-blue-500' : 
-                        swap.pairType === 'volta' ? 'border-l-4 border-l-purple-500' : ''
-                      }`}>
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${statusBadgeClass(swap.status)}`}>
-                          {(swap.status === 'pendente' || swap.status === 'aguardando_substituto') && <Clock size={11} />}
-                          {swap.status === 'aprovado'  && <CheckCircle2 size={11} />}
-                          {(swap.status === 'reprovado' || swap.status === 'recusado_substituto') && <XCircle size={11} />}
-                          {swap.status === 'cancelado' && <XCircle size={11} />}
-                          {STATUS_LABELS[swap.status]}
+
+                  {/* Card Actions (Aprovação / Cancelamento) */}
+                  <div className="flex items-center gap-2">
+                    {u.status === 'pendente' && currentUser.isAdmin && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setEvaluationModal({ isOpen: true, swap: u.ida, action: 'aprovado', observation: '' })}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1 shadow-sm shadow-emerald-500/10"
+                        >
+                          <Check size={12} /> Aprovar Solicitação
+                        </button>
+                        <button
+                          onClick={() => setEvaluationModal({ isOpen: true, swap: u.ida, action: 'reprovado', observation: '' })}
+                          className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1 shadow-sm shadow-red-500/10"
+                        >
+                          <X size={12} /> Reprovar Solicitação
+                        </button>
+                      </div>
+                    )}
+                    
+                    {((['aguardando_substituto', 'pendente', 'aprovado'].includes(u.status) && (isUserInvolved || currentUser.isAdmin)) ||
+                      (u.status === 'reprovado' && currentUser.isAdmin)) && (
+                      <button
+                        onClick={() => setCancelSwapId(u.ida.id)}
+                        className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
+                      >
+                        <XCircle size={12} /> Cancelar Solicitação
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Card Body Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                  
+                  {/* Lado Esquerdo: IDA */}
+                  <div className="p-5 border-l-4 border-l-blue-500 bg-blue-500/[0.02] space-y-3">
+                    <div className="flex items-center justify-between border-b border-blue-100/50 pb-2">
+                      <span className="text-[10px] font-black uppercase text-blue-600 tracking-wider flex items-center gap-1">
+                        📤 Ida (Serviço Original)
+                      </span>
+                      <span className="text-[9px] text-slate-400 font-bold">
+                        Criado em: {new Date(u.ida.createdAt).toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">Escalado (Trabalha)</span>
+                        <span className="text-xs font-bold text-slate-700">{u.ida.escaladoName}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">Substituto (Folga)</span>
+                        <span className="text-xs font-bold text-slate-700">{u.ida.substitutoName}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">Data / Horário</span>
+                      <span className="block text-xs font-bold text-slate-800">
+                        {new Date(u.ida.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-bold">
+                        {u.ida.horarioInicio}h → {u.ida.horarioFim}h
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Lado Direito: VOLTA */}
+                  {u.volta ? (
+                    <div className="p-5 border-l-4 border-l-purple-500 bg-purple-500/[0.02] space-y-3">
+                      <div className="flex items-center justify-between border-b border-purple-100/50 pb-2">
+                        <span className="text-[10px] font-black uppercase text-purple-600 tracking-wider flex items-center gap-1">
+                          📥 Volta (Devolução)
                         </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1 items-start">
-                          <span className={`inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${funcaoBadgeClass(swap.funcao)}`}>
-                            {swap.funcao}
-                          </span>
-                          {swap.pairType === 'ida' && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase bg-blue-100 text-blue-700 border border-blue-200">
-                              📤 Ida (Troca)
-                            </span>
-                          )}
-                          {swap.pairType === 'volta' && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase bg-purple-100 text-purple-700 border border-purple-200">
-                              📥 Volta
-                            </span>
-                          )}
+                        
+                        {/* Devolução Action Button */}
+                        {u.volta.data === '1970-01-01' && ['pendente', 'aprovado'].includes(u.status) && (isUserInvolved || currentUser.isAdmin) && (
+                          <button
+                            onClick={() => setPaymentModal({
+                              isOpen: true,
+                              swap: u.volta!,
+                              dataPagamento: '',
+                              horarioInicioPagamento: '08:00',
+                              horarioFimPagamento: '08:00'
+                            })}
+                            className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1.5"
+                          >
+                            <Calendar size={10} /> Definir Data
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">Escalado (Trabalha)</span>
+                          <span className="text-xs font-bold text-slate-700">{u.volta.escaladoName}</span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {swap.data === '1970-01-01' ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-wider animate-pulse">
+                        <div>
+                          <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">Substituto (Folga)</span>
+                          <span className="text-xs font-bold text-slate-700">{u.volta.substitutoName}</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">Data / Horário</span>
+                        {u.volta.data === '1970-01-01' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-wider animate-pulse mt-1">
                             ⚠️ A Pagar (Definir)
                           </span>
                         ) : (
                           <>
                             <span className="block text-xs font-bold text-slate-800">
-                              {swap.data ? new Date(swap.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'A definir'}
+                              {new Date(u.volta.data + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </span>
                             <span className="text-[10px] text-slate-400 font-bold">
-                              {swap.horarioInicio && swap.horarioFim ? `${swap.horarioInicio}h → ${swap.horarioFim}h` : 'Horário a definir'}
+                              {u.volta.horarioInicio}h → {u.volta.horarioFim}h
                             </span>
                           </>
                         )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`text-xs font-bold ${isEscalado ? 'text-blue-600' : 'text-slate-700'}`}>
-                          {swap.escaladoName}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`text-xs font-bold ${isSubstituto ? 'text-blue-600' : 'text-slate-700'}`}>
-                          {swap.substitutoName}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        {swap.status === 'recusado_substituto' ? (
-                          <div className="text-[10px] text-slate-500 font-bold space-y-0.5">
-                            <p className="flex items-center gap-1 text-red-600 font-black">
-                              <XCircle size={11} className="text-red-500" /> Recusado pelo Substituto
-                            </p>
-                            {swap.observacao && (
-                              <p className="flex items-start gap-1 italic text-slate-400">
-                                <MessageSquare size={10} className="shrink-0 mt-0.5" />
-                                {swap.observacao}
-                              </p>
-                            )}
-                          </div>
-                        ) : swap.aprovadorName ? (
-                          <div className="text-[10px] text-slate-500 font-bold space-y-0.5">
-                            <p className="flex items-center gap-1">
-                              {swap.status === 'cancelado' ? (
-                                <>
-                                  <XCircle size={11} className="text-rose-500" />
-                                  <span className="text-rose-600">Cancelado por: {swap.aprovadorName}</span>
-                                </>
-                              ) : (
-                                <>
-                                  <UserCheck size={11} className="text-slate-400" />
-                                  <span>{swap.aprovadorName}</span>
-                                </>
-                              )}
-                            </p>
-                            {swap.observacao && (
-                              <p className="flex items-start gap-1 italic text-slate-400">
-                                <MessageSquare size={10} className="shrink-0 mt-0.5" />
-                                {swap.observacao}
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-[10px] text-slate-300 font-bold italic">—</span>
-                        )}
-                      </td>
-                      {(currentUser.isAdmin ||
-                        swap.escaladoId === currentUser.id ||
-                        (swap.status === 'aguardando_substituto' && isSubstituto)) && (
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
-                            {swap.status === 'aguardando_substituto' && isSubstituto && (
-                              <>
-                                <button
-                                  onClick={() => handleAccept(swap)}
-                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
-                                >
-                                  <Check size={12} /> Aceitar
-                                </button>
-                                <button
-                                  onClick={() => setRejectModal({ isOpen: true, swapId: swap.id, reason: '' })}
-                                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
-                                >
-                                  <X size={12} /> Recusar
-                                </button>
-                              </>
-                            )}
-                            {swap.status === 'pendente' && currentUser.isAdmin && (
-                              <>
-                                <button
-                                  onClick={() => setEvaluationModal({ isOpen: true, swap, action: 'aprovado', observation: '' })}
-                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
-                                >
-                                  <Check size={12} /> Aprovar
-                                </button>
-                                <button
-                                  onClick={() => setEvaluationModal({ isOpen: true, swap, action: 'reprovado', observation: '' })}
-                                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
-                                >
-                                  <X size={12} /> Reprovar
-                                </button>
-                              </>
-                            )}
-                            {['pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || swap.substitutoId === currentUser.id || currentUser.isAdmin) && (
-                              <button
-                                onClick={() => setPaymentModal({
-                                  isOpen: true,
-                                  swap,
-                                  dataPagamento: '',
-                                  horarioInicioPagamento: '08:00',
-                                  horarioFimPagamento: '08:00'
-                                })}
-                                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
-                              >
-                                <Calendar size={12} /> Devolução
-                              </button>
-                            )}
-                            {((['aguardando_substituto', 'pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin)) ||
-                              (swap.status === 'reprovado' && currentUser.isAdmin)) && (
-                              <button
-                                onClick={() => setCancelSwapId(swap.id)}
-                                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
-                              >
-                                <XCircle size={12} /> Cancelar
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Cards */}
-          <div className="lg:hidden divide-y divide-slate-100">
-            {filteredSwaps.map(swap => {
-              const isEscalado   = swap.escaladoId   === currentUser.id;
-              const isSubstituto = swap.substitutoId === currentUser.id;
-              return (
-                <div 
-                  key={swap.id} 
-                  className={`p-5 space-y-3 border-l-4 transition-all ${
-                    swap.pairType === 'ida' ? 'border-l-blue-500 bg-blue-500/[0.04]' : 
-                    swap.pairType === 'volta' ? 'border-l-purple-500 bg-purple-500/[0.04]' : 'border-l-transparent bg-transparent'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${statusBadgeClass(swap.status)}`}>
-                        {(swap.status === 'pendente' || swap.status === 'aguardando_substituto') && <Clock size={11} />}
-                        {swap.status === 'aprovado'  && <CheckCircle2 size={11} />}
-                        {(swap.status === 'reprovado' || swap.status === 'recusado_substituto') && <XCircle size={11} />}
-                        {swap.status === 'cancelado' && <XCircle size={11} />}
-                        {STATUS_LABELS[swap.status]}
-                      </span>
-                      <span className={`inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${funcaoBadgeClass(swap.funcao)}`}>
-                        {swap.funcao}
-                      </span>
-                      {swap.pairType === 'ida' && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase bg-blue-100 text-blue-700 border border-blue-200">
-                          📤 Ida (Troca)
-                        </span>
-                      )}
-                      {swap.pairType === 'volta' && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase bg-purple-100 text-purple-700 border border-purple-200">
-                          📥 Volta
-                        </span>
-                      )}
+                      </div>
                     </div>
-                    <span className="text-xs font-bold text-slate-500">
-                      {swap.data === '1970-01-01' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-md text-[8px] font-black uppercase tracking-wider animate-pulse">
-                          ⚠️ A Pagar
-                        </span>
-                      ) : (
-                        `${swap.data ? new Date(swap.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'A definir'} · ${swap.horarioInicio && swap.horarioFim ? `${swap.horarioInicio}h→${swap.horarioFim}h` : 'Horário a definir'}`
-                      )}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Escalado</p>
-                      <p className={`font-bold truncate ${isEscalado ? 'text-blue-600' : 'text-slate-800'}`}>{swap.escaladoName}</p>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Substituto</p>
-                      <p className={`font-bold truncate ${isSubstituto ? 'text-blue-600' : 'text-slate-800'}`}>{swap.substitutoName}</p>
-                    </div>
-                  </div>
-
-
-                  {(swap.aprovadorName || swap.observacao || swap.status === 'recusado_substituto') && (
-                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1">
-                      {swap.status === 'recusado_substituto' && (
-                        <p className="text-[10px] text-red-600 font-black flex items-center gap-1">
-                          <XCircle size={11} className="text-red-500" /> Recusado pelo Substituto
-                        </p>
-                      )}
-                      {swap.aprovadorName && (
-                        <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
-                          {swap.status === 'cancelado' ? (
-                            <>
-                              <XCircle size={11} className="text-rose-500" />
-                              <span className="text-rose-600">Cancelado por: {swap.aprovadorName}</span>
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck size={11} className="text-slate-400" />
-                              <span>{swap.aprovadorName}</span>
-                            </>
-                          )}
-                        </p>
-                      )}
-                      {swap.observacao && (
-                        <p className="text-[10px] text-slate-400 italic flex items-start gap-1">
-                          <MessageSquare size={10} className="shrink-0 mt-0.5" /> {swap.observacao}
-                        </p>
-                      )}
+                  ) : (
+                    <div className="p-5 bg-slate-50 flex items-center justify-center text-slate-400 text-xs font-bold italic">
+                      Sem devolução casada.
                     </div>
                   )}
-
-                  {((swap.status === 'aguardando_substituto' && isSubstituto) ||
-                    (swap.status === 'pendente' && currentUser.isAdmin) ||
-                    (['aguardando_substituto', 'pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin)) ||
-                    (swap.status === 'reprovado' && currentUser.isAdmin)) && (
-                    <div className="flex flex-col gap-2 pt-1">
-                      {swap.status === 'aguardando_substituto' && isSubstituto && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleAccept(swap)}
-                            className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                          >
-                            <Check size={13} /> Aceitar
-                          </button>
-                          <button
-                            onClick={() => setRejectModal({ isOpen: true, swapId: swap.id, reason: '' })}
-                            className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                          >
-                            <X size={13} /> Recusar
-                          </button>
-                        </div>
-                      )}
-                      {swap.status === 'pendente' && currentUser.isAdmin && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setEvaluationModal({ isOpen: true, swap, action: 'aprovado', observation: '' })}
-                            className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                          >
-                            <Check size={13} /> Aprovar
-                          </button>
-                          <button
-                            onClick={() => setEvaluationModal({ isOpen: true, swap, action: 'reprovado', observation: '' })}
-                            className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                          >
-                            <X size={13} /> Reprovar
-                          </button>
-                        </div>
-                      )}
-                      {['pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || swap.substitutoId === currentUser.id || currentUser.isAdmin) && (
-                        <button
-                          onClick={() => setPaymentModal({
-                            isOpen: true,
-                            swap,
-                            dataPagamento: '',
-                            horarioInicioPagamento: '08:00',
-                            horarioFimPagamento: '08:00'
-                          })}
-                          className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5 mb-2"
-                        >
-                          <Calendar size={13} /> Informar Devolução
-                        </button>
-                      )}
-                      {((['aguardando_substituto', 'pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin)) ||
-                        (swap.status === 'reprovado' && currentUser.isAdmin)) && (
-                        <button
-                          onClick={() => setCancelSwapId(swap.id)}
-                          className="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                        >
-                          <XCircle size={13} /> Cancelar Solicitação
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  
                 </div>
-              );
-            })}
-          </div>
-
+              </div>
+            );
+          })}
+          
           {/* Footer count */}
-          <div className="px-6 py-3 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+          <div className="px-6 py-4 bg-white rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {filteredSwaps.length} registro{filteredSwaps.length !== 1 ? 's' : ''}
+              {filteredUnifiedSwaps.length} solicitação{filteredUnifiedSwaps.length !== 1 ? 'ões casadas' : 'ão casada'}
             </p>
           </div>
         </div>
