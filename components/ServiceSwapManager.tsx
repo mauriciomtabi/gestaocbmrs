@@ -1038,7 +1038,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                         📤 Ida (Serviço Original)
                       </span>
                       <span className="text-[9px] text-slate-400 font-bold">
-                        Criado em: {new Date(u.ida.createdAt).toLocaleDateString('pt-BR')}
+                        Criado em: {new Date(u.ida.createdAt).toLocaleDateString('pt-BR')} por {u.ida.escaladoName}
                       </span>
                     </div>
                     
