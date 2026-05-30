@@ -295,12 +295,33 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
         return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
       };
 
+      const cleanOcrText = (text: string): string => {
+        if (!text) return '';
+        // 1. Substituir caracteres quebrados conhecidos e caixas de erro do OCR.
+        let clean = text.replace(/[\uFFFD\u25A0-\u25FF\u007F-\u009F]/g, '');
+        
+        // 2. Corrigir padrões com LEO, incluindo caracteres especiais residuais
+        clean = clean.replace(/[^A-Za-z0-9\sÀ-ÿ]?LEO\b/gi, 'ÓLEO');
+        clean = clean.replace(/\bOLEO\b/gi, 'ÓLEO');
+        clean = clean.replace(/\bOLEOS\b/gi, 'ÓLEOS');
+        
+        // 3. Outras palavras comuns de abastecimento/manutenção
+        clean = clean.replace(/\bDISEL\b/gi, 'DIESEL');
+        clean = clean.replace(/\bAGUA\b/gi, 'ÁGUA');
+        clean = clean.replace(/\bVEICULO\b/gi, 'VEÍCULO');
+        clean = clean.replace(/\bCONVENIO\b/gi, 'CONVÊNIO');
+        
+        // 4. Espaços duplicados
+        clean = clean.replace(/\s+/g, ' ').trim();
+        return clean.toUpperCase();
+      };
+
       const supply: FuelSupply = {
         id: 'temp-' + Date.now(),
         date: result.data || getLocalISOString(new Date()),
         location: result.local || '',
         cnpj: result.cnpj || '',
-        fuelType: entryType === 'manutencao' ? 'VÁRIOS ITENS' : (result.fuelType || ''),
+        fuelType: entryType === 'manutencao' ? 'VÁRIOS ITENS' : cleanOcrText(result.fuelType || ''),
         liters: entryType === 'manutencao' ? 0 : (result.liters || 0),
         pricePerLiter: entryType === 'manutencao' ? 0 : (result.pricePerLiter || 0),
         totalValue: result.totalValue || 0,
@@ -310,7 +331,12 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
         attendant: result.attendant || '',
         protocol: result.protocol || '',
         entryType: entryType,
-        items: entryType === 'manutencao' ? (result.items || []) : [],
+        items: entryType === 'manutencao'
+          ? (result.items || []).map((item: any) => ({
+              ...item,
+              description: cleanOcrText(item.description || '')
+            }))
+          : [],
         attachmentData: finalImages.nf || '',
         attachmentType: finalImages.nf ? 'image/jpeg' : '',
         ticketLogData: finalImages.ticket || '',

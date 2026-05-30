@@ -90,6 +90,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
   }>({ isOpen: false, swap: null, action: 'aprovado', observation: '' });
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const statusFilterDropdownRef = React.useRef<HTMLDivElement>(null);
@@ -429,6 +430,11 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
       if (showPendingPaybacksOnly) {
         if (!u.volta || u.volta.data !== '1970-01-01') return false;
       }
+      if (dateFilter) {
+        const matchesIdaDate = u.ida.data === dateFilter;
+        const matchesVoltaDate = u.volta ? u.volta.data === dateFilter : false;
+        if (!matchesIdaDate && !matchesVoltaDate) return false;
+      }
       if (searchTerm.trim() !== '') {
         const q = searchTerm.toLowerCase();
         const matchesIda = 
@@ -448,7 +454,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
       }
       return true;
     });
-  }, [unifiedSwaps, activeTab, statusFilter, searchTerm, currentUser.id, showPendingPaybacksOnly]);
+  }, [unifiedSwaps, activeTab, statusFilter, searchTerm, dateFilter, currentUser.id, showPendingPaybacksOnly]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -883,6 +889,28 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           />
         </div>
 
+        {/* Filtro de Data */}
+        <div className="relative w-full md:w-auto shrink-0">
+          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={e => setDateFilter(e.target.value)}
+            className="pl-12 pr-8 py-3 bg-slate-50 border border-slate-100 hover:bg-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all text-xs font-bold text-slate-700 w-full md:w-[160px] cursor-pointer"
+            title="Filtrar por Data"
+          />
+          {dateFilter && (
+            <button
+              type="button"
+              onClick={() => setDateFilter('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 cursor-pointer"
+              title="Limpar Data"
+            >
+              <X size={10} />
+            </button>
+          )}
+        </div>
+
         {/* Toggle Filtro A Pagar */}
         <button
           type="button"
@@ -968,10 +996,10 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
         )}
 
         {/* Clear filters */}
-        {(searchTerm !== '' || statusFilter.length > 0) && (
+        {(searchTerm !== '' || statusFilter.length > 0 || dateFilter !== '') && (
           <button
-            onClick={() => { setSearchTerm(''); setStatusFilter([]); }}
-            className="text-[10px] font-black text-blue-600 hover:text-blue-800 uppercase px-2 shrink-0"
+            onClick={() => { setSearchTerm(''); setStatusFilter([]); setDateFilter(''); }}
+            className="text-[10px] font-black text-blue-600 hover:text-blue-800 uppercase px-2 shrink-0 cursor-pointer"
           >
             Limpar
           </button>
@@ -1101,8 +1129,8 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                   {/* Lado Esquerdo: IDA */}
                   <div className="p-5 border-l-4 border-l-blue-500 bg-blue-500/[0.02] space-y-3">
                     <div className="flex items-center justify-between border-b border-blue-100/50 pb-2">
-                      <span className="text-[10px] font-black uppercase text-blue-600 tracking-wider flex items-center gap-1">
-                        📤 Ida (Serviço Original)
+                      <span className="text-[11px] font-black uppercase text-blue-700 tracking-wider flex items-center gap-1.5 bg-blue-50 border border-blue-200/50 px-2.5 py-1 rounded-full shadow-sm">
+                        📤 ESCALADO
                       </span>
                       <span className="text-[9px] text-slate-400 font-bold">
                         Criado em: {new Date(u.ida.createdAt).toLocaleDateString('pt-BR')} por {u.ida.escaladoName}
@@ -1111,17 +1139,17 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">Escalado (Trabalha)</span>
-                        <span className="text-xs font-bold text-slate-700">{u.ida.escaladoName}</span>
+                        <span className="block text-[9px] font-black uppercase text-blue-600 bg-blue-50 border border-blue-200/30 px-2 py-0.5 rounded-md inline-block mb-1 tracking-wider">ESCALADO (TRABALHA)</span>
+                        <span className="text-xs font-bold text-slate-700 block">{u.ida.escaladoName}</span>
                       </div>
                       <div>
-                        <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">Substituto (Folga)</span>
-                        <span className="text-xs font-bold text-slate-700">{u.ida.substitutoName}</span>
+                        <span className="block text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 border border-indigo-200/30 px-2 py-0.5 rounded-md inline-block mb-1 tracking-wider">SUBSTITUTO (FOLGA)</span>
+                        <span className="text-xs font-bold text-slate-700 block">{u.ida.substitutoName}</span>
                       </div>
                     </div>
 
                     <div>
-                      <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">Data / Horário</span>
+                      <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Data / Horário</span>
                       <span className="block text-xs font-bold text-slate-800">
                         {new Date(u.ida.data + 'T00:00:00').toLocaleDateString('pt-BR')}
                       </span>
@@ -1135,8 +1163,8 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                   {u.volta ? (
                     <div className="p-5 border-l-4 border-l-purple-500 bg-purple-500/[0.02] space-y-3">
                       <div className="flex items-center justify-between border-b border-purple-100/50 pb-2">
-                        <span className="text-[10px] font-black uppercase text-purple-600 tracking-wider flex items-center gap-1">
-                          📥 Volta (Devolução)
+                        <span className="text-[11px] font-black uppercase text-purple-700 tracking-wider flex items-center gap-1.5 bg-purple-50 border border-purple-200/50 px-2.5 py-1 rounded-full shadow-sm">
+                          📥 SUBSTITUTO
                         </span>
                         
                         {/* Devolução Action Button */}
@@ -1158,12 +1186,12 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">Escalado (Trabalha)</span>
-                          <span className="text-xs font-bold text-slate-700">{u.volta.escaladoName}</span>
+                          <span className="block text-[9px] font-black uppercase text-purple-600 bg-purple-50 border border-purple-200/30 px-2 py-0.5 rounded-md inline-block mb-1 tracking-wider">ESCALADO (TRABALHA)</span>
+                          <span className="text-xs font-bold text-slate-700 block">{u.volta.escaladoName}</span>
                         </div>
                         <div>
-                          <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest">Substituto (Folga)</span>
-                          <span className="text-xs font-bold text-slate-700">{u.volta.substitutoName}</span>
+                          <span className="block text-[9px] font-black uppercase text-fuchsia-600 bg-fuchsia-50 border border-fuchsia-200/30 px-2 py-0.5 rounded-md inline-block mb-1 tracking-wider">SUBSTITUTO (FOLGA)</span>
+                          <span className="text-xs font-bold text-slate-700 block">{u.volta.substitutoName}</span>
                         </div>
                       </div>
 
