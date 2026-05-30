@@ -1139,11 +1139,11 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <span className="block text-[9px] font-black uppercase text-blue-600 bg-blue-50 border border-blue-200/30 px-2 py-0.5 rounded-md inline-block mb-1 tracking-wider">ESCALADO (TRABALHA)</span>
+                        <span className="block text-[9px] font-black uppercase text-blue-600 bg-blue-50 border border-blue-200/30 px-2 py-0.5 rounded-md inline-block mb-1 tracking-wider">ESCALADO</span>
                         <span className="text-xs font-bold text-slate-700 block">{u.ida.escaladoName}</span>
                       </div>
                       <div>
-                        <span className="block text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 border border-indigo-200/30 px-2 py-0.5 rounded-md inline-block mb-1 tracking-wider">SUBSTITUTO (FOLGA)</span>
+                        <span className="block text-[9px] font-black uppercase text-indigo-600 bg-indigo-50 border border-indigo-200/30 px-2 py-0.5 rounded-md inline-block mb-1 tracking-wider">SUBSTITUTO</span>
                         <span className="text-xs font-bold text-slate-700 block">{u.ida.substitutoName}</span>
                       </div>
                     </div>
@@ -1187,7 +1187,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                       <div className="grid grid-cols-1 gap-4">
                         <div>
                           <span className="block text-[9px] font-black uppercase text-purple-600 bg-purple-50 border border-purple-200/30 px-2 py-0.5 rounded-md inline-block mb-1 tracking-wider">SUBSTITUTO</span>
-                          <span className="text-xs font-bold text-slate-700 block">{u.volta.escaladoName}</span>
+                          <span className="text-xs font-bold text-slate-700 block">{u.volta.substitutoName}</span>
                         </div>
                       </div>
 
