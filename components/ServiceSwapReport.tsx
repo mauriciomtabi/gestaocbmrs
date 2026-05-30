@@ -364,7 +364,7 @@ const ReportDocument: React.FC<DocProps> = ({
               <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                 {[
                   'Status', 'Função', 'Data / Horário', 'Escalado',
-                  'Substituto', 'Devolução', 'Etapa Substituto', 'Aprovador',
+                  'Substituto', 'Etapa Substituto', 'Aprovador',
                 ].map(h => (
                   <th key={h} style={{
                     padding: '10px 14px', textAlign: 'left',
@@ -429,21 +429,6 @@ const ReportDocument: React.FC<DocProps> = ({
                     <span style={{ fontWeight: 700, color: '#1e293b' }}>{swap.substitutoName}</span>
                   </td>
 
-                  {/* Devolução */}
-                  <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
-                    {swap.dataPagamento ? (
-                      <div>
-                        <span style={{ fontWeight: 700, color: '#10b981' }}>
-                          {fmtDate(swap.dataPagamento)}
-                        </span>
-                        <span style={{ display: 'block', fontSize: 9, color: '#94a3b8', fontWeight: 600, marginTop: 2 }}>
-                          {swap.horarioInicioPagamento}h → {swap.horarioFimPagamento}h
-                        </span>
-                      </div>
-                    ) : (
-                      <span style={{ color: '#d97706', fontWeight: 600 }}>A definir</span>
-                    )}
-                  </td>
 
                   {/* Etapa Substituto */}
                   <td style={{ padding: '10px 14px', maxWidth: 180 }}>

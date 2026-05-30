@@ -109,6 +109,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
   }>({ isOpen: false, swap: null });
 
   const [formData, setFormData] = useState({
+    escaladoId: currentUser.id || '',
     substitutoId: '',
     funcao: 'Linha' as Funcao,
     data: '',
@@ -137,6 +138,10 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
 
   const [savingPayment, setSavingPayment] = useState(false);
 
+  const [escaladoSearch, setEscaladoSearch] = useState(currentUser.id ? `${currentUser.rank} ${currentUser.warName} (${currentUser.name})` : '');
+  const [isEscaladoDropdownOpen, setIsEscaladoDropdownOpen] = useState(false);
+  const escaladoDropdownRef = React.useRef<HTMLDivElement>(null);
+
   const [substituteSearch, setSubstituteSearch] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [cancelSwapId, setCancelSwapId] = useState<string | null>(null);
@@ -163,9 +168,21 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
     profiles.reduce((acc, p) => { if (p.id) acc[p.id] = p; return acc; }, {} as Record<string, Operator>),
   [profiles]);
 
+  const eligibleEscalados = useMemo(() => profiles, [profiles]);
+
+  const filteredEscalados = useMemo(() => {
+    const query = escaladoSearch.toLowerCase().trim();
+    if (!query) return eligibleEscalados;
+    return eligibleEscalados.filter(p =>
+      p.rank.toLowerCase().includes(query) ||
+      p.warName.toLowerCase().includes(query) ||
+      p.name.toLowerCase().includes(query)
+    );
+  }, [eligibleEscalados, escaladoSearch]);
+
   const eligibleSubstitutes = useMemo(() =>
-    profiles.filter(p => p.id !== currentUser.id),
-  [profiles, currentUser]);
+    profiles.filter(p => p.id !== formData.escaladoId),
+  [profiles, formData.escaladoId]);
 
   const filteredSubstitutes = useMemo(() => {
     const query = substituteSearch.toLowerCase().trim();
@@ -179,6 +196,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Clique fora do substituto
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
         if (!formData.substitutoId) {
@@ -190,10 +208,51 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           }
         }
       }
+      // Clique fora do escalado
+      if (escaladoDropdownRef.current && !escaladoDropdownRef.current.contains(event.target as Node)) {
+        setIsEscaladoDropdownOpen(false);
+        if (!formData.escaladoId) {
+          setEscaladoSearch('');
+        } else {
+          const selected = profilesMap[formData.escaladoId];
+          if (selected) {
+            setEscaladoSearch(`${selected.rank} ${selected.warName} (${selected.name})`);
+          }
+        }
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [formData.substitutoId, profilesMap]);
+  }, [formData.substitutoId, formData.escaladoId, profilesMap]);
+
+  const handleSelectEscalado = (esc: Operator) => {
+    setFormData(prev => {
+      const nextSubId = prev.substitutoId === esc.id ? '' : prev.substitutoId;
+      if (prev.substitutoId === esc.id) {
+        setSubstituteSearch('');
+      }
+      return {
+        ...prev,
+        escaladoId: esc.id || '',
+        substitutoId: nextSubId
+      };
+    });
+    setEscaladoSearch(esc.id ? `${esc.rank} ${esc.warName} (${esc.name})` : '');
+    setIsEscaladoDropdownOpen(false);
+  };
+
+  const handleEscaladoSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEscaladoSearch(val);
+    setFormData(prev => ({ ...prev, escaladoId: '' }));
+    setIsEscaladoDropdownOpen(true);
+  };
+
+  const handleClearEscaladoSelection = () => {
+    setEscaladoSearch('');
+    setFormData(prev => ({ ...prev, escaladoId: '' }));
+    setIsEscaladoDropdownOpen(false);
+  };
 
   const handleSelectSubstitute = (sub: Operator) => {
     setFormData(prev => ({ ...prev, substitutoId: sub.id || '' }));
@@ -256,6 +315,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser.id) { setNotification('Sessão inválida.', 'error'); return; }
+    if (!formData.escaladoId) { setNotification('Selecione o escalado.', 'error'); return; }
     if (!formData.substitutoId) { setNotification('Selecione o substituto.', 'error'); return; }
     if (!formData.data) { setNotification('Preencha a data da troca.', 'error'); return; }
 
@@ -267,23 +327,35 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
 
     setSaving(true);
     try {
+      // 1. Criar a troca original (A -> B)
       const result = await createServiceSwap({
-        escaladoId:    currentUser.id,
+        escaladoId:    formData.escaladoId,
         substitutoId:  formData.substitutoId,
         funcao:        formData.funcao,
         data:          formData.data,
         horarioInicio: formData.horarioInicio,
         horarioFim:    formData.horarioFim,
         status:        'aguardando_substituto',
-        dataPagamento: informarPagamentoAgora ? formData.dataPagamento : null,
-        horarioInicioPagamento: informarPagamentoAgora ? formData.horarioInicioPagamento : null,
-        horarioFimPagamento: informarPagamentoAgora ? formData.horarioFimPagamento : null,
       } as Partial<ServiceSwap>);
+
+      // 2. Se a devolução foi informada, criar a troca invertida (B -> A)
+      if (informarPagamentoAgora && formData.dataPagamento) {
+        await createServiceSwap({
+          escaladoId:    formData.substitutoId, // Invertido!
+          substitutoId:  formData.escaladoId,   // Invertido!
+          funcao:        formData.funcao,
+          data:          formData.dataPagamento,
+          horarioInicio: formData.horarioInicioPagamento,
+          horarioFim:    formData.horarioFimPagamento,
+          status:        'aguardando_substituto',
+        } as Partial<ServiceSwap>);
+      }
 
       if (result) {
         setNotification('Solicitação enviada para aceite do substituto!', 'success');
         setIsModalOpen(false);
         setFormData({
+          escaladoId: currentUser.id || '',
           substitutoId: '',
           funcao: 'Linha',
           data: '',
@@ -293,8 +365,9 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
           horarioInicioPagamento: '08:00',
           horarioFimPagamento: '08:00',
         });
-        setInformarPagamentoAgora(false);
+        setEscaladoSearch(currentUser.id ? `${currentUser.rank} ${currentUser.warName} (${currentUser.name})` : '');
         setSubstituteSearch('');
+        setInformarPagamentoAgora(false);
         await loadData();
       } else throw new Error('Erro no retorno da criação.');
     } catch (err: any) {
@@ -406,14 +479,18 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
 
     setSavingPayment(true);
     try {
-      const result = await updateServiceSwapPayment(
-        paymentModal.swap.id,
-        paymentModal.dataPagamento,
-        paymentModal.horarioInicioPagamento,
-        paymentModal.horarioFimPagamento
-      );
+      const result = await createServiceSwap({
+        escaladoId:    paymentModal.swap.substitutoId, // Invertido!
+        substitutoId:  paymentModal.swap.escaladoId,   // Invertido!
+        funcao:        paymentModal.swap.funcao,
+        data:          paymentModal.dataPagamento,
+        horarioInicio: paymentModal.horarioInicioPagamento,
+        horarioFim:    paymentModal.horarioFimPagamento,
+        status:        'aguardando_substituto',
+      } as Partial<ServiceSwap>);
+
       if (result) {
-        setNotification('Dados de devolução de plantão atualizados com sucesso!', 'success');
+        setNotification('Devolução registrada com sucesso como uma nova solicitação de troca!', 'success');
         setPaymentModal({
           isOpen: false,
           swap: null,
@@ -424,7 +501,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
         await loadData();
       } else throw new Error('Erro ao salvar as informações de devolução.');
     } catch (err: any) {
-      setNotification(err.message || 'Erro ao salvar a devolução de plantão.', 'error');
+      setNotification(err.message || 'Erro ao registrar a devolução de plantão.', 'error');
     } finally {
       setSavingPayment(false);
     }
@@ -637,7 +714,6 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Data / Horário</th>
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Escalado</th>
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Substituto</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Devolução</th>
                   <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Avaliação</th>
                   {(currentUser.isAdmin || filteredSwaps.some(s => s.escaladoId === currentUser.id || s.substitutoId === currentUser.id)) && (
                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ações</th>
@@ -681,39 +757,6 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                         <span className={`text-xs font-bold ${isSubstituto ? 'text-blue-600' : 'text-slate-700'}`}>
                           {swap.substitutoName}
                         </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        {swap.dataPagamento ? (
-                          <div className="text-xs font-bold text-slate-700 flex flex-col gap-0.5">
-                            <span className="text-emerald-700 bg-emerald-50 border border-emerald-250 px-2 py-0.5 rounded-lg inline-flex items-center gap-1 w-max text-[10px] font-black uppercase">
-                              <Calendar size={10} />
-                              {new Date(swap.dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR')}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-bold ml-1">
-                              {swap.horarioInicioPagamento}h → {swap.horarioFimPagamento}h
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-amber-600 bg-amber-50 border border-amber-250 px-2 py-0.5 rounded-lg">
-                            <Clock size={10} />
-                            A Definir
-                          </span>
-                        )}
-                        
-                        {(swap.escaladoId === currentUser.id || currentUser.isAdmin) && (
-                          <button
-                            onClick={() => setPaymentModal({
-                              isOpen: true,
-                              swap,
-                              dataPagamento: swap.dataPagamento || '',
-                              horarioInicioPagamento: swap.horarioInicioPagamento || '08:00',
-                              horarioFimPagamento: swap.horarioFimPagamento || '08:00'
-                            })}
-                            className="mt-1.5 text-[9px] text-blue-600 hover:text-blue-800 font-black uppercase flex items-center gap-1 active:scale-95 transition-all ml-1"
-                          >
-                            {swap.dataPagamento ? 'Alterar' : 'Informar'}
-                          </button>
-                        )}
                       </td>
                       <td className="px-6 py-4">
                         {swap.status === 'recusado_substituto' ? (
@@ -791,6 +834,20 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                                 </button>
                               </>
                             )}
+                            {['pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin) && (
+                              <button
+                                onClick={() => setPaymentModal({
+                                  isOpen: true,
+                                  swap,
+                                  dataPagamento: '',
+                                  horarioInicioPagamento: '08:00',
+                                  horarioFimPagamento: '08:00'
+                                })}
+                                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
+                              >
+                                <Calendar size={12} /> Devolução
+                              </button>
+                            )}
                             {((['aguardando_substituto', 'pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin)) ||
                               (swap.status === 'reprovado' && currentUser.isAdmin)) && (
                               <button
@@ -844,33 +901,6 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                     </div>
                   </div>
 
-                  {/* Bloco de Devolução no Mobile */}
-                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Devolução / Pagamento</p>
-                      {swap.dataPagamento ? (
-                        <p className="font-bold text-slate-800 text-xs">
-                          {new Date(swap.dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR')} · {swap.horarioInicioPagamento}h→{swap.horarioFimPagamento}h
-                        </p>
-                      ) : (
-                        <p className="font-bold text-amber-600 text-xs uppercase">A definir</p>
-                      )}
-                    </div>
-                    {(swap.escaladoId === currentUser.id || currentUser.isAdmin) && (
-                      <button
-                        onClick={() => setPaymentModal({
-                          isOpen: true,
-                          swap,
-                          dataPagamento: swap.dataPagamento || '',
-                          horarioInicioPagamento: swap.horarioInicioPagamento || '08:00',
-                          horarioFimPagamento: swap.horarioFimPagamento || '08:00'
-                        })}
-                        className="py-1.5 px-3 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1 shrink-0"
-                      >
-                        {swap.dataPagamento ? 'Alterar' : 'Informar'}
-                      </button>
-                    )}
-                  </div>
 
                   {(swap.aprovadorName || swap.observacao || swap.status === 'recusado_substituto') && (
                     <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1">
@@ -939,6 +969,20 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                           </button>
                         </div>
                       )}
+                      {['pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin) && (
+                        <button
+                          onClick={() => setPaymentModal({
+                            isOpen: true,
+                            swap,
+                            dataPagamento: '',
+                            horarioInicioPagamento: '08:00',
+                            horarioFimPagamento: '08:00'
+                          })}
+                          className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5 mb-2"
+                        >
+                          <Calendar size={13} /> Informar Devolução
+                        </button>
+                      )}
                       {((['aguardando_substituto', 'pendente', 'aprovado'].includes(swap.status) && (swap.escaladoId === currentUser.id || currentUser.isAdmin)) ||
                         (swap.status === 'reprovado' && currentUser.isAdmin)) && (
                         <button
@@ -993,12 +1037,56 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
               <div className="p-6 space-y-5">
 
-                {/* Escalado (read-only) */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Escalado (Você)</label>
-                  <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-500 font-bold text-sm flex items-center gap-2">
-                    <User size={15} className="text-slate-400" />
-                    <span>{currentUser.rank} {currentUser.warName}</span>
+                {/* Escalado (com Autocomplete) */}
+                <div className="space-y-1.5" ref={escaladoDropdownRef}>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Escalado *</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Digite para buscar o escalado..."
+                      value={escaladoSearch}
+                      onChange={handleEscaladoSearchChange}
+                      onFocus={() => setIsEscaladoDropdownOpen(true)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-slate-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-bold text-sm"
+                    />
+                    
+                    {formData.escaladoId ? (
+                      <button
+                        type="button"
+                        onClick={handleClearEscaladoSelection}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
+                        title="Limpar seleção"
+                      >
+                        <X size={16} />
+                      </button>
+                    ) : (
+                      <ArrowUpDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    )}
+
+                    <input type="hidden" value={formData.escaladoId} required />
+
+                    {/* Floating Dropdown Menu */}
+                    {isEscaladoDropdownOpen && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-[1200] max-h-60 overflow-y-auto no-scrollbar animate-in fade-in slide-in-from-top-2 duration-200">
+                        {filteredEscalados.length === 0 ? (
+                          <div className="p-4 text-center text-slate-400 text-xs font-bold uppercase tracking-wider">
+                            Nenhum militar encontrado
+                          </div>
+                        ) : (
+                          filteredEscalados.map(p => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => handleSelectEscalado(p)}
+                              className="w-full text-left px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all border-b border-slate-50 last:border-0 flex flex-col gap-0.5"
+                            >
+                              <span className="text-slate-900 font-black uppercase text-[11px]">{p.rank} {p.warName}</span>
+                              <span className="text-[10px] text-slate-400 font-medium">{p.name}</span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
