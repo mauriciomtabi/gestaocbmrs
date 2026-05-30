@@ -1040,6 +1040,14 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                     </div>
                   )}
 
+                  {/* Substitute Rejection Details */}
+                  {u.status === 'recusado_substituto' && u.ida.observacao && (
+                    <div className="text-[10px] text-slate-400 font-bold max-w-xs truncate">
+                      Recusado por: <span className="text-slate-600 font-extrabold">{u.ida.substitutoName || 'Substituto'}</span>
+                      <span className="italic block mt-0.5">"{u.ida.observacao}"</span>
+                    </div>
+                  )}
+
                   {/* Card Actions (Aprovação / Cancelamento) */}
                   <div className="flex items-center gap-2">
                     {u.status === 'aguardando_substituto' && u.ida.substitutoId === currentUser.id && (
