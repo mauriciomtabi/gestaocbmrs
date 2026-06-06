@@ -144,7 +144,7 @@ const UserProfile: React.FC<Props> = ({ user, onUpdate, onBack }) => {
             </div>
 
             <div>
-              <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">{(formData.rank || '')} {(formData.warName || 'OPERADOR')}</h3>
+              <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">{(formData.rank && formData.rank !== 'Outro' && formData.warName?.toUpperCase() !== 'COBOM' ? `${formData.rank} ` : '')}{(formData.warName || 'OPERADOR')}</h3>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Operador de Sistema</p>
             </div>
 

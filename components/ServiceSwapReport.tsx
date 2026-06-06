@@ -334,7 +334,7 @@ const ReportDocument: React.FC<DocProps> = ({
             <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', margin: 0 }}>Emitido em</p>
             <p style={{ color: 'white', fontSize: 12, fontWeight: 800, margin: '2px 0 0' }}>{emitDate}</p>
             <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', margin: '8px 0 0' }}>Emitido por</p>
-            <p style={{ color: 'white', fontSize: 12, fontWeight: 800, margin: '2px 0 0' }}>{currentUser.rank} {currentUser.warName}</p>
+            <p style={{ color: 'white', fontSize: 12, fontWeight: 800, margin: '2px 0 0' }}>{currentUser.rank && currentUser.rank !== 'Outro' && currentUser.warName?.toUpperCase() !== 'COBOM' ? `${currentUser.rank} ` : ''}{currentUser.warName}</p>
           </div>
         </div>
 

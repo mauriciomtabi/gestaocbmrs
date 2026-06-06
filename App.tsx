@@ -482,7 +482,7 @@ const App: React.FC = () => {
             className={`px-3 py-3 bg-blue-900/30 rounded-2xl border border-white/5 text-left transition-all hover:bg-blue-800/50 ${view === 'settings' ? 'ring-2 ring-blue-500 border-transparent' : ''}`}
           >
             <p className="text-[8px] font-black uppercase text-blue-400 tracking-widest mb-1">Operador Logado</p>
-            <p className="text-[11px] font-bold truncate text-white uppercase">{(currentUser.rank || '')} {(currentUser.warName || '')}</p>
+            <p className="text-[11px] font-bold truncate text-white uppercase">{(currentUser.rank && currentUser.rank !== 'Outro' && currentUser.warName?.toUpperCase() !== 'COBOM' ? `${currentUser.rank} ` : '')}{(currentUser.warName || '')}</p>
           </button>
           <button 
             onClick={handleLogout}

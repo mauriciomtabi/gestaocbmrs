@@ -552,7 +552,7 @@ const UserAccessControl: React.FC = () => {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-black text-slate-800 uppercase text-sm truncate">{p.rank} {p.warName}</h3>
+                      <h3 className="font-black text-slate-800 uppercase text-sm truncate">{p.rank && p.rank !== 'Outro' && p.warName?.toUpperCase() !== 'COBOM' ? `${p.rank} ` : ''}{p.warName}</h3>
                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest truncate">{p.email}</p>
                     </div>
                   </div>
@@ -663,7 +663,7 @@ const UserAccessControl: React.FC = () => {
                 </p>
                 <div className="mt-4 bg-red-50 border border-red-100 rounded-2xl p-4">
                   <p className="text-red-800 font-black text-sm uppercase tracking-tight">
-                    {deleteModal.user.rank} {deleteModal.user.warName}
+                    {deleteModal.user.rank && deleteModal.user.rank !== 'Outro' && deleteModal.user.warName?.toUpperCase() !== 'COBOM' ? `${deleteModal.user.rank} ` : ''}{deleteModal.user.warName}
                   </p>
                   <p className="text-red-500 text-xs font-medium mt-1">{deleteModal.user.email}</p>
                 </div>

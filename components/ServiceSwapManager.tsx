@@ -74,6 +74,16 @@ const statusBadgeClass = (status: string) => {
   }
 };
 
+const formatMilitar = (rank?: string, warName?: string) => {
+  if (!rank || rank === 'Outro' || warName?.toUpperCase() === 'COBOM') return warName || '';
+  return `${rank} ${warName || ''}`;
+};
+
+const formatMilitarWithRealName = (rank?: string, warName?: string, name?: string) => {
+  const base = formatMilitar(rank, warName);
+  return name ? `${base} (${name})` : base;
+};
+
 const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isReadOnly = false }) => {
   const [swaps, setSwaps] = useState<ServiceSwap[]>([]);
   const [profiles, setProfiles] = useState<Operator[]>([]);
@@ -151,7 +161,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
   const isSavingRef = useRef(false);
   const [showPendingPaybacksOnly, setShowPendingPaybacksOnly] = useState(false);
 
-  const [escaladoSearch, setEscaladoSearch] = useState(currentUser.id ? `${currentUser.rank} ${currentUser.warName} (${currentUser.name})` : '');
+  const [escaladoSearch, setEscaladoSearch] = useState(currentUser.id ? formatMilitarWithRealName(currentUser.rank, currentUser.warName, currentUser.name) : '');
   const [isEscaladoDropdownOpen, setIsEscaladoDropdownOpen] = useState(false);
   const escaladoDropdownRef = React.useRef<HTMLDivElement>(null);
 
@@ -217,7 +227,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
         } else {
           const selected = profilesMap[formData.substitutoId];
           if (selected) {
-            setSubstituteSearch(`${selected.rank} ${selected.warName} (${selected.name})`);
+            setSubstituteSearch(formatMilitarWithRealName(selected.rank, selected.warName, selected.name));
           }
         }
       }
@@ -229,7 +239,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
         } else {
           const selected = profilesMap[formData.escaladoId];
           if (selected) {
-            setEscaladoSearch(`${selected.rank} ${selected.warName} (${selected.name})`);
+            setEscaladoSearch(formatMilitarWithRealName(selected.rank, selected.warName, selected.name));
           }
         }
       }
@@ -250,7 +260,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
         substitutoId: nextSubId
       };
     });
-    setEscaladoSearch(esc.id ? `${esc.rank} ${esc.warName} (${esc.name})` : '');
+    setEscaladoSearch(esc.id ? formatMilitarWithRealName(esc.rank, esc.warName, esc.name) : '');
     setIsEscaladoDropdownOpen(false);
   };
 
@@ -269,7 +279,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
 
   const handleSelectSubstitute = (sub: Operator) => {
     setFormData(prev => ({ ...prev, substitutoId: sub.id || '' }));
-    setSubstituteSearch(sub.id ? `${sub.rank} ${sub.warName} (${sub.name})` : '');
+    setSubstituteSearch(sub.id ? formatMilitarWithRealName(sub.rank, sub.warName, sub.name) : '');
     setIsDropdownOpen(false);
   };
 
@@ -294,9 +304,9 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
       const aprovador  = s.aprovadorId ? profilesMap[s.aprovadorId] : null;
       return {
         ...s,
-        escaladoName:   escalado   ? `${escalado.rank} ${escalado.warName}`   : 'Militar Removido',
-        substitutoName: substituto ? `${substituto.rank} ${substituto.warName}` : 'Militar Removido',
-        aprovadorName:  aprovador  ? `${aprovador.rank} ${aprovador.warName}`  : undefined,
+        escaladoName:   escalado   ? formatMilitar(escalado.rank, escalado.warName)   : 'Militar Removido',
+        substitutoName: substituto ? formatMilitar(substituto.rank, substituto.warName) : 'Militar Removido',
+        aprovadorName:  aprovador  ? formatMilitar(aprovador.rank, aprovador.warName)  : undefined,
         pairType:       'solo' as 'solo' | 'ida' | 'volta',
         pairId:         null as string | null
       };
@@ -527,7 +537,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
           horarioInicioPagamento: '08:00',
           horarioFimPagamento: '08:00',
         });
-        setEscaladoSearch(currentUser.id ? `${currentUser.rank} ${currentUser.warName} (${currentUser.name})` : '');
+        setEscaladoSearch(currentUser.id ? formatMilitarWithRealName(currentUser.rank, currentUser.warName, currentUser.name) : '');
         setSubstituteSearch('');
         setInformarPagamentoAgora(false);
         await loadData();
@@ -1289,7 +1299,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
                               onClick={() => handleSelectEscalado(p)}
                               className="w-full text-left px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all border-b border-slate-50 last:border-0 flex flex-col gap-0.5"
                             >
-                              <span className="text-slate-900 font-black uppercase text-[11px]">{p.rank} {p.warName}</span>
+                              <span className="text-slate-900 font-black uppercase text-[11px]">{formatMilitar(p.rank, p.warName)}</span>
                               <span className="text-[10px] text-slate-400 font-medium">{p.name}</span>
                             </button>
                           ))
@@ -1342,7 +1352,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
                               onClick={() => handleSelectSubstitute(p)}
                               className="w-full text-left px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all border-b border-slate-50 last:border-0 flex flex-col gap-0.5"
                             >
-                              <span className="text-slate-900 font-black uppercase text-[11px]">{p.rank} {p.warName}</span>
+                              <span className="text-slate-900 font-black uppercase text-[11px]">{formatMilitar(p.rank, p.warName)}</span>
                               <span className="text-[10px] text-slate-400 font-medium">{p.name}</span>
                             </button>
                           ))
