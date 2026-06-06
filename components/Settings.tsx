@@ -498,8 +498,8 @@ const UserAccessControl: React.FC = () => {
       </div>
 
       {/* Users List */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 rounded-t-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 text-blue-600 rounded-xl">
               <ShieldCheck size={20} />
@@ -530,7 +530,7 @@ const UserAccessControl: React.FC = () => {
             });
             if (filtered.length === 0) {
               return (
-                <div className="p-8 text-center text-slate-400 font-bold uppercase text-xs">
+                <div className="p-8 text-center text-slate-400 font-bold uppercase text-xs rounded-b-3xl">
                   Nenhum usuário encontrado
                 </div>
               );
@@ -538,7 +538,7 @@ const UserAccessControl: React.FC = () => {
             return filtered.map(p => {
               const activeScreens = availableScreens.filter(s => (p.allowedScreens || []).includes(s.id));
               return (
-                <div key={p.id} className="p-6 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors flex flex-col xl:flex-row gap-6 xl:items-center justify-between">
+                <div key={p.id} className="p-6 border-b border-slate-100 last:border-0 last:rounded-b-3xl hover:bg-slate-50/50 transition-colors flex flex-col xl:flex-row gap-6 xl:items-center justify-between">
                   
                   {/* User info on the left */}
                   <div className="flex items-center gap-4 min-w-[250px] max-w-xs shrink-0">
