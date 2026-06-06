@@ -36,6 +36,7 @@ interface UnifiedSwapRequest {
 interface Props {
   currentUser: Operator;
   setNotification: (msg: string, type: 'success' | 'error') => void;
+  isReadOnly?: boolean;
 }
 
 const FUNCOES = ['CG', 'COV', 'Linha', 'COBOM'] as const;
@@ -73,7 +74,7 @@ const statusBadgeClass = (status: string) => {
   }
 };
 
-const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) => {
+const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isReadOnly = false }) => {
   const [swaps, setSwaps] = useState<ServiceSwap[]>([]);
   const [profiles, setProfiles] = useState<Operator[]>([]);
   const [loading, setLoading] = useState(true);
@@ -825,13 +826,15 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
               Relatório PDF
             </button>
           )}
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-sm active:scale-95"
-          >
-            <Plus size={18} />
-            Nova Solicitação
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-sm active:scale-95"
+            >
+              <Plus size={18} />
+              Nova Solicitação
+            </button>
+          )}
         </div>
       </header>
 
@@ -1114,7 +1117,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                           </td>
                           <td className="px-3 py-2.5 text-center">
                             <div className="flex items-center justify-center gap-1 flex-wrap">
-                              {u.status === 'aguardando_substituto' && u.ida.substitutoId === currentUser.id && (
+                              {!isReadOnly && u.status === 'aguardando_substituto' && u.ida.substitutoId === currentUser.id && (
                                 <>
                                   <button onClick={() => handleAccept(u.ida)} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm">
                                     <Check size={10} /> Aceitar
@@ -1124,7 +1127,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                                   </button>
                                 </>
                               )}
-                              {u.status === 'pendente' && currentUser.isAdmin && (
+                              {!isReadOnly && u.status === 'pendente' && currentUser.isAdmin && (
                                 <>
                                   <button onClick={() => setEvaluationModal({ isOpen: true, swap: u.ida, action: 'aprovado', observation: '' })} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm">
                                     <Check size={10} /> Aprovar
@@ -1134,7 +1137,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification }) =
                                   </button>
                                 </>
                               )}
-                              {u.status !== 'cancelado' && (currentUser.isAdmin || (isUserInvolved && ['aguardando_substituto', 'pendente'].includes(u.status))) && (
+                              {!isReadOnly && u.status !== 'cancelado' && (currentUser.isAdmin || (isUserInvolved && ['aguardando_substituto', 'pendente'].includes(u.status))) && (
                                 <button onClick={() => setCancelSwapId(u.ida.id)} title="Cancelar Solicitação" className="p-1 bg-rose-50 hover:bg-rose-100 text-rose-500 border border-rose-200 rounded-md transition-all active:scale-95">
                                   <XCircle size={12} />
                                 </button>

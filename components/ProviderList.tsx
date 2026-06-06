@@ -9,7 +9,7 @@ interface Props {
   providers: Provider[];
   attendance: AttendanceRecord[];
   onSelect: (id: string) => void;
-  onAdd: () => void;
+  onAdd?: () => void;
   onNavigateDashboard: () => void;
 }
 
@@ -170,13 +170,15 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
             <LayoutDashboard size={18} />
             <span className="hidden sm:inline">Painel</span>
           </button>
-          <button 
-            onClick={onAdd}
-            className="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-sm active:scale-95"
-          >
-            <Plus size={20} />
-            Novo Cadastro
-          </button>
+          {onAdd && (
+            <button 
+              onClick={onAdd}
+              className="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-sm active:scale-95"
+            >
+              <Plus size={20} />
+              Novo Cadastro
+            </button>
+          )}
         </div>
       </div>
 

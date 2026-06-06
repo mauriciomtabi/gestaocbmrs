@@ -22,6 +22,7 @@ interface Props {
   onEditProvider?: (provider: Provider) => void;
   currentUser?: string;
   setNotification?: (message: string, type: 'success' | 'error') => void;
+  isReadOnly?: boolean;
 }
 
 const Speedometer = ({ percentage, value, label }: { percentage: number; value: string; label: string }) => {
@@ -85,7 +86,7 @@ const Speedometer = ({ percentage, value, label }: { percentage: number; value: 
 
 const ATTENDANCE_ITEMS_PER_PAGE = 50;
 
-const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpdateAttendance, onDeleteAttendance, onUpdateProvider, onEditProvider, currentUser = "Operador", setNotification }) => {
+const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpdateAttendance, onDeleteAttendance, onUpdateProvider, onEditProvider, currentUser = "Operador", setNotification, isReadOnly = false }) => {
   const [activeTab, setActiveTab] = useState<'attendance' | 'evaluation' | 'history'>('attendance');
   const [isOcrOpen, setIsOcrOpen] = useState(false);
   const [isSavingOcr, setIsSavingOcr] = useState(false);
@@ -608,10 +609,10 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
 
       {/* Botões de Ação - Rola normalmente com a página */}
       <div className="flex justify-end gap-2 md:-mt-16 relative z-10 pr-0">
-        {onEditProvider && <button onClick={() => onEditProvider(provider)} className="flex items-center gap-2 text-blue-600 hover:text-white hover:bg-blue-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-blue-200 bg-white shadow-sm"><Edit3 size={16} />Cadastro</button>}
-        {provider.status === 'active' && <button onClick={() => setIsCompleteModalOpen(true)} className="flex items-center gap-2 text-emerald-600 hover:text-white hover:bg-emerald-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-emerald-200 bg-white shadow-sm"><Check size={16} />Concluir</button>}
-        {provider.status === 'returned' && <button onClick={() => setIsReactivateModalOpen(true)} className="flex items-center gap-2 text-green-600 hover:text-white hover:bg-green-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-green-200 bg-white shadow-sm"><RefreshCw size={16} />Reativar</button>}
-        {provider.status !== 'returned' && provider.status !== 'completed' && <button onClick={() => setIsReturnModalOpen(true)} className="flex items-center gap-2 text-red-600 hover:text-white hover:bg-red-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-red-200 bg-white"><LogOut size={16} />Devolver</button>}
+        {!isReadOnly && onEditProvider && <button onClick={() => onEditProvider(provider)} className="flex items-center gap-2 text-blue-600 hover:text-white hover:bg-blue-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-blue-200 bg-white shadow-sm"><Edit3 size={16} />Cadastro</button>}
+        {!isReadOnly && provider.status === 'active' && <button onClick={() => setIsCompleteModalOpen(true)} className="flex items-center gap-2 text-emerald-600 hover:text-white hover:bg-emerald-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-emerald-200 bg-white shadow-sm"><Check size={16} />Concluir</button>}
+        {!isReadOnly && provider.status === 'returned' && <button onClick={() => setIsReactivateModalOpen(true)} className="flex items-center gap-2 text-green-600 hover:text-white hover:bg-green-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-green-200 bg-white shadow-sm"><RefreshCw size={16} />Reativar</button>}
+        {!isReadOnly && provider.status !== 'returned' && provider.status !== 'completed' && <button onClick={() => setIsReturnModalOpen(true)} className="flex items-center gap-2 text-red-600 hover:text-white hover:bg-red-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-red-200 bg-white"><LogOut size={16} />Devolver</button>}
       </div>
 
       {provider.status === 'returned' && (
@@ -637,17 +638,26 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                 <div className="flex flex-wrap gap-2 mt-3">
                   <span className="bg-white/20 px-3 py-1.5 rounded-xl text-[9px] font-mono border border-white/10 uppercase font-black">PROC: {provider.processNumber || '-'}</span>
                   <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase border flex items-center gap-1.5 ${provider.status === 'active' ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}><div className={`w-1.5 h-1.5 rounded-full animate-pulse ${provider.status === 'active' ? 'bg-green-400' : 'bg-red-400'}`}></div>{getStatusLabel(provider.status)}</span>
-                  <button
-                    onClick={() => setIsFaceEnrollOpen(true)}
-                    className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase border flex items-center gap-1.5 transition-all ${
-                      hasFaceDescriptor
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30'
-                        : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20'
-                    }`}
-                  >
-                    <ScanFace size={12} />
-                    {hasFaceDescriptor ? 'Rosto Cadastrado ✓' : 'Cadastrar Rosto'}
-                  </button>
+                  {isReadOnly ? (
+                    hasFaceDescriptor && (
+                      <span className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase border flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+                        <ScanFace size={12} />
+                        Rosto Cadastrado ✓
+                      </span>
+                    )
+                  ) : (
+                    <button
+                      onClick={() => setIsFaceEnrollOpen(true)}
+                      className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase border flex items-center gap-1.5 transition-all ${
+                        hasFaceDescriptor
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30'
+                          : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20'
+                      }`}
+                    >
+                      <ScanFace size={12} />
+                      {hasFaceDescriptor ? 'Rosto Cadastrado ✓' : 'Cadastrar Rosto'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -738,27 +748,31 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                   >
                     <Printer size={16} /> <span className="hidden sm:inline">Imprimir Folha</span>
                   </button>
-                  <button 
-                    onClick={() => setIsJustificationOpen(true)} 
-                    title="Justificativa"
-                    className="flex-1 sm:flex-none bg-white text-amber-600 border border-amber-600 p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-amber-50 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-sm"
-                  >
-                    <FileWarning size={16} /> <span className="hidden sm:inline">Justificativa</span>
-                  </button>
-                  <button 
-                    onClick={() => setIsManualEntryOpen(true)} 
-                    title="Manual"
-                    className="flex-1 sm:flex-none bg-white text-blue-600 border border-blue-600 p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-blue-50 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-sm"
-                  >
-                    <Plus size={16} /> <span className="hidden sm:inline">Manual</span>
-                  </button>
-                  <button 
-                    onClick={() => setIsOcrOpen(true)} 
-                    title="Digitalizar"
-                    className="flex-1 sm:flex-none bg-blue-600 text-white p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-lg shadow-blue-500/30"
-                  >
-                    <Scan size={16} /> <span className="hidden sm:inline">Digitalizar</span>
-                  </button>
+                  {!isReadOnly && (
+                    <>
+                      <button 
+                        onClick={() => setIsJustificationOpen(true)} 
+                        title="Justificativa"
+                        className="flex-1 sm:flex-none bg-white text-amber-600 border border-amber-600 p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-amber-50 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-sm"
+                      >
+                        <FileWarning size={16} /> <span className="hidden sm:inline">Justificativa</span>
+                      </button>
+                      <button 
+                        onClick={() => setIsManualEntryOpen(true)} 
+                        title="Manual"
+                        className="flex-1 sm:flex-none bg-white text-blue-600 border border-blue-600 p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-blue-50 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-sm"
+                      >
+                        <Plus size={16} /> <span className="hidden sm:inline">Manual</span>
+                      </button>
+                      <button 
+                        onClick={() => setIsOcrOpen(true)} 
+                        title="Digitalizar"
+                        className="flex-1 sm:flex-none bg-blue-600 text-white p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-lg shadow-blue-500/30"
+                      >
+                        <Scan size={16} /> <span className="hidden sm:inline">Digitalizar</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -880,7 +894,7 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                         </div>
                         
                         <div className="hidden md:flex justify-end items-center gap-2">
-                          <ActionButtons record={record} editingId={editingId} editForm={editForm} setEditForm={setEditForm} saveEdit={saveEdit} setEditingId={setEditingId} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} deleteRecord={deleteRecord} startEditing={startEditing} setViewingAttachment={setViewingAttachment} providerStatus={provider.status} />
+                          <ActionButtons record={record} editingId={editingId} editForm={editForm} setEditForm={setEditForm} saveEdit={saveEdit} setEditingId={setEditingId} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} deleteRecord={deleteRecord} startEditing={startEditing} setViewingAttachment={setViewingAttachment} providerStatus={provider.status} isReadOnly={isReadOnly} />
                         </div>
                       </div>
                       
@@ -911,7 +925,7 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                           {record.type === 'justification' ? 'JUSTIFICATIVA' : `Tempo: ${formatMinutesToHHMM(record.durationMinutes || 0)}`}
                         </span>
                         <div className="flex items-center gap-1.5">
-                          <ActionButtons record={record} editingId={editingId} editForm={editForm} setEditForm={setEditForm} saveEdit={saveEdit} setEditingId={setEditingId} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} deleteRecord={deleteRecord} startEditing={startEditing} setViewingAttachment={setViewingAttachment} providerStatus={provider.status} />
+                          <ActionButtons record={record} editingId={editingId} editForm={editForm} setEditForm={setEditForm} saveEdit={saveEdit} setEditingId={setEditingId} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId} deleteRecord={deleteRecord} startEditing={startEditing} setViewingAttachment={setViewingAttachment} providerStatus={provider.status} isReadOnly={isReadOnly} />
                         </div>
                       </div>
                     </div>
@@ -1000,8 +1014,9 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                     </div>
                   </div>
                   <button
+                    disabled={isReadOnly}
                     onClick={() => setEvalForm({ ...evalForm, hadAbsences: !evalForm.hadAbsences })}
-                    className={`shrink-0 min-w-[56px] relative w-14 h-8 rounded-full transition-all duration-300 ${evalForm.hadAbsences ? 'bg-red-500' : 'bg-slate-200'}`}
+                    className={`shrink-0 min-w-[56px] relative w-14 h-8 rounded-full transition-all duration-300 ${evalForm.hadAbsences ? 'bg-red-500' : 'bg-slate-200'} ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
                     <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 ${evalForm.hadAbsences ? 'left-7' : 'left-1'}`} />
                   </button>
@@ -1019,8 +1034,9 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                     </div>
                   </div>
                   <button
+                    disabled={isReadOnly}
                     onClick={() => setEvalForm({ ...evalForm, goodBehavior: !evalForm.goodBehavior })}
-                    className={`shrink-0 min-w-[56px] relative w-14 h-8 rounded-full transition-all duration-300 ${evalForm.goodBehavior ? 'bg-emerald-500' : 'bg-red-500'}`}
+                    className={`shrink-0 min-w-[56px] relative w-14 h-8 rounded-full transition-all duration-300 ${evalForm.goodBehavior ? 'bg-emerald-500' : 'bg-red-500'} ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
                     <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 ${evalForm.goodBehavior ? 'left-7' : 'left-1'}`} />
                   </button>
@@ -1038,8 +1054,9 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                     </div>
                   </div>
                   <button
+                    disabled={isReadOnly}
                     onClick={() => setEvalForm({ ...evalForm, disciplinaryIssues: !evalForm.disciplinaryIssues })}
-                    className={`shrink-0 min-w-[56px] relative w-14 h-8 rounded-full transition-all duration-300 ${evalForm.disciplinaryIssues ? 'bg-red-500' : 'bg-slate-200'}`}
+                    className={`shrink-0 min-w-[56px] relative w-14 h-8 rounded-full transition-all duration-300 ${evalForm.disciplinaryIssues ? 'bg-red-500' : 'bg-slate-200'} ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
                     <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 ${evalForm.disciplinaryIssues ? 'left-7' : 'left-1'}`} />
                   </button>
@@ -1057,8 +1074,9 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                     </div>
                   </div>
                   <button
+                    disabled={isReadOnly}
                     onClick={() => setEvalForm({ ...evalForm, satisfactoryService: !evalForm.satisfactoryService })}
-                    className={`shrink-0 min-w-[56px] relative w-14 h-8 rounded-full transition-all duration-300 ${evalForm.satisfactoryService ? 'bg-emerald-500' : 'bg-red-500'}`}
+                    className={`shrink-0 min-w-[56px] relative w-14 h-8 rounded-full transition-all duration-300 ${evalForm.satisfactoryService ? 'bg-emerald-500' : 'bg-red-500'} ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
                     <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 ${evalForm.satisfactoryService ? 'left-7' : 'left-1'}`} />
                   </button>
@@ -1071,21 +1089,24 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                   </label>
                   <textarea
                     rows={3}
+                    disabled={isReadOnly}
                     value={evalForm.observations}
                     onChange={e => setEvalForm({ ...evalForm, observations: e.target.value })}
-                    placeholder="Anotações adicionais sobre o desempenho do prestador neste mês..."
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-emerald-100 outline-none transition-all text-sm resize-none"
+                    placeholder={isReadOnly ? "Sem observações registradas." : "Anotações adicionais sobre o desempenho do prestador neste mês..."}
+                    className={`w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-emerald-100 outline-none transition-all text-sm resize-none ${isReadOnly ? 'opacity-70 cursor-not-allowed' : ''}`}
                   />
                 </div>
 
-                <button
-                  onClick={handleSaveEvaluation}
-                  disabled={evalSaving}
-                  className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-200 hover:bg-emerald-700 active:scale-[0.98] transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                  {evalSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                  {evalExistingId ? 'Atualizar Avaliação' : 'Salvar Avaliação'}
-                </button>
+                {!isReadOnly && (
+                  <button
+                    onClick={handleSaveEvaluation}
+                    disabled={evalSaving}
+                    className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-200 hover:bg-emerald-700 active:scale-[0.98] transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {evalSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                    {evalExistingId ? 'Atualizar Avaliação' : 'Salvar Avaliação'}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1486,7 +1507,7 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
   );
 };
 
-const ActionButtons = ({ record, editingId, editForm, setEditForm, saveEdit, setEditingId, confirmDeleteId, setConfirmDeleteId, deleteRecord, startEditing, setViewingAttachment, providerStatus }: any) => {
+const ActionButtons = ({ record, editingId, editForm, setEditForm, saveEdit, setEditingId, confirmDeleteId, setConfirmDeleteId, deleteRecord, startEditing, setViewingAttachment, providerStatus, isReadOnly }: any) => {
   if (editingId === record.id) {
     return (
       <>
@@ -1515,7 +1536,7 @@ const ActionButtons = ({ record, editingId, editForm, setEditForm, saveEdit, set
           <Eye size={18}/>
         </button>
       )}
-      {providerStatus === 'active' && (
+      {!isReadOnly && providerStatus === 'active' && (
         <>
           <button onClick={() => startEditing(record)} className="p-2 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl border border-transparent hover:border-amber-100 transition-all">
             <Edit2 size={18}/>

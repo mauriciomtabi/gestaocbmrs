@@ -15,9 +15,10 @@ interface Props {
   onUpdateVehicles: () => void;
   onNavigateDashboard: () => void;
   setNotification: (msg: string, type: 'success' | 'error') => void;
+  isReadOnly?: boolean;
 }
 
-const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplies, stationNicknames, onUpdateVehicles, onNavigateDashboard, setNotification }) => {
+const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplies, stationNicknames, onUpdateVehicles, onNavigateDashboard, setNotification, isReadOnly = false }) => {
   const [supplies, setSupplies] = useState<FuelSupply[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -425,22 +426,26 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
             <Car size={18} />
             <span className="hidden md:inline">Frota</span>
           </button>
-          <button 
-            onClick={() => setIsOcrOpen(true)}
-            title="Digitalizar Nota Fiscal"
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-blue-600 px-4 md:px-6 py-3 rounded-2xl border border-blue-100 hover:bg-blue-50 transition-all font-black text-xs shadow-sm active:scale-95"
-          >
-            <Camera size={18} />
-            <span className="hidden md:inline">Digitalizar Nota</span>
-          </button>
-          <button 
-            onClick={() => { setEditingId(null); setFormData(initialFormData); setIsModalOpen(true); setActiveTab('form'); }}
-            title="Novo Registro de Abastecimento"
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-4 md:px-6 py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-xs active:scale-95"
-          >
-            <Plus size={18} />
-            <span className="hidden md:inline">Novo Registro</span>
-          </button>
+          {!isReadOnly && (
+            <>
+              <button 
+                onClick={() => setIsOcrOpen(true)}
+                title="Digitalizar Nota Fiscal"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-blue-600 px-4 md:px-6 py-3 rounded-2xl border border-blue-100 hover:bg-blue-50 transition-all font-black text-xs shadow-sm active:scale-95"
+              >
+                <Camera size={18} />
+                <span className="hidden md:inline">Digitalizar Nota</span>
+              </button>
+              <button 
+                onClick={() => { setEditingId(null); setFormData(initialFormData); setIsModalOpen(true); setActiveTab('form'); }}
+                title="Novo Registro de Abastecimento"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-4 md:px-6 py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-xs active:scale-95"
+              >
+                <Plus size={18} />
+                <span className="hidden md:inline">Novo Registro</span>
+              </button>
+            </>
+          )}
         </div>
       </header>
 
@@ -692,7 +697,9 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                   {s.ticketLogData && (
                     <button onClick={() => setViewingAttachment(s.ticketLogData!)} title="Ver Ticket Log" className="p-2.5 bg-blue-50 text-blue-600 rounded-xl"><Eye size={18}/></button>
                   )}
-                  <button onClick={() => handleDelete(s.id)} className="p-2.5 bg-red-50 text-red-400 rounded-xl"><Trash2 size={18}/></button>
+                  {!isReadOnly && (
+                    <button onClick={() => handleDelete(s.id)} className="p-2.5 bg-red-50 text-red-400 rounded-xl"><Trash2 size={18}/></button>
+                  )}
                 </div>
               </div>
             </div>
@@ -1346,49 +1353,51 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8">
-              <form onSubmit={handleSaveNickname} className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
-                <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Cadastrar Novo Posto</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className={labelClasses}>Posto Original</label>
-                    <select 
-                      required 
-                      value={nicknameFormData.originalName} 
-                      onChange={e => setNicknameFormData({...nicknameFormData, originalName: e.target.value})}
-                      className={inputClasses}
-                    >
-                      <option value="">Selecione um posto...</option>
-                      {uniqueStations.map(station => {
-                        const hasNickname = !!nicknameMap[station];
-                        return (
-                          <option key={station} value={station}>
-                            {hasNickname ? `✅ ${station}` : `⚠️ ${station}`}
-                          </option>
-                        );
-                      })}
-                    </select>
+              {!isReadOnly && (
+                <form onSubmit={handleSaveNickname} className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
+                  <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Cadastrar Novo Posto</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelClasses}>Posto Original</label>
+                      <select 
+                        required 
+                        value={nicknameFormData.originalName} 
+                        onChange={e => setNicknameFormData({...nicknameFormData, originalName: e.target.value})}
+                        className={inputClasses}
+                      >
+                        <option value="">Selecione um posto...</option>
+                        {uniqueStations.map(station => {
+                          const hasNickname = !!nicknameMap[station];
+                          return (
+                            <option key={station} value={station}>
+                              {hasNickname ? `✅ ${station}` : `⚠️ ${station}`}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelClasses}>Nome do Posto</label>
+                      <input 
+                        type="text" 
+                        required 
+                        value={nicknameFormData.nickname} 
+                        onChange={e => setNicknameFormData({...nicknameFormData, nickname: e.target.value})}
+                        className={inputClasses}
+                        placeholder="Ex: Posto do Centro"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className={labelClasses}>Nome do Posto</label>
-                    <input 
-                      type="text" 
-                      required 
-                      value={nicknameFormData.nickname} 
-                      onChange={e => setNicknameFormData({...nicknameFormData, nickname: e.target.value})}
-                      className={inputClasses}
-                      placeholder="Ex: Posto do Centro"
-                    />
-                  </div>
-                </div>
-                <button 
-                  type="submit"
-                  disabled={savingNickname}
-                  className="w-full py-3 bg-blue-600 text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-2"
-                >
-                  {savingNickname ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                  Salvar Posto
-                </button>
-              </form>
+                  <button 
+                    type="submit"
+                    disabled={savingNickname}
+                    className="w-full py-3 bg-blue-600 text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    {savingNickname ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    Salvar Posto
+                  </button>
+                </form>
+              )}
 
               <div className="space-y-4">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-2">Postos Configurados</h4>
@@ -1405,12 +1414,14 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">Original: {n.originalName}</span>
                           <span className="text-sm font-black text-slate-800 uppercase mt-1">{n.nickname}</span>
                         </div>
-                        <button 
-                          onClick={() => setNicknameFormData({ originalName: n.originalName, nickname: n.nickname })}
-                          className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
-                        >
-                          <Edit3 size={16} />
-                        </button>
+                        {!isReadOnly && (
+                          <button 
+                            onClick={() => setNicknameFormData({ originalName: n.originalName, nickname: n.nickname })}
+                            className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
+                          >
+                            <Edit3 size={16} />
+                          </button>
+                        )}
                       </div>
                     ))
                   )}
@@ -1437,7 +1448,8 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
             <div className="flex-1 overflow-y-auto p-6 md:p-8">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Form Section */}
-                <div className="lg:col-span-5 space-y-6">
+                {!isReadOnly && (
+                  <div className="lg:col-span-5 space-y-6">
                   <form onSubmit={handleSaveVehicle} className="space-y-4">
                     <div className="flex flex-col items-center gap-4 mb-6">
                       <div 
@@ -1549,6 +1561,7 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                     </div>
                   </form>
                 </div>
+                )}
 
                 {/* List Section */}
                 <div className="lg:col-span-7 space-y-4">
@@ -1577,20 +1590,22 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                                 <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-tight">{formatPlate(v.plate)}</span>
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{v.fleetCode || 'Sem Código'}</span>
                               </div>
-                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button 
-                                  onClick={() => { setVehicleFormData(v); setEditingVehicleId(v.id); }}
-                                  className="p-1 text-slate-400 hover:text-blue-600"
-                                >
-                                  <Edit3 size={14} />
-                                </button>
-                                <button 
-                                  onClick={() => handleDeleteVehicleAction(v.id)}
-                                  className="p-1 text-slate-400 hover:text-red-600"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
+                              {!isReadOnly && (
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button 
+                                    onClick={() => { setVehicleFormData(v); setEditingVehicleId(v.id); }}
+                                    className="p-1 text-slate-400 hover:text-blue-600"
+                                  >
+                                    <Edit3 size={14} />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleDeleteVehicleAction(v.id)}
+                                    className="p-1 text-slate-400 hover:text-red-600"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              )}
                             </div>
                             <p className="text-[11px] font-black text-slate-800 uppercase truncate">{v.brand} {v.model}</p>
                             <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{v.year} • {v.color}</p>

@@ -429,6 +429,7 @@ const App: React.FC = () => {
 
 
   const currentProvider = providers.find(p => p.id === selectedProviderId);
+  const isReadOnly = currentUser?.email === 'cobom.consulta@cbm.rs.gov.br';
 
   const NavItem = ({ icon: Icon, label, target, active, onClick }: any) => (
     <button 
@@ -533,7 +534,7 @@ const App: React.FC = () => {
             providers={providers} 
             attendance={attendance}
             onSelect={handleSelectProvider}
-            onAdd={() => setIsModalOpen(true)}
+            onAdd={isReadOnly ? undefined : () => setIsModalOpen(true)}
             onNavigateDashboard={() => navigateToDashboard('prestadores')}
           />
         )}
@@ -548,6 +549,7 @@ const App: React.FC = () => {
             onEditProvider={(p) => { setEditingProvider(p); setIsModalOpen(true); }}
             currentUser={currentUser.warName || 'Operador'}
             setNotification={(msg: string, type: 'success' | 'error') => setNotification({ message: msg, type })}
+            isReadOnly={isReadOnly}
           />
         )}
         {view === 'reports' && (
@@ -562,6 +564,7 @@ const App: React.FC = () => {
             onUpdateVehicles={fetchData}
             onNavigateDashboard={() => navigateToDashboard('abastecimento')}
             setNotification={(msg: string, type: 'success' | 'error') => setNotification({ message: msg, type })}
+            isReadOnly={isReadOnly}
           />
         )}
         {view === 'face-checkin' && (
@@ -585,6 +588,7 @@ const App: React.FC = () => {
           <ServiceSwapManager 
             currentUser={currentUser}
             setNotification={(msg: string, type: 'success' | 'error') => setNotification({ message: msg, type })}
+            isReadOnly={isReadOnly}
           />
         )}
         {view === 'help' && (
