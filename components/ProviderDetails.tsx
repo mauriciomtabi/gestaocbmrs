@@ -88,6 +88,7 @@ const ATTENDANCE_ITEMS_PER_PAGE = 50;
 const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpdateAttendance, onDeleteAttendance, onUpdateProvider, onEditProvider, currentUser = "Operador", setNotification }) => {
   const [activeTab, setActiveTab] = useState<'attendance' | 'evaluation' | 'history'>('attendance');
   const [isOcrOpen, setIsOcrOpen] = useState(false);
+  const [isSavingOcr, setIsSavingOcr] = useState(false);
 
   // Evaluation states
   const currentDate = new Date();
@@ -475,7 +476,7 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
     setIsCompleteModalOpen(false);
   };
 
-  const handleOcrExtracted = (recs: AttendanceRecord[]) => {
+  const handleOcrExtracted = async (recs: AttendanceRecord[]) => {
     // Filtrar registros que já existem para evitar duplicidade (checa data + horários)
     const newRecs = recs.filter(r => !isRecordDuplicate(r.date, r.entryTime, r.exitTime, 'presence'));
     const duplicatesCount = recs.length - newRecs.length;
@@ -486,20 +487,29 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
       return;
     }
 
-    if (onUpdateProvider) {
-      const details = newRecs.length === 1 ? `Lançamento via Digitalização: ${formatDateBR(newRecs[0].date)}` : `Lançamento via Digitalização: ${newRecs.length} dias registrados`;
-      onUpdateProvider({ ...provider, history: [createAuditLog('PRESENÇA', details), ...(provider.history || [])] });
-    }
-    onUpdateAttendance([...attendance, ...newRecs]);
-    
-    if (duplicatesCount > 0) {
-      if (setNotification) setNotification(`${newRecs.length} novos registros salvos. ${duplicatesCount} duplicados foram ignorados.`, "success");
-    } else {
-      if (setNotification) setNotification(`${newRecs.length} registros extraídos com sucesso!`, "success");
-    }
-    
     setIsOcrOpen(false);
-    setAttendancePage(1);
+    setIsSavingOcr(true);
+
+    try {
+      if (onUpdateProvider) {
+        const details = newRecs.length === 1 ? `Lançamento via Digitalização: ${formatDateBR(newRecs[0].date)}` : `Lançamento via Digitalização: ${newRecs.length} dias registrados`;
+        await onUpdateProvider({ ...provider, history: [createAuditLog('PRESENÇA', details), ...(provider.history || [])] });
+      }
+      await onUpdateAttendance([...attendance, ...newRecs]);
+      
+      if (duplicatesCount > 0) {
+        if (setNotification) setNotification(`${newRecs.length} novos registros salvos. ${duplicatesCount} duplicados foram ignorados.`, "success");
+      } else {
+        if (setNotification) setNotification(`${newRecs.length} registros extraídos com sucesso!`, "success");
+      }
+      
+      setAttendancePage(1);
+    } catch (err) {
+      console.error("Erro ao salvar digitalização:", err);
+      if (setNotification) setNotification("Erro ao salvar os registros digitalizados.", "error");
+    } finally {
+      setIsSavingOcr(false);
+    }
   };
 
   const convertPdfToImage = async (file: File): Promise<string> => {
@@ -1409,6 +1419,27 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
       )}
       {isBlankSheetModalOpen && (
         <BlankAttendanceSheet provider={provider} onClose={() => setIsBlankSheetModalOpen(false)} />
+      )}
+
+      {isSavingOcr && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex flex-col items-center justify-center gap-4">
+          <div className="relative flex items-center justify-center">
+            {/* Outer spinning ring */}
+            <div className="w-16 h-16 rounded-full border-4 border-t-blue-500 border-r-blue-500/30 border-b-blue-500/10 border-l-blue-500/50 animate-spin" />
+            {/* Inner pulsing icon */}
+            <div className="absolute">
+              <ShieldCheck className="w-6 h-6 text-emerald-400 animate-pulse" />
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-1.5 text-center px-6">
+            <h3 className="text-white font-black uppercase text-sm tracking-widest animate-pulse">
+              Salvando Registros
+            </h3>
+            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-wider max-w-xs leading-relaxed">
+              Sincronizando com o Supabase e enviando folha de frequência ao Cloudinary...
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );
