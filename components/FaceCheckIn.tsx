@@ -545,6 +545,15 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
               </div>
             )}
 
+            {/* Saving state - loading spinner */}
+            {status === 'saving' && (
+              <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center gap-4 z-30">
+                <Loader2 size={48} className="animate-spin text-blue-500" />
+                <p className="text-white font-black uppercase tracking-wider text-sm">Registrando Presença...</p>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Processando biometria e localização GPS...</p>
+              </div>
+            )}
+
             {/* No faces registered */}
             {status === 'no-faces-registered' && (
               <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center gap-4 p-6">
