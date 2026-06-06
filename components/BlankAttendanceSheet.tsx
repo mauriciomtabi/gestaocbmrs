@@ -314,6 +314,7 @@ export const AttendanceRecordDetailsModal: React.FC<AttendanceRecordDetailsModal
   evaluation,
   onClose
 }) => {
+  const [isPhotoExpanded, setIsPhotoExpanded] = useState(false);
   const isJustification = record.type === 'justification';
   const isFace = record.id && record.id.startsWith('face-');
   
@@ -450,14 +451,20 @@ export const AttendanceRecordDetailsModal: React.FC<AttendanceRecordDetailsModal
                   Comprovante Fotográfico
                 </h5>
                 {record.attachmentData ? (
-                  <div className="relative rounded-xl overflow-hidden border border-slate-200/60 bg-black flex items-center justify-center min-h-[180px] max-h-[220px]">
+                  <div 
+                    onClick={() => setIsPhotoExpanded(true)}
+                    className="relative rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center cursor-zoom-in group/photo hover:opacity-95 transition-all"
+                  >
                     <img
                       src={record.attachmentData}
                       alt="Comprovante de presença"
-                      className="object-contain max-w-full max-h-[220px]"
+                      className="w-full h-auto object-contain"
                     />
-                    <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[8px] font-bold text-white tracking-widest uppercase border border-white/10">
-                      Registro Seguro
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl text-white font-black text-[10px] uppercase tracking-wider border border-white/10 flex items-center gap-2">
+                        <ScanFace size={14} />
+                        Ampliar Comprovante
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -535,6 +542,25 @@ export const AttendanceRecordDetailsModal: React.FC<AttendanceRecordDetailsModal
             Fechar Auditoria
           </button>
         </div>
+        {/* Full Screen Photo Zoom Overlay */}
+        {isPhotoExpanded && record.attachmentData && (
+          <div 
+            onClick={() => setIsPhotoExpanded(false)}
+            className="fixed inset-0 z-[250] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 md:p-8 cursor-zoom-out animate-in fade-in duration-200"
+          >
+            <button 
+              onClick={() => setIsPhotoExpanded(false)}
+              className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10"
+            >
+              <X size={24} />
+            </button>
+            <img
+              src={record.attachmentData}
+              alt="Comprovante ampliado"
+              className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border-4 border-white/10"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
