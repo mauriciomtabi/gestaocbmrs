@@ -164,6 +164,41 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
     return canvas.toDataURL('image/png');
   };
 
+  const optimizeImage = (base64Str: string, maxWidth = 1600, quality = 0.8): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!base64Str.startsWith('data:image/')) {
+        resolve(base64Str);
+        return;
+      }
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxWidth) {
+            width *= maxWidth / height;
+            height = maxWidth;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+    });
+  };
+
   const processFile = async (file: File, isIdentity: boolean) => {
     setLoading(true);
     setMsgIndex(0);
@@ -173,11 +208,12 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
       if (file.type === 'application/pdf') {
         base64 = await convertPdfToImage(file);
       } else {
-        base64 = await new Promise((resolve) => {
+        const rawBase64 = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
           reader.readAsDataURL(file);
         });
+        base64 = await optimizeImage(rawBase64);
       }
 
       if (isIdentity) {
@@ -300,11 +336,12 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
       if (file.type === 'application/pdf') {
         base64 = await convertPdfToImage(file);
       } else {
-        base64 = await new Promise((resolve) => {
+        const rawBase64 = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
           reader.readAsDataURL(file);
         });
+        base64 = await optimizeImage(rawBase64);
       }
       setReferralPreview(base64);
       setCrop(undefined);

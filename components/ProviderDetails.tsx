@@ -526,16 +526,52 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
     return canvas.toDataURL('image/png');
   };
 
+  const optimizeImage = (base64Str: string, maxWidth = 1600, quality = 0.8): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!base64Str.startsWith('data:image/')) {
+        resolve(base64Str);
+        return;
+      }
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxWidth) {
+            width *= maxWidth / height;
+            height = maxWidth;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+    });
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'return' | 'justification') => {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsProcessingFile(true);
     try {
-      const base64 = file.type === 'application/pdf' ? await convertPdfToImage(file) : await new Promise<string>((resolve) => {
+      const rawBase64 = file.type === 'application/pdf' ? await convertPdfToImage(file) : await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
         reader.readAsDataURL(file);
       });
+      const base64 = file.type === 'application/pdf' ? rawBase64 : await optimizeImage(rawBase64);
       
       if (type === 'return') {
         setReturnForm(prev => ({ ...prev, attachment: base64, attachmentName: file.name, attachmentType: file.type }));
