@@ -560,17 +560,22 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20 md:pb-6">
-      <div className="sticky top-0 bg-slate-50/95 backdrop-blur-md z-30 pb-4 pt-4 md:pt-8 border-b border-slate-200/60 flex flex-wrap items-center justify-between gap-4 -mx-4 px-4 md:-mx-8 md:px-8 -mt-4 md:-mt-8 mb-4">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors font-bold text-sm bg-white/50 px-4 py-2 rounded-xl border border-slate-100 shadow-sm w-fit">
-          <ArrowLeft size={18} />
-          Voltar para Lista
-        </button>
-        <div className="flex gap-2">
-          {onEditProvider && <button onClick={() => onEditProvider(provider)} className="flex items-center gap-2 text-blue-600 hover:text-white hover:bg-blue-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-blue-200 bg-white shadow-sm"><Edit3 size={16} />Cadastro</button>}
-          {provider.status === 'active' && <button onClick={() => setIsCompleteModalOpen(true)} className="flex items-center gap-2 text-emerald-600 hover:text-white hover:bg-emerald-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-emerald-200 bg-white shadow-sm"><Check size={16} />Concluir</button>}
-          {provider.status === 'returned' && <button onClick={() => setIsReactivateModalOpen(true)} className="flex items-center gap-2 text-green-600 hover:text-white hover:bg-green-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-green-200 bg-white shadow-sm"><RefreshCw size={16} />Reativar</button>}
-          {provider.status !== 'returned' && provider.status !== 'completed' && <button onClick={() => setIsReturnModalOpen(true)} className="flex items-center gap-2 text-red-600 hover:text-white hover:bg-red-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-red-200 bg-white"><LogOut size={16} />Devolver</button>}
+      {/* Cabeçalho Sticky - Apenas o botão Voltar fica fixo no topo */}
+      <div className="sticky top-0 z-30 pointer-events-none -mx-4 px-4 md:-mx-8 md:px-8 -mt-4 md:-mt-8 pt-4 md:pt-8 flex items-center justify-between">
+        <div className="pointer-events-auto bg-slate-50/90 backdrop-blur-md pb-2 pr-4 rounded-br-2xl">
+          <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors font-bold text-sm bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm w-fit">
+            <ArrowLeft size={18} />
+            Voltar para Lista
+          </button>
         </div>
+      </div>
+
+      {/* Botões de Ação - Rola normalmente com a página */}
+      <div className="flex justify-end gap-2 md:-mt-16 relative z-10 pr-0">
+        {onEditProvider && <button onClick={() => onEditProvider(provider)} className="flex items-center gap-2 text-blue-600 hover:text-white hover:bg-blue-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-blue-200 bg-white shadow-sm"><Edit3 size={16} />Cadastro</button>}
+        {provider.status === 'active' && <button onClick={() => setIsCompleteModalOpen(true)} className="flex items-center gap-2 text-emerald-600 hover:text-white hover:bg-emerald-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-emerald-200 bg-white shadow-sm"><Check size={16} />Concluir</button>}
+        {provider.status === 'returned' && <button onClick={() => setIsReactivateModalOpen(true)} className="flex items-center gap-2 text-green-600 hover:text-white hover:bg-green-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-green-200 bg-white shadow-sm"><RefreshCw size={16} />Reativar</button>}
+        {provider.status !== 'returned' && provider.status !== 'completed' && <button onClick={() => setIsReturnModalOpen(true)} className="flex items-center gap-2 text-red-600 hover:text-white hover:bg-red-600 transition-all font-black text-xs px-4 py-2 rounded-xl border border-red-200 bg-white"><LogOut size={16} />Devolver</button>}
       </div>
 
       {provider.status === 'returned' && (
