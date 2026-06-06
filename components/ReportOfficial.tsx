@@ -1,8 +1,9 @@
 
-import React, { useState, useMemo } from 'react';
-import { Provider, AttendanceRecord, MonthlySummary } from '../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Provider, AttendanceRecord, MonthlySummary, MonthlyEvaluation } from '../types';
 import { formatMinutesToHHMM, formatDateBR, getLatestVisit } from '../utils/timeUtils';
 import {  FileDown, Filter, Calendar as CalendarIcon, Loader2, AlertCircle , FileText } from 'lucide-react';
+import { AttendanceSheetPrint } from './BlankAttendanceSheet';
 
 interface Props {
   providers: Provider[];
@@ -28,6 +29,33 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'));
   const [includeReturned, setIncludeReturned] = useState(false);
+  const [evaluations, setEvaluations] = useState<MonthlyEvaluation[]>([]);
+  const [loadingEvaluations, setLoadingEvaluations] = useState(false);
+
+  useEffect(() => {
+    if (selectedYear !== 'Todos' && selectedMonth !== 'Todos') {
+      setLoadingEvaluations(true);
+      const year = parseInt(selectedYear);
+      const month = parseInt(selectedMonth);
+      import('../services/supabaseService')
+        .then(({ getAllMonthlyEvaluationsForMonth }) => {
+          getAllMonthlyEvaluationsForMonth(year, month)
+            .then(setEvaluations)
+            .catch(() => setEvaluations([]))
+            .finally(() => setLoadingEvaluations(false));
+        })
+        .catch(() => {
+          setEvaluations([]);
+          setLoadingEvaluations(false);
+        });
+    } else {
+      setEvaluations([]);
+    }
+  }, [selectedYear, selectedMonth]);
+
+  const selectedMonthName = useMemo(() => {
+    return months.find(m => m.value === selectedMonth)?.label || '';
+  }, [selectedMonth]);
 
   const today = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -187,8 +215,10 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
       '@page { size: A4 portrait; margin: 1.5cm 2cm; }' +
       '* { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }' +
       'html, body { margin: 0; padding: 0; background: white !important; font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; color: #000 !important; }' +
-      'table { border-collapse: collapse; width: 100%; }' +
-      'th, td { border: 1px solid black; padding: 4px 12px; }' +
+      'table.consolidated-table { border-collapse: collapse; width: 100%; }' +
+      'table.consolidated-table th, table.consolidated-table td { border: 1px solid black; padding: 4px 12px; }' +
+      'table.frequency-table { border-collapse: collapse; width: 100%; }' +
+      'table.frequency-table th, table.frequency-table td { border: 1px solid black; padding: 4px 6px; }' +
       'thead tr { background-color: #f8fafc !important; }' +
       '#official-document-content { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; max-width: none !important; min-width: auto !important; }' +
       '</style></head><body>' +
@@ -379,7 +409,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
         <div className="mt-20 pt-10" style={{ pageBreakBefore: 'always' }}>
           <h3 className="text-center font-bold text-lg mb-8 uppercase" style={{ color: '#000000' }}>Frequência Prestadores Serviço Comunitário</h3>
           
-          <table className="w-full border-collapse text-[10pt]" style={{ border: '1px solid black', color: '#000000' }}>
+          <table className="w-full border-collapse text-[10pt] consolidated-table" style={{ border: '1px solid black', color: '#000000' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc' }}>
                 <th className="px-4 py-2 text-left font-bold uppercase" style={{ border: '1px solid black' }}>PRESTADORES DE SERVIÇO</th>
@@ -408,6 +438,37 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
             </tbody>
           </table>
         </div>
+
+        {/* Folhas de frequência individuais dos prestadores (impressas em lote no final do Ofício) */}
+        {selectedYear !== 'Todos' && selectedMonth !== 'Todos' && filteredProviders.map((p) => {
+          const pRecords = attendance.filter(a => {
+            if (a.providerId !== p.id) return false;
+            const parts = a.date.split('-');
+            return parts[0] === selectedYear && parts[1] === selectedMonth;
+          }).sort((a, b) => a.date.localeCompare(b.date));
+
+          const pEvaluation = evaluations.find(ev => 
+            ev.providerId === p.id && 
+            ev.year === parseInt(selectedYear) && 
+            ev.month === parseInt(selectedMonth)
+          ) || null;
+
+          return (
+            <div key={p.id} style={{ pageBreakBefore: 'always', paddingTop: '1.5cm' }} className="print:pt-0">
+              <div className="no-print mb-4 p-3 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-2 text-blue-800 text-xs font-bold uppercase tracking-wider">
+                <FileText size={16} />
+                <span>Anexo: Folha de Frequência — {p.name}</span>
+              </div>
+              <AttendanceSheetPrint 
+                provider={p}
+                records={pRecords}
+                month={selectedMonthName}
+                year={selectedYear}
+                evaluation={pEvaluation}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   </div>

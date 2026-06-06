@@ -1480,7 +1480,7 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
         />
       )}
       {isBlankSheetModalOpen && (
-        <BlankAttendanceSheet provider={provider} onClose={() => setIsBlankSheetModalOpen(false)} />
+        <BlankAttendanceSheet provider={provider} attendance={attendance} onClose={() => setIsBlankSheetModalOpen(false)} />
       )}
 
       {isSavingOcr && (
