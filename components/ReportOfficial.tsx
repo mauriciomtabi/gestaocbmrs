@@ -1,9 +1,8 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Provider, AttendanceRecord, MonthlySummary, MonthlyEvaluation } from '../types';
 import { formatMinutesToHHMM, formatDateBR, getLatestVisit } from '../utils/timeUtils';
 import {  FileDown, Filter, Calendar as CalendarIcon, Loader2, AlertCircle , FileText } from 'lucide-react';
-import { AttendanceSheetPrint } from './BlankAttendanceSheet';
+import { AttendanceSheetPrint, AttendanceRecordDetailsModal } from './BlankAttendanceSheet';
 
 interface Props {
   providers: Provider[];
@@ -31,6 +30,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
   const [includeReturned, setIncludeReturned] = useState(false);
   const [evaluations, setEvaluations] = useState<MonthlyEvaluation[]>([]);
   const [loadingEvaluations, setLoadingEvaluations] = useState(false);
+  const [auditState, setAuditState] = useState<{ record: AttendanceRecord, provider: Provider } | null>(null);
 
   useEffect(() => {
     if (selectedYear !== 'Todos' && selectedMonth !== 'Todos') {
@@ -465,10 +465,18 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance }) => {
                 month={selectedMonthName}
                 year={selectedYear}
                 evaluation={pEvaluation}
+                onShowRecordDetails={(rec) => setAuditState({ record: rec, provider: p })}
               />
             </div>
           );
         })}
+        {auditState && (
+          <AttendanceRecordDetailsModal 
+            record={auditState.record}
+            provider={auditState.provider}
+            onClose={() => setAuditState(null)}
+          />
+        )}
       </div>
     </div>
   </div>

@@ -430,6 +430,10 @@ const App: React.FC = () => {
 
   const currentProvider = providers.find(p => p.id === selectedProviderId);
   const isReadOnly = currentUser?.email === 'cobom.consulta@cbm.rs.gov.br';
+  
+  const formattedMilitaryName = currentUser 
+    ? ((currentUser.rank && currentUser.rank !== 'Outro' && currentUser.warName?.toUpperCase() !== 'COBOM' ? `${currentUser.rank} ` : '') + (currentUser.warName || ''))
+    : 'Operador';
 
   const NavItem = ({ icon: Icon, label, target, active, onClick }: any) => (
     <button 
@@ -547,7 +551,7 @@ const App: React.FC = () => {
             onDeleteAttendance={handleDeleteAttendance}
             onUpdateProvider={handleUpdateProvider}
             onEditProvider={(p) => { setEditingProvider(p); setIsModalOpen(true); }}
-            currentUser={currentUser.warName || 'Operador'}
+            currentUser={formattedMilitaryName}
             setNotification={(msg: string, type: 'success' | 'error') => setNotification({ message: msg, type })}
             isReadOnly={isReadOnly}
           />
@@ -557,7 +561,7 @@ const App: React.FC = () => {
         )}
         {view === 'fuel' && (
           <FuelSupplyManager 
-            currentUser={currentUser.warName || 'Operador'}
+            currentUser={formattedMilitaryName}
             vehicles={vehicles}
             fuelSupplies={fuelSupplies}
             stationNicknames={stationNicknames}
@@ -571,7 +575,7 @@ const App: React.FC = () => {
           <FaceCheckIn
             providers={providers}
             attendance={attendance}
-            currentUser={currentUser.warName || 'Operador'}
+            currentUser={formattedMilitaryName}
             onAttendanceUpdated={fetchData}
             setNotification={(msg: string, type: 'success' | 'error') => setNotification({ message: msg, type })}
           />

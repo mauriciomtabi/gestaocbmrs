@@ -357,6 +357,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
             if (perimeterDistance !== null) reasonObj.exit.isOutside = perimeterDistance > perimeterConfig.radius;
           }
         }
+        reasonObj.exitOperator = currentUser;
 
         const updatedRecord: AttendanceRecord = {
           ...record,
@@ -379,6 +380,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
             if (perimeterDistance !== null) reasonObj.entry.isOutside = perimeterDistance > perimeterConfig.radius;
           }
         }
+        reasonObj.entryOperator = currentUser;
 
         const newRecord: AttendanceRecord = {
           id: `face-${Date.now()}`,

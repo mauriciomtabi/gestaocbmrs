@@ -396,6 +396,11 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
     }
 
     const duration = calculateDuration(manualForm.entryTime, manualForm.exitTime);
+    const reasonObj = {
+      entryOperator: currentUser,
+      exitOperator: currentUser,
+      manual: true
+    };
     const newRecord: AttendanceRecord = {
       id: 'manual-' + Math.random().toString(36).substr(2, 9),
       providerId: provider.id,
@@ -403,7 +408,8 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
       entryTime: manualForm.entryTime,
       exitTime: manualForm.exitTime,
       durationMinutes: duration,
-      type: 'presence'
+      type: 'presence',
+      reason: JSON.stringify(reasonObj)
     };
     if (onUpdateProvider) {
       const log = createAuditLog('PRESENÇA', `Lançamento manual: ${formatDateBR(manualForm.date)} das ${manualForm.entryTime} às ${manualForm.exitTime}`);
@@ -488,20 +494,32 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
       return;
     }
 
+    const updatedNewRecs = newRecs.map(r => {
+      const reasonObj = {
+        entryOperator: currentUser,
+        exitOperator: currentUser,
+        ocr: true
+      };
+      return {
+        ...r,
+        reason: JSON.stringify(reasonObj)
+      };
+    });
+
     setIsOcrOpen(false);
     setIsSavingOcr(true);
 
     try {
       if (onUpdateProvider) {
-        const details = newRecs.length === 1 ? `Lançamento via Digitalização: ${formatDateBR(newRecs[0].date)}` : `Lançamento via Digitalização: ${newRecs.length} dias registrados`;
+        const details = updatedNewRecs.length === 1 ? `Lançamento via Digitalização: ${formatDateBR(updatedNewRecs[0].date)}` : `Lançamento via Digitalização: ${updatedNewRecs.length} dias registrados`;
         await onUpdateProvider({ ...provider, history: [createAuditLog('PRESENÇA', details), ...(provider.history || [])] });
       }
-      await onUpdateAttendance([...attendance, ...newRecs]);
+      await onUpdateAttendance([...attendance, ...updatedNewRecs]);
       
       if (duplicatesCount > 0) {
-        if (setNotification) setNotification(`${newRecs.length} novos registros salvos. ${duplicatesCount} duplicados foram ignorados.`, "success");
+        if (setNotification) setNotification(`${updatedNewRecs.length} novos registros salvos. ${duplicatesCount} duplicados foram ignorados.`, "success");
       } else {
-        if (setNotification) setNotification(`${newRecs.length} registros extraídos com sucesso!`, "success");
+        if (setNotification) setNotification(`${updatedNewRecs.length} registros extraídos com sucesso!`, "success");
       }
       
       setAttendancePage(1);
