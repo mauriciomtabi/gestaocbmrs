@@ -328,6 +328,7 @@ const GeoPerimeterConfig: React.FC<{ setNotification?: (msg: string, type: 'succ
 const UserAccessControl: React.FC = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
   const [defaultScreens, setDefaultScreens] = useState<string[]>(['dashboard', 'fuel', 'face-checkin']);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -534,69 +535,116 @@ const UserAccessControl: React.FC = () => {
                 </div>
               );
             }
-            return filtered.map(p => (
-              <div key={p.id} className="p-6 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors flex flex-col xl:flex-row gap-6 xl:items-center justify-between">
-                
-                <div className="flex items-center gap-4 min-w-[250px]">
-                  <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shrink-0">
-                    {p.profilePhoto ? (
-                      <img src={p.profilePhoto} alt={p.warName} className="w-full h-full object-cover" />
+            return filtered.map(p => {
+              const activeScreens = availableScreens.filter(s => (p.allowedScreens || []).includes(s.id));
+              return (
+                <div key={p.id} className="p-6 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors flex flex-col xl:flex-row gap-6 xl:items-center justify-between">
+                  
+                  {/* User info on the left */}
+                  <div className="flex items-center gap-4 min-w-[250px] max-w-xs shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                      {p.profilePhoto ? (
+                        <img src={p.profilePhoto} alt={p.warName} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-300">
+                          <UserCircle size={24} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-black text-slate-800 uppercase text-sm truncate">{p.rank} {p.warName}</h3>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest truncate">{p.email}</p>
+                    </div>
+                  </div>
+
+                  {/* Summary of permissions in the middle (compact) */}
+                  <div className="flex-1 flex items-center gap-4 flex-wrap">
+                    <div className="flex flex-wrap gap-1.5 max-w-lg">
+                      {activeScreens.map(s => (
+                        <span key={s.id} className="px-2.5 py-1 bg-blue-50 border border-blue-100 text-blue-700 text-[9px] font-black uppercase rounded-lg tracking-wider">
+                          {s.label}
+                        </span>
+                      ))}
+                      {activeScreens.length === 0 && (
+                        <span className="text-slate-400 text-[10px] font-bold uppercase italic">Sem acessos permitidos</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Popover toggle and actions on the right */}
+                  <div className="shrink-0 flex items-center gap-3 self-end xl:self-center">
+                    
+                    {/* Popover trigger */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenPopoverId(openPopoverId === p.id ? null : p.id)}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${
+                          openPopoverId === p.id 
+                            ? 'bg-blue-600 border-blue-500 text-white shadow-md' 
+                            : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+                        }`}
+                      >
+                        Gerenciar Permissões ({activeScreens.length})
+                      </button>
+                      
+                      {openPopoverId === p.id && (
+                        <>
+                          <div className="fixed inset-0 z-30" onClick={() => setOpenPopoverId(null)} />
+                          <div className="absolute right-0 mt-2.5 w-64 bg-slate-900 border border-white/10 rounded-2xl p-4.5 shadow-2xl z-40 animate-in fade-in slide-in-from-top-2 duration-150">
+                            <p className="text-[9px] font-black uppercase text-blue-400 tracking-widest mb-3 border-b border-white/5 pb-2">Telas Permitidas</p>
+                            <div className="flex flex-col gap-3">
+                              {availableScreens.map(screen => {
+                                const hasAccess = (p.allowedScreens || []).includes(screen.id);
+                                return (
+                                  <label key={screen.id} className="flex items-center gap-3 cursor-pointer text-white text-[11px] font-black uppercase select-none hover:text-blue-300 transition-colors">
+                                    <input 
+                                      type="checkbox" 
+                                      checked={hasAccess} 
+                                      onChange={() => handleToggleScreen(p.id, screen.id)}
+                                      className="hidden" 
+                                    />
+                                    <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
+                                      hasAccess ? 'border-blue-500 bg-blue-600 text-white' : 'border-slate-700 bg-slate-800'
+                                    }`}>
+                                      {hasAccess && <div className="w-1.5 h-1.5 bg-white rounded-sm"></div>}
+                                    </div>
+                                    {screen.label}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {p.hasUnsavedChanges ? (
+                      <button 
+                        onClick={() => saveUserAccess(p)}
+                        disabled={savingId === p.id}
+                        className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase shadow-md shadow-emerald-500/20 hover:bg-emerald-600 transition-colors"
+                      >
+                        {savingId === p.id ? 'Salvando...' : 'Salvar'}
+                      </button>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300">
-                        <UserCircle size={24} />
+                      <div className="px-4 py-2 bg-slate-100 text-slate-400 rounded-xl text-xs font-black uppercase text-center">
+                        Salvo
                       </div>
                     )}
-                  </div>
-                  <div>
-                    <h3 className="font-black text-slate-800 uppercase text-sm">{p.rank} {p.warName}</h3>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{p.email}</p>
-                  </div>
-                </div>
-
-                <div className="flex-1 flex flex-wrap gap-2">
-                  {availableScreens.map(screen => {
-                    const hasAccess = (p.allowedScreens || []).includes(screen.id);
-                    return (
-                      <label key={screen.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase cursor-pointer border transition-colors ${hasAccess ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'}`}>
-                        <input 
-                          type="checkbox" 
-                          checked={hasAccess} 
-                          onChange={() => handleToggleScreen(p.id, screen.id)}
-                          className="hidden" 
-                        />
-                        <div className={`w-2.5 h-2.5 rounded-sm flex items-center justify-center ${hasAccess ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
-                        {screen.label}
-                      </label>
-                    );
-                  })}
-                </div>
-
-                <div className="shrink-0 flex items-center gap-2">
-                  {p.hasUnsavedChanges ? (
-                    <button 
-                      onClick={() => saveUserAccess(p)}
-                      disabled={savingId === p.id}
-                      className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase shadow-md shadow-emerald-500/20 hover:bg-emerald-600 transition-colors w-full xl:w-auto"
+                    <button
+                      onClick={() => setDeleteModal({ isOpen: true, user: p })}
+                      title="Remover usuário"
+                      className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-transparent hover:border-rose-200 transition-all"
                     >
-                      {savingId === p.id ? 'Salvando...' : 'Salvar Alterações'}
-                  </button>
-                  ) : (
-                    <div className="px-4 py-2 bg-slate-100 text-slate-400 rounded-xl text-xs font-black uppercase text-center w-full xl:w-auto">
-                      Acessos Salvos
-                    </div>
-                  )}
-                  <button
-                    onClick={() => setDeleteModal({ isOpen: true, user: p })}
-                    title="Remover usuário"
-                    className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-transparent hover:border-rose-200 transition-all"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ));
+              );
+            });
           })()}
         </div>
+
 
       </div>
 
