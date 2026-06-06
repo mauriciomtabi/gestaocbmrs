@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Operator } from '../types';
 import UserProfile from './UserProfile';
-import { Settings as SettingsIcon, Smartphone, UserCircle, ChevronRight, ShieldCheck, CheckCircle2, AlertCircle, MapPin, Navigation, Save, ToggleLeft, ToggleRight, Trash2, XCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Smartphone, UserCircle, ChevronRight, ShieldCheck, CheckCircle2, AlertCircle, MapPin, Navigation, Save, ToggleLeft, ToggleRight, Trash2, XCircle, Search } from 'lucide-react';
 import packageJson from '../package.json';
 import { getCurrentPosition } from '../services/geoService';
 import GeoMapPicker from './GeoMapPicker';
@@ -327,6 +327,7 @@ const GeoPerimeterConfig: React.FC<{ setNotification?: (msg: string, type: 'succ
 
 const UserAccessControl: React.FC = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [defaultScreens, setDefaultScreens] = useState<string[]>(['dashboard', 'fuel', 'face-checkin']);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -497,79 +498,106 @@ const UserAccessControl: React.FC = () => {
 
       {/* Users List */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-3">
-          <div className="p-2 bg-blue-100 text-blue-600 rounded-xl">
-            <ShieldCheck size={20} />
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 text-blue-600 rounded-xl">
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <h2 className="font-black text-slate-800 uppercase text-sm tracking-tight">Controle de Usuários</h2>
+              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Gerencie quem acessa o quê</p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-black text-slate-800 uppercase text-sm tracking-tight">Controle de Usuários</h2>
-            <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Gerencie quem acessa o quê</p>
+          {/* Campo de Busca por Nome */}
+          <div className="relative w-full sm:w-64">
+            <input
+              type="text"
+              placeholder="Buscar usuário por nome..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2.5 pl-10 rounded-xl border border-slate-200 text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white placeholder-slate-400 text-slate-700 transition-all shadow-inner"
+            />
+            <Search size={14} className="absolute left-3.5 top-3.5 text-slate-400" />
           </div>
         </div>
 
         <div className="flex flex-col">
-          {profiles.map(p => (
-            <div key={p.id} className="p-6 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors flex flex-col xl:flex-row gap-6 xl:items-center justify-between">
-              
-              <div className="flex items-center gap-4 min-w-[250px]">
-                <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shrink-0">
-                  {p.profilePhoto ? (
-                    <img src={p.profilePhoto} alt={p.warName} className="w-full h-full object-cover" />
+          {(() => {
+            const filtered = profiles.filter(p => {
+              const fullName = `${p.rank || ''} ${p.warName || ''} ${p.name || ''}`.toLowerCase();
+              return fullName.includes(searchTerm.toLowerCase());
+            });
+            if (filtered.length === 0) {
+              return (
+                <div className="p-8 text-center text-slate-400 font-bold uppercase text-xs">
+                  Nenhum usuário encontrado
+                </div>
+              );
+            }
+            return filtered.map(p => (
+              <div key={p.id} className="p-6 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors flex flex-col xl:flex-row gap-6 xl:items-center justify-between">
+                
+                <div className="flex items-center gap-4 min-w-[250px]">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                    {p.profilePhoto ? (
+                      <img src={p.profilePhoto} alt={p.warName} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300">
+                        <UserCircle size={24} />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-black text-slate-800 uppercase text-sm">{p.rank} {p.warName}</h3>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{p.email}</p>
+                  </div>
+                </div>
+
+                <div className="flex-1 flex flex-wrap gap-2">
+                  {availableScreens.map(screen => {
+                    const hasAccess = (p.allowedScreens || []).includes(screen.id);
+                    return (
+                      <label key={screen.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase cursor-pointer border transition-colors ${hasAccess ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'}`}>
+                        <input 
+                          type="checkbox" 
+                          checked={hasAccess} 
+                          onChange={() => handleToggleScreen(p.id, screen.id)}
+                          className="hidden" 
+                        />
+                        <div className={`w-2.5 h-2.5 rounded-sm flex items-center justify-center ${hasAccess ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
+                        {screen.label}
+                      </label>
+                    );
+                  })}
+                </div>
+
+                <div className="shrink-0 flex items-center gap-2">
+                  {p.hasUnsavedChanges ? (
+                    <button 
+                      onClick={() => saveUserAccess(p)}
+                      disabled={savingId === p.id}
+                      className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase shadow-md shadow-emerald-500/20 hover:bg-emerald-600 transition-colors w-full xl:w-auto"
+                    >
+                      {savingId === p.id ? 'Salvando...' : 'Salvar Alterações'}
+                  </button>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-300">
-                      <UserCircle size={24} />
+                    <div className="px-4 py-2 bg-slate-100 text-slate-400 rounded-xl text-xs font-black uppercase text-center w-full xl:w-auto">
+                      Acessos Salvos
                     </div>
                   )}
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-800 uppercase text-sm">{p.rank} {p.warName}</h3>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{p.email}</p>
-                </div>
-              </div>
-
-              <div className="flex-1 flex flex-wrap gap-2">
-                {availableScreens.map(screen => {
-                  const hasAccess = (p.allowedScreens || []).includes(screen.id);
-                  return (
-                    <label key={screen.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase cursor-pointer border transition-colors ${hasAccess ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'}`}>
-                      <input 
-                        type="checkbox" 
-                        checked={hasAccess} 
-                        onChange={() => handleToggleScreen(p.id, screen.id)}
-                        className="hidden" 
-                      />
-                      <div className={`w-2.5 h-2.5 rounded-sm flex items-center justify-center ${hasAccess ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
-                      {screen.label}
-                    </label>
-                  );
-                })}
-              </div>
-
-              <div className="shrink-0 flex items-center gap-2">
-                {p.hasUnsavedChanges ? (
-                  <button 
-                    onClick={() => saveUserAccess(p)}
-                    disabled={savingId === p.id}
-                    className="px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase shadow-md shadow-emerald-500/20 hover:bg-emerald-600 transition-colors w-full xl:w-auto"
+                  <button
+                    onClick={() => setDeleteModal({ isOpen: true, user: p })}
+                    title="Remover usuário"
+                    className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-transparent hover:border-rose-200 transition-all"
                   >
-                    {savingId === p.id ? 'Salvando...' : 'Salvar Alterações'}
+                    <Trash2 size={16} />
                   </button>
-                ) : (
-                  <div className="px-4 py-2 bg-slate-100 text-slate-400 rounded-xl text-xs font-black uppercase text-center w-full xl:w-auto">
-                    Acessos Salvos
-                  </div>
-                )}
-                <button
-                  onClick={() => setDeleteModal({ isOpen: true, user: p })}
-                  title="Remover usuário"
-                  className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-transparent hover:border-rose-200 transition-all"
-                >
-                  <Trash2 size={16} />
-                </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ));
+          })()}
         </div>
+
       </div>
 
       {/* ── MODAL Confirmar Remoção de Usuário ── */}
