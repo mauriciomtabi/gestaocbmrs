@@ -289,7 +289,7 @@ const FaceCheckIn: React.FC<Props> = ({ providers, attendance, currentUser, onAt
           // Add Watermark
           const timestampStr = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR');
           const watermarkText = type === 'entrada' ? `ENTRADA: ${timestampStr}` : `SAÍDA: ${timestampStr}`;
-          const operatorText = `OPERADOR: ${currentUser || 'SISTEMA'}`;
+          const operatorText = `MILITAR RESPONSÁVEL: ${currentUser || 'SISTEMA'}`;
           
           let locationText = 'LOCALIZAÇÃO: Não obtida';
           let perimeterStatusText = '';

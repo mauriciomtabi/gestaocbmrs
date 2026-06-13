@@ -387,16 +387,13 @@ export const AttendanceRecordDetailsModal: React.FC<AttendanceRecordDetailsModal
           {/* Top Panel - Provider Info */}
           <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl flex flex-col md:flex-row justify-between gap-4">
             <div>
-              <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Prestador PSC</span>
+              <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Prestador</span>
               <h4 className="text-sm font-black text-slate-950 uppercase tracking-tight">{provider.name}</h4>
               <p className="text-xs text-slate-500 font-bold">Processo: {provider.processNumber || 'Sem número'}</p>
             </div>
             <div className="md:text-right text-left">
               <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Data do Lançamento</span>
               <h4 className="text-sm font-black text-slate-950 tracking-tight">{formatDateBR(record.date)}</h4>
-              <p className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border mt-1 ${methodColor}`}>
-                {methodLabel}
-              </p>
             </div>
           </div>
 
