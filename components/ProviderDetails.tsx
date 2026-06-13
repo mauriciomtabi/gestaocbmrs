@@ -483,13 +483,48 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
     setIsCompleteModalOpen(false);
   };
 
-  const handleOcrExtracted = async (recs: AttendanceRecord[]) => {
+  const handleOcrExtracted = async (recs: AttendanceRecord[], evaluation?: any) => {
+    // 1. Processar avaliação se existir
+    let savedEvalMsg = "";
+    if (evaluation && recs.length > 0) {
+      try {
+        const [yearStr, monthStr] = recs[0].date.split('-');
+        const year = parseInt(yearStr, 10);
+        const month = parseInt(monthStr, 10);
+        if (year && month) {
+          const { saveMonthlyEvaluation } = await import('../services/supabaseService');
+          const evalData = {
+            providerId: provider.id,
+            year,
+            month,
+            hadAbsences: evaluation.hadAbsences,
+            goodBehavior: evaluation.goodBehavior,
+            disciplinaryIssues: evaluation.disciplinaryIssues,
+            satisfactoryService: evaluation.satisfactoryService,
+            observations: "Extraído automaticamente via digitalização OCR da folha de frequência.",
+            evaluatedBy: currentUser || 'MILITAR RESPONSÁVEL'
+          };
+          await saveMonthlyEvaluation(evalData);
+          await loadEvaluations();
+          savedEvalMsg = " e avaliação mensal salva";
+        }
+      } catch (e) {
+        console.error("Erro ao salvar avaliação extraída por OCR:", e);
+      }
+    }
+
     // Filtrar registros que já existem para evitar duplicidade (checa data + horários)
     const newRecs = recs.filter(r => !isRecordDuplicate(r.date, r.entryTime, r.exitTime, 'presence'));
     const duplicatesCount = recs.length - newRecs.length;
 
     if (newRecs.length === 0) {
-      if (setNotification) setNotification("Todos os registros digitalizados já constam no sistema.", "error");
+      if (setNotification) {
+        if (savedEvalMsg) {
+          setNotification(`Avaliação mensal salva com sucesso. Todos os registros de frequência já constavam no sistema.`, "success");
+        } else {
+          setNotification("Todos os registros digitalizados já constam no sistema.", "error");
+        }
+      }
       setIsOcrOpen(false);
       return;
     }
@@ -511,15 +546,17 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
 
     try {
       if (onUpdateProvider) {
-        const details = updatedNewRecs.length === 1 ? `Lançamento via Digitalização: ${formatDateBR(updatedNewRecs[0].date)}` : `Lançamento via Digitalização: ${updatedNewRecs.length} dias registrados`;
+        const details = updatedNewRecs.length === 1 
+          ? `Lançamento via Digitalização: ${formatDateBR(updatedNewRecs[0].date)}${savedEvalMsg}` 
+          : `Lançamento via Digitalização: ${updatedNewRecs.length} dias registrados${savedEvalMsg}`;
         await onUpdateProvider({ ...provider, history: [createAuditLog('PRESENÇA', details), ...(provider.history || [])] });
       }
       await onUpdateAttendance([...attendance, ...updatedNewRecs]);
       
       if (duplicatesCount > 0) {
-        if (setNotification) setNotification(`${updatedNewRecs.length} novos registros salvos. ${duplicatesCount} duplicados foram ignorados.`, "success");
+        if (setNotification) setNotification(`${updatedNewRecs.length} novos registros salvos${savedEvalMsg}. ${duplicatesCount} duplicados foram ignorados.`, "success");
       } else {
-        if (setNotification) setNotification(`${updatedNewRecs.length} registros extraídos com sucesso!`, "success");
+        if (setNotification) setNotification(`${updatedNewRecs.length} registros extraídos${savedEvalMsg} com sucesso!`, "success");
       }
       
       setAttendancePage(1);

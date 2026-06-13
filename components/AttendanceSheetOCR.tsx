@@ -16,7 +16,7 @@ interface Props {
   providerId: string;
   providerName: string;
   existingRecords?: string[];
-  onExtracted: (records: AttendanceRecord[]) => void;
+  onExtracted: (records: AttendanceRecord[], evaluation?: any) => void;
   onCancel: () => void;
 }
 
@@ -37,6 +37,7 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
   const [fileMeta, setFileMeta] = useState<{ name: string; type: string } | null>(null);
   const [extractedData, setExtractedData] = useState<Partial<AttendanceRecord>[]>([]);
   const [extractedName, setExtractedName] = useState<string | null>(null);
+  const [extractedEvaluation, setExtractedEvaluation] = useState<any | null>(null);
   const [step, setStep] = useState<'upload' | 'review'>('upload');
   const [msgIndex, setMsgIndex] = useState(0);
   const [crop, setCrop] = useState<Crop>();
@@ -177,6 +178,11 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
       }));
       setExtractedName(result.extractedProviderName);
       setExtractedData(records);
+      if (result.monthlyEvaluation) {
+        setExtractedEvaluation(result.monthlyEvaluation);
+      } else {
+        setExtractedEvaluation(null);
+      }
       setStep('review');
     } catch (error: any) {
       console.error('Erro na API do Gemini:', error);
@@ -383,6 +389,20 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                   </div>
                 )}
 
+                {extractedEvaluation && (
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex gap-3 items-start animate-in fade-in duration-300">
+                    <div className="bg-emerald-600 p-1.5 rounded-lg text-white shrink-0 shadow-sm">
+                      <Check size={16} />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-emerald-700 text-sm uppercase">Avaliação Mensal Detectada</h4>
+                      <p className="text-xs text-emerald-600 leading-relaxed">
+                        A avaliação comportamental no rodapé foi identificada e será salva automaticamente com os registros.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-2xl shadow-sm">
                   <div className="flex items-center gap-3">
                     <div className="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-200">
@@ -437,7 +457,7 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
               <div className="pt-4 border-t border-slate-100 flex gap-3">
                 <button onClick={() => setStep('upload')} className="flex-1 py-4 text-slate-600 font-bold hover:bg-slate-50 rounded-2xl">Voltar</button>
                 <button 
-                  onClick={() => onExtracted(extractedData as AttendanceRecord[])} 
+                  onClick={() => onExtracted(extractedData as AttendanceRecord[], extractedEvaluation)} 
                   className={`flex-1 py-4 px-2 text-[11px] sm:text-base text-white rounded-2xl font-bold shadow-xl flex items-center justify-center gap-1 sm:gap-2 transition-all ${isNameMismatched ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
                 >
                   <Save size={18} className="shrink-0" />

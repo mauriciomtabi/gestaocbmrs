@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Provider, AttendanceRecord, MonthlySummary, MonthlyEvaluation } from '../types';
 import { formatMinutesToHHMM, formatDateBR, getLatestVisit } from '../utils/timeUtils';
-import { FileDown, Filter, Calendar as CalendarIcon, Loader2, AlertCircle, FileText, X, Check, ThumbsUp, ThumbsDown, AlertTriangle, ShieldCheck, Star, MessageSquare, Save, Sparkles } from 'lucide-react';
+import { FileDown, Filter, Calendar as CalendarIcon, Loader2, AlertCircle, FileText, X, Check, ThumbsUp, ThumbsDown, AlertTriangle, ShieldCheck, Star, MessageSquare, Save, Sparkles, ClipboardCheck } from 'lucide-react';
 import { AttendanceSheetPrint, AttendanceRecordDetailsModal } from './BlankAttendanceSheet';
 
 interface Props {
@@ -564,14 +564,17 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
         )}
 
         {pendingEvaluation && (
-          <div className="fixed inset-0 bg-slate-900/60 z-[120] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300">
+          <div 
+            style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+            className="fixed inset-0 bg-slate-900/60 z-[120] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300"
+          >
             <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-white/20 relative animate-in zoom-in-95 duration-200">
               
               {/* Header */}
               <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-emerald-50 to-white">
                 <div className="flex items-center gap-3">
                   <div className="bg-emerald-600 p-2.5 rounded-xl text-white shadow-lg shadow-emerald-200">
-                    <Sparkles size={20} />
+                    <ClipboardCheck size={20} />
                   </div>
                   <div>
                     <h3 className="text-base font-extrabold text-slate-800">Avaliação Mensal</h3>

@@ -68,7 +68,8 @@ export const extractAttendanceFromFile = async (base64Data: string, mimeType: st
     3. Converta as datas para o formato ISO YYYY-MM-DD. Ex: 03/01/2026 vira 2026-01-03.
     4. Garanta que os horários estejam no formato HH:mm (24h).
     5. Ignore linhas em branco ou sem horários preenchidos.
-    6. Retorne APENAS o JSON conforme o esquema definido.
+    6. Verifique se a seção de avaliação/perguntas comportamentais no rodapé do documento está preenchida/marcada (perguntas: Faltas no período, Apresentou bom comportamento, Cometeu atos indisciplinares, A qualidade do serviço prestado foi satisfatória). Se e somente se houver respostas marcadas (ex: Sim/Não com 'X' ou preenchidos), extraia as opções marcadas como booleanos em 'monthlyEvaluation'. Caso contrário, não inclua 'monthlyEvaluation'.
+    7. Retorne APENAS o JSON conforme o esquema definido.
   `;
 
   try {
@@ -100,6 +101,16 @@ export const extractAttendanceFromFile = async (base64Data: string, mimeType: st
                 },
                 required: ["date", "entryTime", "exitTime"]
               }
+            },
+            monthlyEvaluation: {
+              type: Type.OBJECT,
+              properties: {
+                hadAbsences: { type: Type.BOOLEAN, description: "True se Faltas no período for Sim, False se for Não" },
+                goodBehavior: { type: Type.BOOLEAN, description: "True se Apresentou bom comportamento for Sim, False se for Não" },
+                disciplinaryIssues: { type: Type.BOOLEAN, description: "True se Cometeu atos indisciplinares for Sim, False se for Não" },
+                satisfactoryService: { type: Type.BOOLEAN, description: "True se A qualidade do serviço prestado foi satisfatória for Sim, False se for Não" }
+              },
+              required: ["hadAbsences", "goodBehavior", "disciplinaryIssues", "satisfactoryService"]
             }
           },
           required: ["records", "extractedProviderName"]
