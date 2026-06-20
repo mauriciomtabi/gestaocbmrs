@@ -198,9 +198,9 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
     const query = escaladoSearch.toLowerCase().trim();
     if (!query) return eligibleEscalados;
     return eligibleEscalados.filter(p =>
-      p.rank.toLowerCase().includes(query) ||
-      p.warName.toLowerCase().includes(query) ||
-      p.name.toLowerCase().includes(query)
+      (p.rank || '').toLowerCase().includes(query) ||
+      (p.warName || '').toLowerCase().includes(query) ||
+      (p.name || '').toLowerCase().includes(query)
     );
   }, [eligibleEscalados, escaladoSearch]);
 
@@ -212,9 +212,9 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
     const query = substituteSearch.toLowerCase().trim();
     if (!query) return eligibleSubstitutes;
     return eligibleSubstitutes.filter(p => 
-      p.rank.toLowerCase().includes(query) ||
-      p.warName.toLowerCase().includes(query) ||
-      p.name.toLowerCase().includes(query)
+      (p.rank || '').toLowerCase().includes(query) ||
+      (p.warName || '').toLowerCase().includes(query) ||
+      (p.name || '').toLowerCase().includes(query)
     );
   }, [eligibleSubstitutes, substituteSearch]);
 
