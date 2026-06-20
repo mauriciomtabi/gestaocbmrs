@@ -521,17 +521,17 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
     setSaving(true);
     try {
       let initialStatusIda: 'aguardando_substituto' | 'aguardando_escalado' | 'pendente' = 'aguardando_substituto';
-      let initialStatusVolta: 'aguardando_substituto' | 'aguardando_escalado' | 'pendente' = 'aguardando_escalado';
+      let initialStatusVolta: 'aguardando_substituto' | 'aguardando_escalado' | 'pendente' = 'aguardando_substituto';
 
       if (currentUser.isAdmin && formData.escaladoId !== currentUser.id && formData.substitutoId !== currentUser.id) {
         initialStatusIda = 'pendente';
         initialStatusVolta = 'pendente';
       } else if (formData.substitutoId === currentUser.id) {
         initialStatusIda = 'aguardando_escalado';
-        initialStatusVolta = 'aguardando_substituto';
+        initialStatusVolta = 'aguardando_escalado';
       } else {
         initialStatusIda = 'aguardando_substituto';
-        initialStatusVolta = 'aguardando_escalado';
+        initialStatusVolta = 'aguardando_substituto';
       }
 
       // 1. Criar a troca original (A -> B)
@@ -748,7 +748,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
     
     return (
       <div className="flex items-center justify-center gap-1 flex-wrap">
-        {!isReadOnly && !isArchived && s.status === 'aguardando_substituto' && isSubstituto && (
+        {!isReadOnly && !isArchived && s.status === 'aguardando_substituto' && isSubstituto && !(isVolta && s.data === '1970-01-01') && (
           <>
             <button
               type="button"
@@ -767,7 +767,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
           </>
         )}
 
-        {!isReadOnly && !isArchived && s.status === 'aguardando_escalado' && isEscalado && (
+        {!isReadOnly && !isArchived && s.status === 'aguardando_escalado' && isEscalado && !(isVolta && s.data === '1970-01-01') && (
           <>
             <button
               type="button"
@@ -838,7 +838,12 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
           )
         )}
 
-        {isVolta && s.data === '1970-01-01' && ['pendente', 'aprovado'].includes(s.status) && (isUserInvolved || currentUser.isAdmin) && (
+        {isVolta && s.data === '1970-01-01' && (
+          (s.status === 'aguardando_substituto' && isSubstituto) ||
+          (s.status === 'aguardando_escalado' && isEscalado) ||
+          (['pendente', 'aprovado'].includes(s.status) && (isUserInvolved || currentUser.isAdmin)) ||
+          currentUser.isAdmin
+        ) && (
           <button
             type="button"
             onClick={() => setPaymentModal({ isOpen: true, swap: s, dataPagamento: '', horarioInicioPagamento: '08:00', horarioFimPagamento: '08:00' })}
@@ -912,12 +917,20 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
 
       // 2. Tentar também atualizar a Volta diretamente no banco para sincronização
       if (voltaSwap) {
+        let nextStatus: string | undefined = undefined;
+        if (voltaSwap.status === 'aguardando_substituto') {
+          nextStatus = 'aguardando_escalado';
+        } else if (voltaSwap.status === 'aguardando_escalado') {
+          nextStatus = 'aguardando_substituto';
+        }
+
         try {
           await updateServiceSwapDetails(
             voltaSwap.id,
             paymentModal.dataPagamento,
             paymentModal.horarioInicioPagamento,
-            paymentModal.horarioFimPagamento
+            paymentModal.horarioFimPagamento,
+            nextStatus
           );
           success = true;
         } catch (err) {

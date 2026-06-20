@@ -1224,16 +1224,21 @@ export const updateServiceSwapDetails = async (
   swapId: string,
   data: string,
   horarioInicio: string,
-  horarioFim: string
+  horarioFim: string,
+  status?: string
 ): Promise<ServiceSwap | null> => {
   try {
+    const updateFields: any = {
+      data: data,
+      horario_inicio: horarioInicio,
+      horario_fim: horarioFim
+    };
+    if (status) {
+      updateFields.status = status;
+    }
     const { data: updated, error } = await supabase
       .from('service_swaps')
-      .update({
-        data: data,
-        horario_inicio: horarioInicio,
-        horario_fim: horarioFim
-      })
+      .update(updateFields)
       .eq('id', swapId)
       .select()
       .single();
