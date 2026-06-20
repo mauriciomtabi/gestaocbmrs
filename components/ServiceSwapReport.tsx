@@ -55,6 +55,19 @@ const ALL_STATUSES = [
   { value: 'cancelado',             label: 'Cancelado'                   },
 ];
 
+const cleanObs = (obs?: string) => {
+  if (!obs) return '';
+  let raw = obs;
+  if (raw.startsWith('[ARQUIVADO] ')) {
+    raw = raw.substring('[ARQUIVADO] '.length);
+  } else if (raw === '[ARQUIVADO]') {
+    raw = '';
+  }
+  return raw.replace(/\[CREATOR_ESCALADO\]/g, '')
+            .replace(/\[CREATOR_SUBSTITUTO\]/g, '')
+            .trim();
+};
+
 const ServiceSwapReport: React.FC<Props> = ({ swaps, currentUser, onClose }) => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo,   setDateTo]   = useState('');
@@ -97,18 +110,6 @@ const ServiceSwapReport: React.FC<Props> = ({ swaps, currentUser, onClose }) => 
   const fmtDate = (d: string) =>
     d && d !== '1970-01-01' ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : 'A definir';
 
-  const cleanObs = (obs?: string) => {
-    if (!obs) return '';
-    let raw = obs;
-    if (raw.startsWith('[ARQUIVADO] ')) {
-      raw = raw.substring('[ARQUIVADO] '.length);
-    } else if (raw === '[ARQUIVADO]') {
-      raw = '';
-    }
-    return raw.replace(/\[CREATOR_ESCALADO\]/g, '')
-              .replace(/\[CREATOR_SUBSTITUTO\]/g, '')
-              .trim();
-  };
 
   const emitDate = new Date().toLocaleString('pt-BR');
 

@@ -520,13 +520,13 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
     isSavingRef.current = true;
     setSaving(true);
     try {
-      let dbStatus: 'aguardando_substituto' | 'pendente' = 'aguardando_substituto';
+      let dbStatus: 'aguardando_substituto' | 'aguardando_escalado' | 'pendente' = 'aguardando_substituto';
       let creatorTag = '';
 
       if (currentUser.isAdmin && formData.escaladoId !== currentUser.id && formData.substitutoId !== currentUser.id) {
         dbStatus = 'pendente';
       } else if (formData.substitutoId === currentUser.id) {
-        dbStatus = 'aguardando_substituto';
+        dbStatus = 'aguardando_escalado';
         creatorTag = '[CREATOR_SUBSTITUTO]';
       } else {
         dbStatus = 'aguardando_substituto';
