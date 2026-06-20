@@ -747,9 +747,14 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
     const isArchived = s.observacao?.startsWith('[ARQUIVADO]');
     const isCompleted = ['aprovado', 'reprovado', 'cancelado', 'recusado_substituto'].includes(s.status);
     
+    const isCreatorSubstituto = !!s.observacao?.includes('[CREATOR_SUBSTITUTO]');
+    const isUserCreator = !isVolta
+      ? (isCreatorSubstituto ? isSubstituto : isEscalado)
+      : (isCreatorSubstituto ? isEscalado : isSubstituto);
+
     return (
       <div className="flex items-center justify-center gap-1 flex-wrap">
-        {!isReadOnly && !isArchived && s.status === 'aguardando_substituto' && isSubstituto && !(isVolta && s.data === '1970-01-01') && (
+        {!isReadOnly && !isArchived && s.status === 'aguardando_substituto' && isSubstituto && !isUserCreator && !(isVolta && s.data === '1970-01-01') && (
           <>
             <button
               type="button"
@@ -768,7 +773,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
           </>
         )}
 
-        {!isReadOnly && !isArchived && s.status === 'aguardando_escalado' && isEscalado && !(isVolta && s.data === '1970-01-01') && (
+        {!isReadOnly && !isArchived && s.status === 'aguardando_escalado' && isEscalado && !isUserCreator && !(isVolta && s.data === '1970-01-01') && (
           <>
             <button
               type="button"
@@ -850,6 +855,20 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
             className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
           >
             <Calendar size={10} /> Definir Data
+          </button>
+        )}
+
+        {isVolta && s.data !== '1970-01-01' && ['aguardando_substituto', 'aguardando_escalado', 'pendente'].includes(s.status) && (
+          (!s.observacao?.includes('[CREATOR_SUBSTITUTO]') && isSubstituto) ||
+          (!!s.observacao?.includes('[CREATOR_SUBSTITUTO]') && isEscalado) ||
+          currentUser.isAdmin
+        ) && (
+          <button
+            type="button"
+            onClick={() => setPaymentModal({ isOpen: true, swap: s, dataPagamento: s.data, horarioInicioPagamento: s.horarioInicio?.substring(0, 5) || '08:00', horarioFimPagamento: s.horarioFim?.substring(0, 5) || '08:00' })}
+            className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
+          >
+            <Calendar size={10} /> Alterar Data
           </button>
         )}
       </div>
