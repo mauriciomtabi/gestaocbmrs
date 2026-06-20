@@ -56,9 +56,8 @@ const ALL_STATUSES = [
 ];
 
 const ServiceSwapReport: React.FC<Props> = ({ swaps, currentUser, onClose }) => {
-  const today = new Date().toISOString().slice(0, 10);
   const [dateFrom, setDateFrom] = useState('');
-  const [dateTo,   setDateTo]   = useState(today);
+  const [dateTo,   setDateTo]   = useState('');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const statusDropdownRef = React.useRef<HTMLDivElement>(null);
@@ -97,6 +96,19 @@ const ServiceSwapReport: React.FC<Props> = ({ swaps, currentUser, onClose }) => 
 
   const fmtDate = (d: string) =>
     d && d !== '1970-01-01' ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : 'A definir';
+
+  const cleanObs = (obs?: string) => {
+    if (!obs) return '';
+    let raw = obs;
+    if (raw.startsWith('[ARQUIVADO] ')) {
+      raw = raw.substring('[ARQUIVADO] '.length);
+    } else if (raw === '[ARQUIVADO]') {
+      raw = '';
+    }
+    return raw.replace(/\[CREATOR_ESCALADO\]/g, '')
+              .replace(/\[CREATOR_SUBSTITUTO\]/g, '')
+              .trim();
+  };
 
   const emitDate = new Date().toLocaleString('pt-BR');
 
@@ -448,9 +460,9 @@ const ReportDocument: React.FC<DocProps> = ({
                     {swap.status === 'recusado_substituto' && (
                       <div>
                         <span style={{ color: '#dc2626', fontWeight: 800, fontSize: 10, display: 'block' }}>✗ Recusado</span>
-                        {swap.observacao && (
+                        {cleanObs(swap.observacao) && (
                           <span style={{ color: '#64748b', fontSize: 9, fontStyle: 'italic', display: 'block', marginTop: 2 }}>
-                            "{swap.observacao}"
+                            "{cleanObs(swap.observacao)}"
                           </span>
                         )}
                       </div>
@@ -473,9 +485,9 @@ const ReportDocument: React.FC<DocProps> = ({
                         }}>
                           {swap.status === 'aprovado' ? '✓ ' : (swap.status === 'reprovado' || swap.status === 'cancelado') ? '✗ ' : ''}{swap.aprovadorName}
                         </span>
-                        {swap.observacao && !['recusado_substituto'].includes(swap.status) && (
+                        {cleanObs(swap.observacao) && !['recusado_substituto'].includes(swap.status) && (
                           <span style={{ color: '#64748b', fontSize: 9, fontStyle: 'italic', display: 'block', marginTop: 2 }}>
-                            "{swap.observacao}"
+                            "{cleanObs(swap.observacao)}"
                           </span>
                         )}
                       </div>

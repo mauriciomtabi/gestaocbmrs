@@ -1251,12 +1251,15 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
                     const dimVoltaRow    = u.volta ? (u.volta.status === 'cancelado' || u.volta.status === 'reprovado') : false;
 
                     const cleanObs = (s: ServiceSwap) => {
-                      const raw = s.observacao || '';
+                      let raw = s.observacao || '';
                       if (raw.startsWith('[ARQUIVADO] ')) {
-                        return raw.substring('[ARQUIVADO] '.length);
+                        raw = raw.substring('[ARQUIVADO] '.length);
+                      } else if (raw === '[ARQUIVADO]') {
+                        raw = '';
                       }
-                      if (raw === '[ARQUIVADO]') return '';
-                      return raw;
+                      return raw.replace(/\[CREATOR_ESCALADO\]/g, '')
+                                .replace(/\[CREATOR_SUBSTITUTO\]/g, '')
+                                .trim();
                     };
 
                     const getObsText = (s: ServiceSwap) => {
