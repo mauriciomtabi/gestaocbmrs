@@ -1,0 +1,17 @@
+{
+  "tables": {
+    "providers": [],
+    "audit_logs": [],
+    "attendance": [],
+    "vehicles": [],
+    "fuel_supplies": [],
+    "fuel_audit_logs": [],
+    "face_descriptors": [],
+    "monthly_evaluations": [],
+    "service_swaps": [],
+    "sys_config": [],
+    "station_nicknames": [],
+    "profiles": []
+  },
+  "users": []
+}

@@ -1,0 +1,1042 @@
+commit 3c6aeddd326cda9cf9a09dc63a833b7f999c81bd
+Author: gestaocbmrs <gestaocbmrs@gmail.com>
+Date:   Sat Jun 20 09:04:52 2026 -0300
+
+    feat(swap): implement individual actions, pending status for escalado, and archivelog for service swaps
+
+diff --git a/components/ServiceSwapManager.tsx b/components/ServiceSwapManager.tsx
+index 6151181..82e30b3 100644
+--- a/components/ServiceSwapManager.tsx
++++ b/components/ServiceSwapManager.tsx
+@@ -1,7 +1,7 @@
+ 
+ import React, { useState, useEffect, useMemo, useRef } from 'react';
+ import { ServiceSwap, Operator } from '../types';
+-import { getServiceSwaps, createServiceSwap, evaluateServiceSwap, getAllProfiles, cancelServiceSwap, acceptServiceSwap, rejectServiceSwap, updateServiceSwapPayment, updateServiceSwapDetails } from '../services/supabaseService';
++import { getServiceSwaps, createServiceSwap, evaluateServiceSwap, getAllProfiles, cancelServiceSwap, acceptServiceSwap, rejectServiceSwap, updateServiceSwapPayment, updateServiceSwapDetails, archiveServiceSwap, unarchiveServiceSwap } from '../services/supabaseService';
+ import ServiceSwapReport from './ServiceSwapReport';
+ import {
+   Calendar,
+@@ -22,12 +22,13 @@ import {
+   ArrowLeftRight,
+   LayoutDashboard,
+   ChevronRight,
++  Archive,
+ } from 'lucide-react';
+ 
+ interface UnifiedSwapRequest {
+   id: string;
+   funcao: 'CG' | 'COV' | 'Linha' | 'COBOM';
+-  status: 'aguardando_substituto' | 'recusado_substituto' | 'pendente' | 'aprovado' | 'reprovado' | 'cancelado';
++  status: 'aguardando_substituto' | 'aguardando_escalado' | 'recusado_substituto' | 'pendente' | 'aprovado' | 'reprovado' | 'cancelado' | 'arquivado';
+   createdAt: string;
+   ida: ServiceSwap & { escaladoName?: string; substitutoName?: string; aprovadorName?: string };
+   volta?: ServiceSwap & { escaladoName?: string; substitutoName?: string; aprovadorName?: string };
+@@ -45,11 +46,13 @@ type Funcao = typeof FUNCOES[number];
+ const STATUS_LABELS: Record<string, string> = {
+   todos: 'Todos',
+   aguardando_substituto: 'Aguardando Substituto',
++  aguardando_escalado: 'Aguardando Escalado',
+   recusado_substituto: 'Recusado pelo Substituto',
+   pendente: 'Pendente',
+   aprovado: 'Aprovado',
+   reprovado: 'Reprovado',
+   cancelado: 'Cancelado',
++  arquivado: 'Arquivado',
+ };
+ 
+ const funcaoBadgeClass = (funcao: string) => {
+@@ -65,11 +68,13 @@ const funcaoBadgeClass = (funcao: string) => {
+ const statusBadgeClass = (status: string) => {
+   switch (status) {
+     case 'aguardando_substituto': return 'bg-sky-50 text-sky-700 border border-sky-200';
++    case 'aguardando_escalado':   return 'bg-indigo-50 text-indigo-700 border border-indigo-200';
+     case 'recusado_substituto':   return 'bg-rose-50 text-rose-700 border border-rose-200';
+     case 'pendente':              return 'bg-amber-50 text-amber-700 border border-amber-200';
+     case 'aprovado':              return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+     case 'reprovado':             return 'bg-red-50 text-red-700 border border-red-200';
+     case 'cancelado':             return 'bg-slate-100 text-slate-500 border border-slate-200';
++    case 'arquivado':             return 'bg-slate-50 text-slate-400 border border-slate-200';
+     default:                      return 'bg-slate-50 text-slate-600';
+   }
+ };
+@@ -116,7 +121,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+     return () => document.removeEventListener('mousedown', handleOutsideClick);
+   }, []);
+ 
+-  const [activeTab, setActiveTab] = useState<'todas' | 'minhas' | 'aprovar'>('todas');
++  const [activeTab, setActiveTab] = useState<'todas' | 'minhas' | 'aprovar' | 'arquivadas'>('todas');
+ 
+   const [rejectModal, setRejectModal] = useState<{
+     isOpen: boolean;
+@@ -136,12 +141,8 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+     data: '',
+     horarioInicio: '08:00',
+     horarioFim: '08:00',
+-    dataPagamento: '',
+-    horarioInicioPagamento: '08:00',
+-    horarioFimPagamento: '08:00',
+   });
+ 
+-  const [informarPagamentoAgora, setInformarPagamentoAgora] = useState(false);
+ 
+   const [paymentModal, setPaymentModal] = useState<{
+     isOpen: boolean;
+@@ -422,49 +423,85 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+     return list;
+   }, [enrichedSwaps]);
+ 
++  const archivedCount = useMemo(() => {
++    return swaps.filter(s => s.observacao?.startsWith('[ARQUIVADO]')).length;
++  }, [swaps]);
++
+   const pendingCount = useMemo(() => {
+-    return unifiedSwaps.filter(u => u.status === 'pendente').length;
+-  }, [unifiedSwaps]);
++    return swaps.filter(s => 
++      s.status === 'pendente' &&
++      !s.observacao?.startsWith('[ARQUIVADO]')
++    ).length;
++  }, [swaps]);
+ 
+   const totalPendingPaybacksCount = useMemo(() => {
+-    return unifiedSwaps.filter(u => u.volta && u.volta.data === '1970-01-01' && u.status !== 'reprovado' && u.status !== 'cancelado').length;
+-  }, [unifiedSwaps]);
++    return swaps.filter(s => 
++      s.data === '1970-01-01' && 
++      !['reprovado', 'cancelado', 'recusado_substituto'].includes(s.status) &&
++      !s.observacao?.startsWith('[ARQUIVADO]')
++    ).length;
++  }, [swaps]);
+ 
+   const mySubstitutionsPendingCount = useMemo(() => {
+-    return swaps.filter(s => s.substitutoId === currentUser.id && s.status === 'aguardando_substituto').length;
++    return swaps.filter(s => 
++      !s.observacao?.startsWith('[ARQUIVADO]') && (
++        (s.substitutoId === currentUser.id && s.status === 'aguardando_substituto') ||
++        (s.escaladoId === currentUser.id && s.status === 'aguardando_escalado')
++      )
++    ).length;
+   }, [swaps, currentUser.id]);
+ 
+   const filteredUnifiedSwaps = useMemo(() => {
+     return unifiedSwaps.filter(u => {
++      const isIdaArchived = !!u.ida.observacao?.startsWith('[ARQUIVADO]');
++      const isVoltaArchived = u.volta ? !!u.volta.observacao?.startsWith('[ARQUIVADO]') : false;
++
++      if (activeTab === 'arquivadas') {
++        if (!isIdaArchived && !isVoltaArchived) return false;
++      } else {
++        const hasActiveLeg = !isIdaArchived || (u.volta ? !isVoltaArchived : false);
++        if (!hasActiveLeg) return false;
++      }
++
+       if (activeTab === 'minhas') {
+-        const isUserInvolvedInIda = u.ida.escaladoId === currentUser.id || u.ida.substitutoId === currentUser.id;
+-        const isUserInvolvedInVolta = u.volta ? (u.volta.escaladoId === currentUser.id || u.volta.substitutoId === currentUser.id) : false;
++        const isUserInvolvedInIda = !isIdaArchived && (u.ida.escaladoId === currentUser.id || u.ida.substitutoId === currentUser.id);
++        const isUserInvolvedInVolta = u.volta ? (!isVoltaArchived && (u.volta.escaladoId === currentUser.id || u.volta.substitutoId === currentUser.id)) : false;
+         if (!isUserInvolvedInIda && !isUserInvolvedInVolta) return false;
+       }
+-      if (activeTab === 'aprovar' && u.status !== 'pendente') return false;
+-      if (statusFilter.length > 0 && !statusFilter.includes(u.status)) return false;
++      if (activeTab === 'aprovar') {
++        const hasPendingLeg = (u.ida.status === 'pendente' && !isIdaArchived) || (u.volta ? (u.volta.status === 'pendente' && !isVoltaArchived) : false);
++        if (!hasPendingLeg) return false;
++      }
++      if (statusFilter.length > 0) {
++        const matchesIdaStatus = !isIdaArchived && statusFilter.includes(u.ida.status);
++        const matchesVoltaStatus = u.volta ? (!isVoltaArchived && statusFilter.includes(u.volta.status)) : false;
++        if (!matchesIdaStatus && !matchesVoltaStatus) return false;
++      }
+       if (showPendingPaybacksOnly) {
+-        if (!u.volta || u.volta.data !== '1970-01-01') return false;
++        const hasPendingPayback = u.volta && !isVoltaArchived && u.volta.data === '1970-01-01' && !['reprovado', 'cancelado', 'recusado_substituto'].includes(u.volta.status);
++        if (!hasPendingPayback) return false;
+       }
+       if (dateFilter) {
+-        const matchesIdaDate = u.ida.data === dateFilter;
+-        const matchesVoltaDate = u.volta ? u.volta.data === dateFilter : false;
++        const matchesIdaDate = !isIdaArchived && u.ida.data === dateFilter;
++        const matchesVoltaDate = u.volta ? (!isVoltaArchived && u.volta.data === dateFilter) : false;
+         if (!matchesIdaDate && !matchesVoltaDate) return false;
+       }
+       if (searchTerm.trim() !== '') {
+         const q = searchTerm.toLowerCase();
+-        const matchesIda = 
++        const matchesIda = !isIdaArchived && (
+           u.ida.escaladoName?.toLowerCase().includes(q) ||
+           u.ida.substitutoName?.toLowerCase().includes(q) ||
+-          u.ida.data.includes(q);
+-        const matchesVolta = u.volta ? (
++          u.ida.data.includes(q)
++        );
++        const matchesVolta = u.volta ? (!isVoltaArchived && (
+           u.volta.escaladoName?.toLowerCase().includes(q) ||
+           u.volta.substitutoName?.toLowerCase().includes(q) ||
+           u.volta.data.includes(q)
+-        ) : false;
++        )) : false;
+         const matchesGeneral = 
+           u.funcao.toLowerCase().includes(q) ||
+-          u.ida.observacao?.toLowerCase().includes(q);
++          (!isIdaArchived && u.ida.observacao?.toLowerCase().includes(q)) ||
++          (u.volta && !isVoltaArchived && u.volta.observacao?.toLowerCase().includes(q));
+ 
+         if (!matchesIda && !matchesVolta && !matchesGeneral) return false;
+       }
+@@ -480,16 +517,19 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+     if (!formData.substitutoId) { setNotification('Selecione o substituto.', 'error'); return; }
+     if (!formData.data) { setNotification('Preencha a data da troca.', 'error'); return; }
+ 
+-    if (informarPagamentoAgora) {
+-      if (!formData.dataPagamento) { setNotification('Preencha a data da devolução.', 'error'); return; }
+-      if (!formData.horarioInicioPagamento) { setNotification('Preencha o horário de início da devolução.', 'error'); return; }
+-      if (!formData.horarioFimPagamento) { setNotification('Preencha o horário de fim da devolução.', 'error'); return; }
+-    }
+-
+     isSavingRef.current = true;
+     setSaving(true);
+     try {
+-      // 1. Criar a troca original (A -> B) - agora já pendente direto, aceita pelas duas partes que já combinaram previamente!
++      let initialStatus: 'aguardando_substituto' | 'aguardando_escalado' | 'pendente' = 'aguardando_substituto';
++      if (currentUser.isAdmin && formData.escaladoId !== currentUser.id && formData.substitutoId !== currentUser.id) {
++        initialStatus = 'pendente';
++      } else if (formData.substitutoId === currentUser.id) {
++        initialStatus = 'aguardando_escalado';
++      } else {
++        initialStatus = 'aguardando_substituto';
++      }
++
++      // 1. Criar a troca original (A -> B)
+       const result = await createServiceSwap({
+         escaladoId:    formData.escaladoId,
+         substitutoId:  formData.substitutoId,
+@@ -497,31 +537,19 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+         data:          formData.data,
+         horarioInicio: formData.horarioInicio,
+         horarioFim:    formData.horarioFim,
+-        status:        'aguardando_substituto',
++        status:        initialStatus,
+       } as Partial<ServiceSwap>);
+ 
+-      // 2. Se a devolução foi informada, criar a troca invertida (B -> A) já preenchida. Caso contrário, criar a linha em branco para preenchimento posterior.
+-      if (informarPagamentoAgora && formData.dataPagamento) {
+-        await createServiceSwap({
+-          escaladoId:    formData.substitutoId, // Invertido!
+-          substitutoId:  formData.escaladoId,   // Invertido!
+-          funcao:        formData.funcao,
+-          data:          formData.dataPagamento,
+-          horarioInicio: formData.horarioInicioPagamento,
+-          horarioFim:    formData.horarioFimPagamento,
+-          status:        'aguardando_substituto',
+-        } as Partial<ServiceSwap>);
+-      } else {
+-        await createServiceSwap({
+-          escaladoId:    formData.substitutoId, // Invertido!
+-          substitutoId:  formData.escaladoId,   // Invertido!
+-          funcao:        formData.funcao,
+-          data:          '1970-01-01', // Data de controle para "A definir" (Pagar depois)
+-          horarioInicio: '00:00',
+-          horarioFim:    '00:00',
+-          status:        'aguardando_substituto',
+-        } as any);
+-      }
++      // 2. Criar a perna de Volta automaticamente "A Definir" (1970-01-01)
++      await createServiceSwap({
++        escaladoId:    formData.substitutoId, // Invertido!
++        substitutoId:  formData.escaladoId,   // Invertido!
++        funcao:        formData.funcao,
++        data:          '1970-01-01', // Data de controle para "A definir" (Pagar depois)
++        horarioInicio: '00:00',
++        horarioFim:    '00:00',
++        status:        initialStatus,
++      } as any);
+ 
+       if (result) {
+         setNotification('Solicitação enviada para aprovação do administrador!', 'success');
+@@ -533,13 +561,9 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+           data: '',
+           horarioInicio: '08:00',
+           horarioFim: '08:00',
+-          dataPagamento: '',
+-          horarioInicioPagamento: '08:00',
+-          horarioFimPagamento: '08:00',
+         });
+         setEscaladoSearch(currentUser.id ? formatMilitarWithRealName(currentUser.rank, currentUser.warName, currentUser.name) : '');
+         setSubstituteSearch('');
+-        setInformarPagamentoAgora(false);
+         await loadData();
+       } else throw new Error('Erro no retorno da criação.');
+     } catch (err: any) {
+@@ -561,25 +585,6 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+         evaluationModal.observation,
+       );
+       if (result) {
+-        // Encontrar a troca de devolução casada (B -> A) que está pendente de aprovação por proximidade temporal
+-        const originalSwap = evaluationModal.swap;
+-        const linkedSwap = swaps.find(s => 
+-          s.id !== originalSwap.id &&
+-          s.escaladoId === originalSwap.substitutoId &&
+-          s.substitutoId === originalSwap.escaladoId &&
+-          s.funcao === originalSwap.funcao &&
+-          s.status === 'pendente' &&
+-          Math.abs(new Date(s.createdAt).getTime() - new Date(originalSwap.createdAt).getTime()) < 15000
+-        );
+-        if (linkedSwap) {
+-          await evaluateServiceSwap(
+-            linkedSwap.id,
+-            evaluationModal.action,
+-            currentUser.id,
+-            `Avaliado de forma casada com a troca principal: ${evaluationModal.observation || ''}`
+-          );
+-        }
+-
+         setNotification(
+           `Troca ${evaluationModal.action === 'aprovado' ? 'aprovada' : 'reprovada'} com sucesso!`,
+           'success',
+@@ -601,7 +606,6 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+       return;
+     }
+     try {
+-      const originalSwap = swaps.find(s => s.id === cancelSwapId);
+       const reasonVal = cancelReason.trim() ? cancelReason.trim() : undefined;
+       const result = await cancelServiceSwap(
+         cancelSwapId,
+@@ -609,30 +613,6 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+         currentUser.isAdmin ? currentUser.id : undefined
+       );
+       if (result) {
+-        if (originalSwap) {
+-          // Encontrar a troca de devolução casada (B -> A) e cancelar também!
+-          const linkedSwap = swaps.find(s => 
+-            s.id !== originalSwap.id &&
+-            s.escaladoId === originalSwap.substitutoId &&
+-            s.substitutoId === originalSwap.escaladoId &&
+-            s.funcao === originalSwap.funcao &&
+-            ['aguardando_substituto', 'pendente', 'aprovado'].includes(s.status) &&
+-            Math.abs(new Date(s.createdAt).getTime() - new Date(originalSwap.createdAt).getTime()) < 15000
+-          );
+-          if (linkedSwap) {
+-            try {
+-              await cancelServiceSwap(
+-                linkedSwap.id,
+-                reasonVal 
+-                  ? `Cancelada devido ao cancelamento da troca principal: ${reasonVal}` 
+-                  : 'Cancelada devido ao cancelamento da troca principal',
+-                currentUser.isAdmin ? currentUser.id : undefined
+-              );
+-            } catch (err) {
+-              console.warn("Erro RLS ao cancelar perna casada (tolerado pois o status resolverá):", err);
+-            }
+-          }
+-        }
+         setNotification('Solicitação de troca cancelada com sucesso!', 'success');
+         await loadData();
+       } else throw new Error('Erro ao cancelar a troca.');
+@@ -654,23 +634,6 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+       const originalSwap = acceptModal.swap;
+       const result = await acceptServiceSwap(originalSwap.id);
+       if (result) {
+-        // Encontrar a troca de devolução casada (B -> A) e aceitar também!
+-        const linkedSwap = swaps.find(s => 
+-          s.id !== originalSwap.id &&
+-          s.escaladoId === originalSwap.substitutoId &&
+-          s.substitutoId === originalSwap.escaladoId &&
+-          s.funcao === originalSwap.funcao &&
+-          s.status === 'aguardando_substituto' &&
+-          Math.abs(new Date(s.createdAt).getTime() - new Date(originalSwap.createdAt).getTime()) < 15000
+-        );
+-        if (linkedSwap) {
+-          try {
+-            await acceptServiceSwap(linkedSwap.id);
+-          } catch (err) {
+-            console.warn("Erro RLS ao aceitar perna casada (tolerado):", err);
+-          }
+-        }
+-
+         setNotification('Você aceitou a troca de serviço com sucesso!', 'success');
+         setAcceptModal({ isOpen: false, swap: null });
+         await loadData();
+@@ -686,27 +649,8 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+       return;
+     }
+     try {
+-      const originalSwap = swaps.find(s => s.id === rejectModal.swapId);
+       const result = await rejectServiceSwap(rejectModal.swapId, rejectModal.reason);
+       if (result) {
+-        if (originalSwap) {
+-          // Encontrar a troca de devolução casada (B -> A) e recusar também!
+-          const linkedSwap = swaps.find(s => 
+-            s.id !== originalSwap.id &&
+-            s.escaladoId === originalSwap.substitutoId &&
+-            s.substitutoId === originalSwap.escaladoId &&
+-            s.funcao === originalSwap.funcao &&
+-            ['aguardando_substituto', 'pendente'].includes(s.status) &&
+-            Math.abs(new Date(s.createdAt).getTime() - new Date(originalSwap.createdAt).getTime()) < 15000
+-          );
+-          if (linkedSwap) {
+-            try {
+-              await rejectServiceSwap(linkedSwap.id, `Recusada devido à recusa da troca principal: ${rejectModal.reason}`);
+-            } catch (err) {
+-              console.warn("Erro RLS ao recusar perna casada (tolerado):", err);
+-            }
+-          }
+-        }
+         setNotification('Solicitação de troca recusada com sucesso.', 'success');
+         setRejectModal({ isOpen: false, swapId: null, reason: '' });
+         await loadData();
+@@ -716,6 +660,192 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+     }
+   };
+ 
++  const handleArchive = async (swap: ServiceSwap) => {
++    try {
++      const result = await archiveServiceSwap(swap.id, swap.observacao);
++      if (result) {
++        setNotification('Solicitação arquivada com sucesso!', 'success');
++        await loadData();
++      } else throw new Error('Erro ao arquivar.');
++    } catch (err: any) {
++      setNotification(err.message || 'Erro ao arquivar solicitação.', 'error');
++    }
++  };
++
++  const handleUnarchive = async (swap: ServiceSwap) => {
++    try {
++      const result = await unarchiveServiceSwap(swap.id, swap.observacao);
++      if (result) {
++        setNotification('Solicitação desarquivada com sucesso!', 'success');
++        await loadData();
++      } else throw new Error('Erro ao desarquivar.');
++    } catch (err: any) {
++      setNotification(err.message || 'Erro ao desarquivar solicitação.', 'error');
++    }
++  };
++
++  const handleInvert = () => {
++    const tempId = formData.escaladoId;
++    const tempSearch = escaladoSearch;
++    
++    setFormData(prev => ({
++      ...prev,
++      escaladoId: prev.substitutoId,
++      substitutoId: tempId
++    }));
++    
++    setEscaladoSearch(substituteSearch);
++    setSubstituteSearch(tempSearch);
++  };
++
++  const renderStatusBadge = (s: ServiceSwap, isVolta: boolean) => {
++    const isAprovado = s.status === 'aprovado';
++    const isPendente = s.status === 'pendente';
++    const isAguardandoSub = s.status === 'aguardando_substituto';
++    const isAguardandoEsc = s.status === 'aguardando_escalado';
++    const isRecusado = s.status === 'recusado_substituto';
++    const isReprovado = s.status === 'reprovado';
++    const isCancelado = s.status === 'cancelado';
++    
++    if (isVolta && s.data === '1970-01-01' && (isAprovado || isPendente)) {
++      return (
++        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
++          <Clock size={9} /> A Pagar
++        </span>
++      );
++    }
++    
++    const shortLabel = isAprovado ? 'OK'
++                     : isPendente ? 'Pend.'
++                     : isAguardandoSub ? 'Ag. Sub.'
++                     : isAguardandoEsc ? 'Ag. Esc.'
++                     : isRecusado ? 'Recusado'
++                     : isReprovado ? 'Repr.'
++                     : 'Canc.';
++                     
++    return (
++      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${statusBadgeClass(s.status)}`}>
++        {isAprovado && <CheckCircle2 size={9} />}
++        {(isRecusado || isReprovado || isCancelado) && <XCircle size={9} />}
++        {(isAguardandoSub || isAguardandoEsc || isPendente) && <Clock size={9} />}
++        {shortLabel}
++      </span>
++    );
++  };
++
++  const renderActions = (s: ServiceSwap, isVolta: boolean) => {
++    const isEscalado = s.escaladoId === currentUser.id;
++    const isSubstituto = s.substitutoId === currentUser.id;
++    const isUserInvolved = isEscalado || isSubstituto;
++    
++    const isArchived = s.observacao?.startsWith('[ARQUIVADO]');
++    const isCompleted = ['aprovado', 'reprovado', 'cancelado', 'recusado_substituto'].includes(s.status);
++    
++    return (
++      <div className="flex items-center justify-center gap-1 flex-wrap">
++        {!isReadOnly && !isArchived && s.status === 'aguardando_substituto' && isSubstituto && (
++          <>
++            <button
++              type="button"
++              onClick={() => handleAccept(s)}
++              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm"
++            >
++              <Check size={10} /> Aceitar
++            </button>
++            <button
++              type="button"
++              onClick={() => setRejectModal({ isOpen: true, swapId: s.id, reason: '' })}
++              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm"
++            >
++              <X size={10} /> Recusar
++            </button>
++          </>
++        )}
++
++        {!isReadOnly && !isArchived && s.status === 'aguardando_escalado' && isEscalado && (
++          <>
++            <button
++              type="button"
++              onClick={() => handleAccept(s)}
++              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm"
++            >
++              <Check size={10} /> Aceitar
++            </button>
++            <button
++              type="button"
++              onClick={() => setRejectModal({ isOpen: true, swapId: s.id, reason: '' })}
++              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm"
++            >
++              <X size={10} /> Recusar
++            </button>
++          </>
++        )}
++
++        {!isReadOnly && !isArchived && s.status === 'pendente' && currentUser.isAdmin && (
++          <>
++            <button
++              type="button"
++              onClick={() => setEvaluationModal({ isOpen: true, swap: s, action: 'aprovado', observation: '' })}
++              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm"
++            >
++              <Check size={10} /> Aprovar
++            </button>
++            <button
++              type="button"
++              onClick={() => setEvaluationModal({ isOpen: true, swap: s, action: 'reprovado', observation: '' })}
++              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm"
++            >
++              <X size={10} /> Repr.
++            </button>
++          </>
++        )}
++
++        {!isReadOnly && !isArchived && s.status !== 'cancelado' && (currentUser.isAdmin || (isUserInvolved && ['aguardando_substituto', 'aguardando_escalado', 'pendente'].includes(s.status))) && (
++          <button
++            type="button"
++            onClick={() => setCancelSwapId(s.id)}
++            title="Cancelar Solicitação"
++            className="p-1 bg-rose-50 hover:bg-rose-100 text-rose-500 border border-rose-200 rounded-md transition-all active:scale-95"
++          >
++            <XCircle size={12} />
++          </button>
++        )}
++
++        {!isReadOnly && currentUser.isAdmin && isCompleted && (
++          isArchived ? (
++            <button
++              type="button"
++              onClick={() => handleUnarchive(s)}
++              title="Desarquivar Solicitação"
++              className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5"
++            >
++              <Archive size={10} /> Desarquivar
++            </button>
++          ) : (
++            <button
++              type="button"
++              onClick={() => handleArchive(s)}
++              title="Arquivar Solicitação"
++              className="px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5"
++            >
++              <Archive size={10} /> Arquivar
++            </button>
++          )
++        )}
++
++        {isVolta && s.data === '1970-01-01' && ['pendente', 'aprovado'].includes(s.status) && (isUserInvolved || currentUser.isAdmin) && (
++          <button
++            type="button"
++            onClick={() => setPaymentModal({ isOpen: true, swap: s, dataPagamento: '', horarioInicioPagamento: '08:00', horarioFimPagamento: '08:00' })}
++            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
++          >
++            <Calendar size={10} /> Definir Data
++          </button>
++        )}
++      </div>
++    );
++  };
++
+   const handleUpdatePayment = async (e: React.FormEvent) => {
+     e.preventDefault();
+     if (!paymentModal.swap) return;
+@@ -891,6 +1021,26 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+             )}
+           </button>
+         )}
++
++        {currentUser.isAdmin && (
++          <button
++            key="arquivadas"
++            onClick={() => { setActiveTab('arquivadas'); setStatusFilter([]); }}
++            className={`group relative flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
++              activeTab === 'arquivadas'
++                ? 'bg-slate-800 text-white shadow-lg scale-100'
++                : 'bg-slate-100 text-slate-500 hover:bg-slate-200 scale-95'
++            }`}
++          >
++            <Archive size={18} />
++            <span className={activeTab === 'arquivadas' ? 'inline' : 'hidden md:inline group-hover:inline'}>Arquivadas</span>
++            {archivedCount > 0 && (
++              <span className="ml-1.5 flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-slate-500 text-[9px] font-black text-white shadow shrink-0">
++                {archivedCount}
++              </span>
++            )}
++          </button>
++        )}
+       </div>
+ 
+       {/* ── FILTERS CARD ── */}
+@@ -1062,103 +1212,76 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+                 </thead>
+                 <tbody className="divide-y divide-slate-100">
+                   {filteredUnifiedSwaps.map(u => {
+-                    const isIdaEscalado    = u.ida.escaladoId  === currentUser.id;
+-                    const isIdaSubstituto  = u.ida.substitutoId === currentUser.id;
+-                    const isVoltaEscalado  = u.volta ? u.volta.escaladoId  === currentUser.id : false;
+-                    const isVoltaSubstituto= u.volta ? u.volta.substitutoId === currentUser.id : false;
+-                    const isUserInvolved   = isIdaEscalado || isIdaSubstituto || isVoltaEscalado || isVoltaSubstituto;
+-
+-                    const isAprovado  = u.status === 'aprovado';
+-                    const isAguardando= u.status === 'aguardando_substituto';
+-                    const isPendente  = u.status === 'pendente';
+-                    const isRecusado  = u.status === 'recusado_substituto';
+-                    const isReprovado = u.status === 'reprovado';
+-                    const isCancelado = u.status === 'cancelado';
+-                    const dimRow      = isCancelado || isReprovado;
+-
+-                    const shortStatus = isAprovado   ? 'OK'
+-                                      : isPendente   ? 'Pend.'
+-                                      : isAguardando ? 'Ag. Sub.'
+-                                      : isRecusado   ? 'Recusado'
+-                                      : isReprovado  ? 'Repr.'
+-                                      : 'Canc.';
+-
+-                    const obs = u.status === 'recusado_substituto' && u.ida.observacao
+-                      ? `Motivo: ${u.ida.observacao}`
+-                      : u.ida.dataAprovacao && u.ida.aprovadorName
+-                      ? `Autor.: ${u.ida.aprovadorName}`
+-                      : '';
++                    const isIdaArchived = !!u.ida.observacao?.startsWith('[ARQUIVADO]');
++                    const isVoltaArchived = u.volta ? !!u.volta.observacao?.startsWith('[ARQUIVADO]') : false;
++
++                    const showIda = (activeTab === 'arquivadas') === isIdaArchived;
++                    const showVolta = !!u.volta && (activeTab === 'arquivadas') === isVoltaArchived;
++
++                    const dimIdaRow      = u.ida.status === 'cancelado' || u.ida.status === 'reprovado';
++                    const dimVoltaRow    = u.volta ? (u.volta.status === 'cancelado' || u.volta.status === 'reprovado') : false;
++
++                    const cleanObs = (s: ServiceSwap) => {
++                      const raw = s.observacao || '';
++                      if (raw.startsWith('[ARQUIVADO] ')) {
++                        return raw.substring('[ARQUIVADO] '.length);
++                      }
++                      if (raw === '[ARQUIVADO]') return '';
++                      return raw;
++                    };
++
++                    const getObsText = (s: ServiceSwap) => {
++                      const clean = cleanObs(s);
++                      if (s.status === 'recusado_substituto' && clean) {
++                        return `Motivo: ${clean}`;
++                      }
++                      if (s.dataAprovacao && s.aprovadorName) {
++                        return `Autor.: ${s.aprovadorName}${clean ? ` (${clean})` : ''}`;
++                      }
++                      return clean;
++                    };
+ 
+                     return (
+                       <React.Fragment key={u.id}>
+                         {/* ── IDA ROW ─────────────────────────────────────── */}
+-                        <tr className={`border-l-4 border-l-blue-500 hover:bg-blue-50/30 transition-colors ${dimRow ? 'opacity-50' : ''}`}>
+-                          <td className="px-4 py-2.5 whitespace-nowrap">
+-                            <span className="text-[8px] font-black text-blue-500 uppercase block leading-none mb-0.5">📤 Escalado</span>
+-                            <span className="text-xs font-bold text-slate-800">{u.ida.escaladoName}</span>
+-                          </td>
+-                          <td className="px-4 py-2.5 whitespace-nowrap">
+-                            <span className="text-[8px] font-black text-indigo-500 uppercase block leading-none mb-0.5">Substituto</span>
+-                            <span className="text-xs font-bold text-slate-800">{u.ida.substitutoName}</span>
+-                          </td>
+-                          <td className="px-4 py-2.5 text-center">
+-                            <span className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${funcaoBadgeClass(u.funcao)}`}>{u.funcao}</span>
+-                          </td>
+-                          <td className="px-4 py-2.5 text-xs font-bold text-slate-700 whitespace-nowrap">
+-                            {u.ida.data && u.ida.data !== '1970-01-01'
+-                              ? new Date(u.ida.data + 'T00:00:00').toLocaleDateString('pt-BR')
+-                              : '—'}
+-                          </td>
+-                          <td className="px-4 py-2.5 text-xs font-bold text-slate-600 whitespace-nowrap">
+-                            {u.ida.horarioInicio}h × {u.ida.horarioFim}h
+-                          </td>
+-                          <td className="px-4 py-2.5 text-center max-w-[160px]">
+-                            <div className="flex flex-col items-center gap-0.5">
+-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${statusBadgeClass(u.status)}`}>
+-                                {isAprovado   && <CheckCircle2 size={9} />}
+-                                {(isRecusado || isReprovado || isCancelado) && <XCircle size={9} />}
+-                                {(isAguardando || isPendente) && <Clock size={9} />}
+-                                {shortStatus}
+-                              </span>
+-                              {obs && (
+-                                <span className="text-[8px] text-slate-400 font-medium italic truncate max-w-[140px]" title={obs}>{obs}</span>
+-                              )}
+-                            </div>
+-                          </td>
+-                          <td className="px-3 py-2.5 text-center">
+-                            <div className="flex items-center justify-center gap-1 flex-wrap">
+-                              {!isReadOnly && u.status === 'aguardando_substituto' && u.ida.substitutoId === currentUser.id && (
+-                                <>
+-                                  <button onClick={() => handleAccept(u.ida)} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm">
+-                                    <Check size={10} /> Aceitar
+-                                  </button>
+-                                  <button onClick={() => setRejectModal({ isOpen: true, swapId: u.ida.id, reason: '' })} className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm">
+-                                    <X size={10} /> Recusar
+-                                  </button>
+-                                </>
+-                              )}
+-                              {!isReadOnly && u.status === 'pendente' && currentUser.isAdmin && (
+-                                <>
+-                                  <button onClick={() => setEvaluationModal({ isOpen: true, swap: u.ida, action: 'aprovado', observation: '' })} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm">
+-                                    <Check size={10} /> Aprovar
+-                                  </button>
+-                                  <button onClick={() => setEvaluationModal({ isOpen: true, swap: u.ida, action: 'reprovado', observation: '' })} className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-0.5 shadow-sm">
+-                                    <X size={10} /> Repr.
+-                                  </button>
+-                                </>
+-                              )}
+-                              {!isReadOnly && u.status !== 'cancelado' && (currentUser.isAdmin || (isUserInvolved && ['aguardando_substituto', 'pendente'].includes(u.status))) && (
+-                                <button onClick={() => setCancelSwapId(u.ida.id)} title="Cancelar Solicitação" className="p-1 bg-rose-50 hover:bg-rose-100 text-rose-500 border border-rose-200 rounded-md transition-all active:scale-95">
+-                                  <XCircle size={12} />
+-                                </button>
+-                              )}
+-                            </div>
+-                          </td>
+-                        </tr>
++                        {showIda && (
++                          <tr className={`border-l-4 border-l-blue-500 hover:bg-blue-50/30 transition-colors ${dimIdaRow ? 'opacity-50' : ''}`}>
++                            <td className="px-4 py-2.5 whitespace-nowrap">
++                              <span className="text-[8px] font-black text-blue-500 uppercase block leading-none mb-0.5">📤 Escalado</span>
++                              <span className="text-xs font-bold text-slate-800">{u.ida.escaladoName}</span>
++                            </td>
++                            <td className="px-4 py-2.5 whitespace-nowrap">
++                              <span className="text-[8px] font-black text-indigo-500 uppercase block leading-none mb-0.5">Substituto</span>
++                              <span className="text-xs font-bold text-slate-800">{u.ida.substitutoName}</span>
++                            </td>
++                            <td className="px-4 py-2.5 text-center">
++                              <span className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${funcaoBadgeClass(u.funcao)}`}>{u.funcao}</span>
++                            </td>
++                            <td className="px-4 py-2.5 text-xs font-bold text-slate-700 whitespace-nowrap">
++                              {u.ida.data && u.ida.data !== '1970-01-01'
++                                ? new Date(u.ida.data + 'T00:00:00').toLocaleDateString('pt-BR')
++                                : '—'}
++                            </td>
++                            <td className="px-4 py-2.5 text-xs font-bold text-slate-600 whitespace-nowrap">
++                              {u.ida.horarioInicio}h × {u.ida.horarioFim}h
++                            </td>
++                            <td className="px-4 py-2.5 text-center max-w-[160px]">
++                              <div className="flex flex-col items-center gap-0.5">
++                                {renderStatusBadge(u.ida, false)}
++                                {getObsText(u.ida) && (
++                                  <span className="text-[8px] text-slate-400 font-medium italic truncate max-w-[140px]" title={getObsText(u.ida)}>{getObsText(u.ida)}</span>
++                                )}
++                              </div>
++                            </td>
++                            <td className="px-3 py-2.5 text-center">
++                              {renderActions(u.ida, false)}
++                            </td>
++                          </tr>
++                        )}
+ 
+                         {/* ── VOLTA ROW ────────────────────────────────────── */}
+-                        {u.volta ? (
+-                          <tr className={`border-l-4 border-l-purple-400 bg-purple-500/[0.03] hover:bg-purple-50/40 transition-colors border-b-2 border-b-slate-200 ${dimRow ? 'opacity-50' : ''}`}>
++                        {showVolta && u.volta && (
++                          <tr className={`border-l-4 border-l-purple-400 bg-purple-500/[0.03] hover:bg-purple-50/40 transition-colors border-b-2 border-b-slate-200 ${dimVoltaRow ? 'opacity-50' : ''}`}>
+                             <td className="px-4 py-2.5 whitespace-nowrap">
+                               <span className="text-[8px] font-black text-purple-500 uppercase block leading-none mb-0.5">↩ Devolução — Escalado</span>
+                               <span className="text-xs font-bold text-slate-700">{u.volta.escaladoName}</span>
+@@ -1185,30 +1308,20 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+                               {u.volta.data === '1970-01-01' ? '—' : `${u.volta.horarioInicio}h × ${u.volta.horarioFim}h`}
+                             </td>
+                             <td className="px-4 py-2.5 text-center">
+-                              {u.volta.data === '1970-01-01' ? (
+-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
+-                                  <Clock size={9} /> A Pagar
+-                                </span>
+-                              ) : (
+-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${statusBadgeClass(u.status)}`}>
+-                                  {isAprovado && <CheckCircle2 size={9} />}
+-                                  {shortStatus}
+-                                </span>
+-                              )}
++                              <div className="flex flex-col items-center gap-0.5">
++                                {renderStatusBadge(u.volta, true)}
++                                {getObsText(u.volta) && (
++                                  <span className="text-[8px] text-slate-400 font-medium italic truncate max-w-[140px]" title={getObsText(u.volta)}>{getObsText(u.volta)}</span>
++                                )}
++                              </div>
+                             </td>
+                             <td className="px-3 py-2.5 text-center">
+-                              {u.volta.data === '1970-01-01' && ['pendente', 'aprovado'].includes(u.status) && (isUserInvolved || currentUser.isAdmin) && (
+-                                <button
+-                                  onClick={() => setPaymentModal({ isOpen: true, swap: u.volta!, dataPagamento: '', horarioInicioPagamento: '08:00', horarioFimPagamento: '08:00' })}
+-                                  className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-md font-black text-[8px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1"
+-                                >
+-                                  <Calendar size={10} /> Definir Data
+-                                </button>
+-                              )}
++                              {renderActions(u.volta, true)}
+                             </td>
+                           </tr>
+-                        ) : (
+-                          <tr className="border-b-2 border-b-slate-200"><td colSpan={7} className="py-0"></td></tr>
++                        )}
++                        {!showIda && !showVolta && (
++                          <tr className="border-b border-slate-100"><td colSpan={7} className="py-0"></td></tr>
+                         )}
+                       </React.Fragment>
+                     );
+@@ -1309,6 +1422,18 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+                   </div>
+                 </div>
+ 
++                {/* Botão de Inversão */}
++                <div className="flex justify-center -my-2 relative z-10">
++                  <button
++                    type="button"
++                    onClick={handleInvert}
++                    className="bg-slate-100 hover:bg-blue-50 text-slate-500 hover:text-blue-600 p-2 rounded-full border border-slate-200 shadow-sm transition-all active:scale-95 flex items-center justify-center cursor-pointer"
++                    title="Inverter Escalado e Substituto"
++                  >
++                    <ArrowUpDown size={14} />
++                  </button>
++                </div>
++
+                 {/* Substituto (com Autocomplete) */}
+                 <div className="space-y-1.5" ref={dropdownRef}>
+                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Substituto *</label>
+@@ -1419,68 +1544,6 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
+                     </div>
+                   ))}
+                 </div>
+-
+-                {/* Checkbox Devolução */}
+-                <div className="pt-2 border-t border-slate-100">
+-                  <label className="flex items-center gap-2.5 cursor-pointer">
+-                    <input
+-                      type="checkbox"
+-                      checked={informarPagamentoAgora}
+-                      onChange={e => setInformarPagamentoAgora(e.target.checked)}
+-                      className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
+-                    />
+-                    <span className="text-xs font-black uppercase text-slate-600 tracking-wider">Informar devolução de serviço agora</span>
+-                  </label>
+-                </div>
+-
+-                {/* Campos de Devolução Condicionais */}
+-                {informarPagamentoAgora && (
+-                  <div className="space-y-5 border-t border-slate-100 pt-4 animate-in fade-in slide-in-from-top-4 duration-300">
+-                    <div className="space-y-1.5">
+-                      <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Data da Devolução *</label>
+-                      <div className="relative">
+-                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={15} />
+-                        <input
+-                          type="date"
+-                          required={informarPagamentoAgora}
+-                          value={formData.dataPagamento}
+-                          onChange={e => setFormData({ ...formData, dataPagamento: e.target.value })}
+-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-slate-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-bold text-sm"
+-                        />
+-                      </div>
+-                    </div>
+-
+-                    <div className="grid grid-cols-2 gap-4">
+-                      <div className="space-y-1.5">
+-                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Horário de Início (Devolução) *</label>
+-                        <div className="relative">
+-                          <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={15} />
+-                          <input
+-                            type="time"
+-                            required={informarPagamentoAgora}
+-                            value={formData.horarioInicioPagamento}
+-                            onChange={e => setFormData({ ...formData, horarioInicioPagamento: e.target.value })}
+-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-slate-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-bold text-sm"
+-                          />
+-                        </div>
+-                      </div>
+-
+-                      <div className="space-y-1.5">
+-                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Horário de Fim (Devolução) *</label>
+-                        <div className="relative">
+-                          <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={15} />
+-                          <input
+-                            type="time"
+-                            required={informarPagamentoAgora}
+-                            value={formData.horarioFimPagamento}
+-                            onChange={e => setFormData({ ...formData, horarioFimPagamento: e.target.value })}
+-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-slate-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none font-bold text-sm"
+-                          />
+-                        </div>
+-                      </div>
+-                    </div>
+-                  </div>
+-                )}
+               </div>
+ 
+               {/* Modal Footer */}
+diff --git a/components/ServiceSwapReport.tsx b/components/ServiceSwapReport.tsx
+index 4776441..2d72edb 100644
+--- a/components/ServiceSwapReport.tsx
++++ b/components/ServiceSwapReport.tsx
+@@ -19,6 +19,7 @@ interface Props {
+ 
+ const STATUS_LABELS: Record<string, string> = {
+   aguardando_substituto: 'Aguardando Substituto',
++  aguardando_escalado:   'Aguardando Escalado',
+   recusado_substituto:   'Recusado pelo Substituto',
+   pendente:              'Pendente',
+   aprovado:              'Aprovado',
+@@ -28,6 +29,7 @@ const STATUS_LABELS: Record<string, string> = {
+ 
+ const STATUS_PRINT_COLOR: Record<string, string> = {
+   aguardando_substituto: '#0284c7',
++  aguardando_escalado:   '#4f46e5',
+   recusado_substituto:   '#dc2626',
+   pendente:              '#d97706',
+   aprovado:              '#16a34a',
+@@ -45,6 +47,7 @@ const FUNCAO_PRINT_COLOR: Record<string, string> = {
+ const ALL_STATUSES = [
+   { value: 'todos',                 label: 'Todos os Status'             },
+   { value: 'aguardando_substituto', label: 'Aguardando Substituto'       },
++  { value: 'aguardando_escalado',   label: 'Aguardando Escalado'         },
+   { value: 'recusado_substituto',   label: 'Recusado pelo Substituto'    },
+   { value: 'pendente',              label: 'Pendente (Aprovação Admin)'  },
+   { value: 'aprovado',              label: 'Aprovado'                    },
+@@ -398,7 +401,7 @@ const ReportDocument: React.FC<DocProps> = ({
+                     }}>
+                       {swap.status === 'aprovado' && <CheckCircle2 size={9} />}
+                       {(swap.status === 'reprovado' || swap.status === 'recusado_substituto' || swap.status === 'cancelado') && <XCircle size={9} />}
+-                      {(swap.status === 'pendente' || swap.status === 'aguardando_substituto') && <Clock size={9} />}
++                      {(swap.status === 'pendente' || swap.status === 'aguardando_substituto' || swap.status === 'aguardando_escalado') && <Clock size={9} />}
+                       {STATUS_LABELS[swap.status]}
+                     </span>
+                   </td>
+@@ -437,8 +440,10 @@ const ReportDocument: React.FC<DocProps> = ({
+ 
+                   {/* Etapa Substituto */}
+                   <td style={{ padding: '10px 14px', maxWidth: 180 }}>
+-                    {swap.status === 'aguardando_substituto' && (
+-                      <span style={{ color: '#0284c7', fontWeight: 700, fontSize: 10 }}>⏳ Aguardando aceite</span>
++                    {(swap.status === 'aguardando_substituto' || swap.status === 'aguardando_escalado') && (
++                      <span style={{ color: '#0284c7', fontWeight: 700, fontSize: 10 }}>
++                        {swap.status === 'aguardando_escalado' ? '⏳ Aguardando escalado' : '⏳ Aguardando aceite'}
++                      </span>
+                     )}
+                     {swap.status === 'recusado_substituto' && (
+                       <div>
+@@ -453,7 +458,7 @@ const ReportDocument: React.FC<DocProps> = ({
+                     {['pendente', 'aprovado', 'reprovado', 'cancelado'].includes(swap.status) && (
+                       <span style={{ color: '#16a34a', fontWeight: 800, fontSize: 10 }}>✓ Aceito</span>
+                     )}
+-                    {!['aguardando_substituto','recusado_substituto','pendente','aprovado','reprovado','cancelado'].includes(swap.status) && (
++                    {!['aguardando_substituto','aguardando_escalado','recusado_substituto','pendente','aprovado','reprovado','cancelado'].includes(swap.status) && (
+                       <span style={{ color: '#94a3b8', fontSize: 10 }}>—</span>
+                     )}
+                   </td>
+diff --git a/services/supabaseService.ts b/services/supabaseService.ts
+index d9cc24c..f863ec3 100644
+--- a/services/supabaseService.ts
++++ b/services/supabaseService.ts
+@@ -1246,4 +1246,60 @@ export const updateServiceSwapDetails = async (
+   }
+ };
+ 
++export const archiveServiceSwap = async (
++  swapId: string,
++  currentObs?: string
++): Promise<ServiceSwap | null> => {
++  try {
++    let cleanObs = currentObs || '';
++    if (cleanObs.startsWith('[ARQUIVADO] ')) {
++      // Já arquivado
++    } else if (cleanObs === '[ARQUIVADO]') {
++      // Já arquivado
++    } else {
++      cleanObs = cleanObs ? `[ARQUIVADO] ${cleanObs}` : '[ARQUIVADO]';
++    }
++
++    const { data, error } = await supabase
++      .from('service_swaps')
++      .update({ observacao: cleanObs })
++      .eq('id', swapId)
++      .select()
++      .single();
++
++    if (error) throw error;
++    return data ? mapServiceSwapFromDB(data) : null;
++  } catch (err) {
++    console.error("Erro ao arquivar troca de serviço:", err);
++    throw err;
++  }
++};
++
++export const unarchiveServiceSwap = async (
++  swapId: string,
++  currentObs?: string
++): Promise<ServiceSwap | null> => {
++  try {
++    let cleanObs = currentObs || '';
++    if (cleanObs.startsWith('[ARQUIVADO] ')) {
++      cleanObs = cleanObs.substring('[ARQUIVADO] '.length);
++    } else if (cleanObs === '[ARQUIVADO]') {
++      cleanObs = '';
++    }
++
++    const { data, error } = await supabase
++      .from('service_swaps')
++      .update({ observacao: cleanObs || null })
++      .eq('id', swapId)
++      .select()
++      .single();
++
++    if (error) throw error;
++    return data ? mapServiceSwapFromDB(data) : null;
++  } catch (err) {
++    console.error("Erro ao desarquivar troca de serviço:", err);
++    throw err;
++  }
++};
++
+ 
+diff --git a/types.ts b/types.ts
+index 1ca1ae4..3f28764 100644
+--- a/types.ts
++++ b/types.ts
+@@ -133,7 +133,7 @@ export interface ServiceSwap {
+   data: string; // YYYY-MM-DD
+   horarioInicio: string; // HH:mm
+   horarioFim: string; // HH:mm
+-  status: 'aguardando_substituto' | 'recusado_substituto' | 'pendente' | 'aprovado' | 'reprovado' | 'cancelado';
++  status: 'aguardando_substituto' | 'aguardando_escalado' | 'recusado_substituto' | 'pendente' | 'aprovado' | 'reprovado' | 'cancelado' | 'arquivado';
+   aprovadorId?: string;
+   observacao?: string;
+   dataAprovacao?: string;

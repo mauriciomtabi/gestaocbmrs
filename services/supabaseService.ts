@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Provider, AttendanceRecord, AuditLog, FuelSupply, Vehicle, StationNickname, MonthlyEvaluation, ServiceSwap } from '../types';
 import type { GeoPerimeter } from './geoService';
 
-const SUPABASE_URL = 'https://gsdweukrawfmgqprngyl.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzZHdldWtyYXdmbWdxcHJuZ3lsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NjE2OTUsImV4cCI6MjA4NTQzNzY5NX0.dTdM1Jyhu0G0skkuBH2flsgnKXbmFtLYTh3wj0TDRiQ';
+const SUPABASE_URL = 'https://lirbmymfsdktxdvbnrrg.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpcmJteW1mc2RrdHhkdmJucnJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5Mjg1MzQsImV4cCI6MjA5NzUwNDUzNH0.FUPtbmSDGdQtGM3kRAfxiuWIXIbjXDlbpV0724XrX4w';
 
 if (!SUPABASE_KEY.startsWith('eyJ') && !SUPABASE_KEY.startsWith('sb_')) {
   console.warn("AVISO: A SUPABASE_KEY não parece ser uma chave 'anon' válida. Verifique as configurações no Supabase Dashboard.");
