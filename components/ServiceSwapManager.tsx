@@ -520,18 +520,17 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
     isSavingRef.current = true;
     setSaving(true);
     try {
-      let initialStatusIda: 'aguardando_substituto' | 'aguardando_escalado' | 'pendente' = 'aguardando_substituto';
-      let initialStatusVolta: 'aguardando_substituto' | 'aguardando_escalado' | 'pendente' = 'aguardando_substituto';
+      let dbStatus: 'aguardando_substituto' | 'pendente' = 'aguardando_substituto';
+      let creatorTag = '';
 
       if (currentUser.isAdmin && formData.escaladoId !== currentUser.id && formData.substitutoId !== currentUser.id) {
-        initialStatusIda = 'pendente';
-        initialStatusVolta = 'pendente';
+        dbStatus = 'pendente';
       } else if (formData.substitutoId === currentUser.id) {
-        initialStatusIda = 'aguardando_escalado';
-        initialStatusVolta = 'aguardando_escalado';
+        dbStatus = 'aguardando_substituto';
+        creatorTag = '[CREATOR_SUBSTITUTO]';
       } else {
-        initialStatusIda = 'aguardando_substituto';
-        initialStatusVolta = 'aguardando_substituto';
+        dbStatus = 'aguardando_substituto';
+        creatorTag = '[CREATOR_ESCALADO]';
       }
 
       // 1. Criar a troca original (A -> B)
@@ -542,7 +541,8 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
         data:          formData.data,
         horarioInicio: formData.horarioInicio,
         horarioFim:    formData.horarioFim,
-        status:        initialStatusIda,
+        status:        dbStatus,
+        observacao:    creatorTag,
       } as Partial<ServiceSwap>);
 
       // 2. Criar a perna de Volta automaticamente "A Definir" (1970-01-01)
@@ -553,7 +553,8 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
         data:          '1970-01-01', // Data de controle para "A definir" (Pagar depois)
         horarioInicio: '00:00',
         horarioFim:    '00:00',
-        status:        initialStatusVolta,
+        status:        dbStatus,
+        observacao:    creatorTag,
       } as any);
 
       if (result) {
@@ -839,9 +840,8 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
         )}
 
         {isVolta && s.data === '1970-01-01' && (
-          (s.status === 'aguardando_substituto' && isSubstituto) ||
-          (s.status === 'aguardando_escalado' && isEscalado) ||
-          (['pendente', 'aprovado'].includes(s.status) && (isUserInvolved || currentUser.isAdmin)) ||
+          (!s.observacao?.includes('[CREATOR_SUBSTITUTO]') && isSubstituto) ||
+          (!!s.observacao?.includes('[CREATOR_SUBSTITUTO]') && isEscalado) ||
           currentUser.isAdmin
         ) && (
           <button
@@ -900,14 +900,20 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
 
       let success = false;
 
-      // 1. Sempre tentar salvar na tabela de pagamento da Ida (onde o usuário tem permissão RLS pois é o original escalado_id)
+      // 1. Sempre tentar salvar na tabela de pagamento da Ida
       if (idaSwap) {
+        let nextStatusIda: string | undefined = undefined;
+        // Se o usuário logado é o substituto da Ida, ele pode atualizar o status da Ida para 'pendente' diretamente.
+        if (idaSwap.substitutoId === currentUser.id && idaSwap.status === 'aguardando_substituto') {
+          nextStatusIda = 'pendente';
+        }
         try {
           await updateServiceSwapPayment(
             idaSwap.id,
             paymentModal.dataPagamento,
-            paymentModal.horarioInicioPagamento,
-            paymentModal.horarioFimPagamento
+            paymentModal.horarioInicioPagamento || '08:00',
+            paymentModal.horarioFimPagamento || '08:00',
+            nextStatusIda
           );
           success = true;
         } catch (err) {
@@ -917,20 +923,25 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
 
       // 2. Tentar também atualizar a Volta diretamente no banco para sincronização
       if (voltaSwap) {
-        let nextStatus: string | undefined = undefined;
+        let nextStatusVolta: string | undefined = undefined;
         if (voltaSwap.status === 'aguardando_substituto') {
-          nextStatus = 'aguardando_escalado';
-        } else if (voltaSwap.status === 'aguardando_escalado') {
-          nextStatus = 'aguardando_substituto';
+          // Se o usuário logado é o substituto da volta, ele está definindo a data de pagamento da própria perna que ele deve trabalhar.
+          // Portanto, ele já está aceitando essa perna. O status pode ir direto para 'pendente'.
+          if (voltaSwap.substitutoId === currentUser.id) {
+            nextStatusVolta = 'pendente';
+          } else {
+            // Caso contrário, mantém 'aguardando_substituto' para que o substituto da volta (que deve trabalhar) aceite.
+            nextStatusVolta = 'aguardando_substituto';
+          }
         }
 
         try {
           await updateServiceSwapDetails(
             voltaSwap.id,
             paymentModal.dataPagamento,
-            paymentModal.horarioInicioPagamento,
-            paymentModal.horarioFimPagamento,
-            nextStatus
+            paymentModal.horarioInicioPagamento || '08:00',
+            paymentModal.horarioFimPagamento || '08:00',
+            nextStatusVolta
           );
           success = true;
         } catch (err) {

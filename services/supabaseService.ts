@@ -1198,16 +1198,21 @@ export const updateServiceSwapPayment = async (
   swapId: string,
   dataPagamento: string | null,
   horarioInicioPagamento: string | null,
-  horarioFimPagamento: string | null
+  horarioFimPagamento: string | null,
+  status?: string
 ): Promise<ServiceSwap | null> => {
   try {
+    const updateFields: any = {
+      data_pagamento: dataPagamento,
+      horario_inicio_pagamento: horarioInicioPagamento,
+      horario_fim_pagamento: horarioFimPagamento
+    };
+    if (status) {
+      updateFields.status = status;
+    }
     const { data, error } = await supabase
       .from('service_swaps')
-      .update({
-        data_pagamento: dataPagamento,
-        horario_inicio_pagamento: horarioInicioPagamento,
-        horario_fim_pagamento: horarioFimPagamento
-      })
+      .update(updateFields)
       .eq('id', swapId)
       .select()
       .single();
