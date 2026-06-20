@@ -1246,4 +1246,60 @@ export const updateServiceSwapDetails = async (
   }
 };
 
+export const archiveServiceSwap = async (
+  swapId: string,
+  currentObs?: string
+): Promise<ServiceSwap | null> => {
+  try {
+    let cleanObs = currentObs || '';
+    if (cleanObs.startsWith('[ARQUIVADO] ')) {
+      // Já arquivado
+    } else if (cleanObs === '[ARQUIVADO]') {
+      // Já arquivado
+    } else {
+      cleanObs = cleanObs ? `[ARQUIVADO] ${cleanObs}` : '[ARQUIVADO]';
+    }
+
+    const { data, error } = await supabase
+      .from('service_swaps')
+      .update({ observacao: cleanObs })
+      .eq('id', swapId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data ? mapServiceSwapFromDB(data) : null;
+  } catch (err) {
+    console.error("Erro ao arquivar troca de serviço:", err);
+    throw err;
+  }
+};
+
+export const unarchiveServiceSwap = async (
+  swapId: string,
+  currentObs?: string
+): Promise<ServiceSwap | null> => {
+  try {
+    let cleanObs = currentObs || '';
+    if (cleanObs.startsWith('[ARQUIVADO] ')) {
+      cleanObs = cleanObs.substring('[ARQUIVADO] '.length);
+    } else if (cleanObs === '[ARQUIVADO]') {
+      cleanObs = '';
+    }
+
+    const { data, error } = await supabase
+      .from('service_swaps')
+      .update({ observacao: cleanObs || null })
+      .eq('id', swapId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data ? mapServiceSwapFromDB(data) : null;
+  } catch (err) {
+    console.error("Erro ao desarquivar troca de serviço:", err);
+    throw err;
+  }
+};
+
 

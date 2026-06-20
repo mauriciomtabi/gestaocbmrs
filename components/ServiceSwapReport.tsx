@@ -19,6 +19,7 @@ interface Props {
 
 const STATUS_LABELS: Record<string, string> = {
   aguardando_substituto: 'Aguardando Substituto',
+  aguardando_escalado:   'Aguardando Escalado',
   recusado_substituto:   'Recusado pelo Substituto',
   pendente:              'Pendente',
   aprovado:              'Aprovado',
@@ -28,6 +29,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_PRINT_COLOR: Record<string, string> = {
   aguardando_substituto: '#0284c7',
+  aguardando_escalado:   '#4f46e5',
   recusado_substituto:   '#dc2626',
   pendente:              '#d97706',
   aprovado:              '#16a34a',
@@ -45,6 +47,7 @@ const FUNCAO_PRINT_COLOR: Record<string, string> = {
 const ALL_STATUSES = [
   { value: 'todos',                 label: 'Todos os Status'             },
   { value: 'aguardando_substituto', label: 'Aguardando Substituto'       },
+  { value: 'aguardando_escalado',   label: 'Aguardando Escalado'         },
   { value: 'recusado_substituto',   label: 'Recusado pelo Substituto'    },
   { value: 'pendente',              label: 'Pendente (Aprovação Admin)'  },
   { value: 'aprovado',              label: 'Aprovado'                    },
@@ -398,7 +401,7 @@ const ReportDocument: React.FC<DocProps> = ({
                     }}>
                       {swap.status === 'aprovado' && <CheckCircle2 size={9} />}
                       {(swap.status === 'reprovado' || swap.status === 'recusado_substituto' || swap.status === 'cancelado') && <XCircle size={9} />}
-                      {(swap.status === 'pendente' || swap.status === 'aguardando_substituto') && <Clock size={9} />}
+                      {(swap.status === 'pendente' || swap.status === 'aguardando_substituto' || swap.status === 'aguardando_escalado') && <Clock size={9} />}
                       {STATUS_LABELS[swap.status]}
                     </span>
                   </td>
@@ -437,8 +440,10 @@ const ReportDocument: React.FC<DocProps> = ({
 
                   {/* Etapa Substituto */}
                   <td style={{ padding: '10px 14px', maxWidth: 180 }}>
-                    {swap.status === 'aguardando_substituto' && (
-                      <span style={{ color: '#0284c7', fontWeight: 700, fontSize: 10 }}>⏳ Aguardando aceite</span>
+                    {(swap.status === 'aguardando_substituto' || swap.status === 'aguardando_escalado') && (
+                      <span style={{ color: '#0284c7', fontWeight: 700, fontSize: 10 }}>
+                        {swap.status === 'aguardando_escalado' ? '⏳ Aguardando escalado' : '⏳ Aguardando aceite'}
+                      </span>
                     )}
                     {swap.status === 'recusado_substituto' && (
                       <div>
@@ -453,7 +458,7 @@ const ReportDocument: React.FC<DocProps> = ({
                     {['pendente', 'aprovado', 'reprovado', 'cancelado'].includes(swap.status) && (
                       <span style={{ color: '#16a34a', fontWeight: 800, fontSize: 10 }}>✓ Aceito</span>
                     )}
-                    {!['aguardando_substituto','recusado_substituto','pendente','aprovado','reprovado','cancelado'].includes(swap.status) && (
+                    {!['aguardando_substituto','aguardando_escalado','recusado_substituto','pendente','aprovado','reprovado','cancelado'].includes(swap.status) && (
                       <span style={{ color: '#94a3b8', fontSize: 10 }}>—</span>
                     )}
                   </td>

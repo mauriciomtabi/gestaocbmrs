@@ -133,7 +133,7 @@ export interface ServiceSwap {
   data: string; // YYYY-MM-DD
   horarioInicio: string; // HH:mm
   horarioFim: string; // HH:mm
-  status: 'aguardando_substituto' | 'recusado_substituto' | 'pendente' | 'aprovado' | 'reprovado' | 'cancelado';
+  status: 'aguardando_substituto' | 'aguardando_escalado' | 'recusado_substituto' | 'pendente' | 'aprovado' | 'reprovado' | 'cancelado' | 'arquivado';
   aprovadorId?: string;
   observacao?: string;
   dataAprovacao?: string;
