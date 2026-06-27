@@ -711,8 +711,8 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
     
     const shortLabel = isAprovado ? 'OK'
                      : isPendente ? 'Pend.'
-                     : isAguardandoSub ? 'Ag. Sub.'
-                     : isAguardandoEsc ? 'Ag. Esc.'
+                     : isAguardandoSub ? 'Ag. Aceite'
+                     : isAguardandoEsc ? 'Ag. Aceite'
                      : isRecusado ? 'Recusado'
                      : isReprovado ? 'Repr.'
                      : 'Canc.';

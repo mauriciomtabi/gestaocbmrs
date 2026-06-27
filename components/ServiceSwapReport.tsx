@@ -18,8 +18,8 @@ interface Props {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  aguardando_substituto: 'Aguardando Substituto',
-  aguardando_escalado:   'Aguardando Escalado',
+  aguardando_substituto: 'Aguardando Aceite',
+  aguardando_escalado:   'Aguardando Aceite',
   recusado_substituto:   'Recusado pelo Substituto',
   pendente:              'Pendente',
   aprovado:              'Aprovado',
@@ -29,7 +29,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_PRINT_COLOR: Record<string, string> = {
   aguardando_substituto: '#0284c7',
-  aguardando_escalado:   '#4f46e5',
+  aguardando_escalado:   '#0284c7', // Unified color
   recusado_substituto:   '#dc2626',
   pendente:              '#d97706',
   aprovado:              '#16a34a',
@@ -46,8 +46,8 @@ const FUNCAO_PRINT_COLOR: Record<string, string> = {
 
 const ALL_STATUSES = [
   { value: 'todos',                 label: 'Todos os Status'             },
-  { value: 'aguardando_substituto', label: 'Aguardando Substituto'       },
-  { value: 'aguardando_escalado',   label: 'Aguardando Escalado'         },
+  { value: 'aguardando_substituto', label: 'Aguardando Aceite (Subst.)'  },
+  { value: 'aguardando_escalado',   label: 'Aguardando Aceite (Escal.)'  },
   { value: 'recusado_substituto',   label: 'Recusado pelo Substituto'    },
   { value: 'pendente',              label: 'Pendente (Aprovação Admin)'  },
   { value: 'aprovado',              label: 'Aprovado'                    },
@@ -73,6 +73,7 @@ const ServiceSwapReport: React.FC<Props> = ({ swaps, currentUser, onClose }) => 
   const [dateTo,   setDateTo]   = useState('');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const [includeArchived, setIncludeArchived] = useState(false);
   const statusDropdownRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -87,12 +88,13 @@ const ServiceSwapReport: React.FC<Props> = ({ swaps, currentUser, onClose }) => 
 
   const dateFiltered = useMemo(() => {
     return swaps.filter(s => {
+      if (!includeArchived && s.observacao?.startsWith('[ARQUIVADO]')) return false;
       if (!s.data) return true; // Mantém trocas sem data no relatório
       if (dateFrom && s.data < dateFrom) return false;
       if (dateTo   && s.data > dateTo)   return false;
       return true;
     });
-  }, [swaps, dateFrom, dateTo]);
+  }, [swaps, dateFrom, dateTo, includeArchived]);
 
   const filtered = useMemo(() => {
     return dateFiltered.filter(s => {
@@ -217,6 +219,16 @@ const ServiceSwapReport: React.FC<Props> = ({ swaps, currentUser, onClose }) => 
                 </div>
               )}
             </div>
+            {/* Include Archived Toggle */}
+            <label className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={includeArchived}
+                onChange={e => setIncludeArchived(e.target.checked)}
+                className="w-3.5 h-3.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500 cursor-pointer"
+              />
+              <span>Incluir Arquivadas</span>
+            </label>
           </div>
 
           {/* Actions */}
@@ -290,7 +302,7 @@ const ReportDocument: React.FC<DocProps> = ({
     aprovado: dateFiltered.filter(s => s.status === 'aprovado').length,
     pendente: dateFiltered.filter(s => s.status === 'pendente').length,
     reprovado: dateFiltered.filter(s => s.status === 'reprovado').length,
-    aguardando: dateFiltered.filter(s => s.status === 'aguardando_substituto').length,
+    aguardando: dateFiltered.filter(s => s.status === 'aguardando_substituto' || s.status === 'aguardando_escalado').length,
     recusado: dateFiltered.filter(s => s.status === 'recusado_substituto').length,
     cancelado: dateFiltered.filter(s => s.status === 'cancelado').length,
   };
@@ -360,7 +372,7 @@ const ReportDocument: React.FC<DocProps> = ({
             { label: 'Total',        value: counts.total,     color: '#fff' },
             { label: 'Aprovados',    value: counts.aprovado,  color: '#4ade80' },
             { label: 'Ag. Admin',    value: counts.pendente,  color: '#fbbf24' },
-            { label: 'Ag. Subst.',   value: counts.aguardando,color: '#38bdf8' },
+            { label: 'Ag. Aceite',   value: counts.aguardando,color: '#38bdf8' },
             { label: 'Recusados',    value: counts.recusado + counts.reprovado, color: '#f87171' },
             { label: 'Cancelados',   value: counts.cancelado, color: '#94a3b8' },
           ].map(stat => (
@@ -385,7 +397,7 @@ const ReportDocument: React.FC<DocProps> = ({
               <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                 {[
                   'Status', 'Função', 'Data / Horário', 'Escalado',
-                  'Substituto', 'Etapa Substituto', 'Aprovador',
+                  'Substituto', 'Aprovador',
                 ].map(h => (
                   <th key={h} style={{
                     padding: '10px 14px', textAlign: 'left',
@@ -448,32 +460,6 @@ const ReportDocument: React.FC<DocProps> = ({
                   {/* Substituto */}
                   <td style={{ padding: '10px 14px' }}>
                     <span style={{ fontWeight: 700, color: '#1e293b' }}>{swap.substitutoName}</span>
-                  </td>
-
-
-                  {/* Etapa Substituto */}
-                  <td style={{ padding: '10px 14px', maxWidth: 180 }}>
-                    {(swap.status === 'aguardando_substituto' || swap.status === 'aguardando_escalado') && (
-                      <span style={{ color: '#0284c7', fontWeight: 700, fontSize: 10 }}>
-                        {swap.status === 'aguardando_escalado' ? '⏳ Aguardando escalado' : '⏳ Aguardando aceite'}
-                      </span>
-                    )}
-                    {swap.status === 'recusado_substituto' && (
-                      <div>
-                        <span style={{ color: '#dc2626', fontWeight: 800, fontSize: 10, display: 'block' }}>✗ Recusado</span>
-                        {cleanObs(swap.observacao) && (
-                          <span style={{ color: '#64748b', fontSize: 9, fontStyle: 'italic', display: 'block', marginTop: 2 }}>
-                            "{cleanObs(swap.observacao)}"
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {['pendente', 'aprovado', 'reprovado', 'cancelado'].includes(swap.status) && (
-                      <span style={{ color: '#16a34a', fontWeight: 800, fontSize: 10 }}>✓ Aceito</span>
-                    )}
-                    {!['aguardando_substituto','aguardando_escalado','recusado_substituto','pendente','aprovado','reprovado','cancelado'].includes(swap.status) && (
-                      <span style={{ color: '#94a3b8', fontSize: 10 }}>—</span>
-                    )}
                   </td>
 
                   {/* Aprovador */}
