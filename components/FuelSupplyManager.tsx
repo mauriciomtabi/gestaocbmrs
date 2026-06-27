@@ -545,11 +545,21 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                       <div className="flex items-center gap-4">
                         <div className="w-20 h-14 rounded-xl bg-slate-50 overflow-hidden border-2 border-slate-200 shrink-0 shadow-sm group-hover:border-blue-400 transition-all flex items-center justify-center">
                           {vehicles.find(v => v.plate === s.plate)?.photo ? (
-                            <img 
-                              src={vehicles.find(v => v.plate === s.plate)?.photo} 
-                              alt={s.plate} 
-                              className="w-full h-full object-contain p-0.5" 
-                            />
+                            <>
+                              <img 
+                                src={vehicles.find(v => v.plate === s.plate)?.photo} 
+                                alt={s.plate} 
+                                className="w-full h-full object-contain p-0.5" 
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  const fallback = e.currentTarget.nextSibling as HTMLElement;
+                                  if (fallback) fallback.style.display = 'flex';
+                                }}
+                              />
+                              <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100" style={{ display: 'none' }}>
+                                <Car size={20} />
+                              </div>
+                            </>
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100">
                               <Car size={20} />
@@ -643,11 +653,21 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                 <div className="flex items-center gap-4">
                   <div className="w-24 h-16 rounded-2xl bg-slate-50 overflow-hidden border-2 border-slate-100 shrink-0 shadow-sm flex items-center justify-center">
                     {vehicles.find(v => v.plate === s.plate)?.photo ? (
-                      <img 
-                        src={vehicles.find(v => v.plate === s.plate)?.photo} 
-                        alt={s.plate} 
-                        className="w-full h-full object-contain p-1" 
-                      />
+                      <>
+                        <img 
+                          src={vehicles.find(v => v.plate === s.plate)?.photo} 
+                          alt={s.plate} 
+                          className="w-full h-full object-contain p-1" 
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const fallback = e.currentTarget.nextSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
+                        />
+                        <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100" style={{ display: 'none' }}>
+                          <Car size={24} />
+                        </div>
+                      </>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100">
                         <Car size={24} />
@@ -850,11 +870,22 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                         {/* Featured Vehicle Photo */}
                         <div className="w-full md:w-48 h-48 rounded-3xl bg-slate-50 border-2 border-slate-100 overflow-hidden shrink-0 flex items-center justify-center shadow-inner group relative">
                           {matchedVehicle?.photo ? (
-                            <img 
-                              src={matchedVehicle.photo} 
-                              alt="Veículo" 
-                              className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-110" 
-                            />
+                            <>
+                              <img 
+                                src={matchedVehicle.photo} 
+                                alt="Veículo" 
+                                className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-110" 
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  const fallback = e.currentTarget.nextSibling as HTMLElement;
+                                  if (fallback) fallback.style.display = 'flex';
+                                }}
+                              />
+                              <div className="flex flex-col items-center gap-2 text-slate-300" style={{ display: 'none' }}>
+                                <Car size={48} strokeWidth={1.5} />
+                                <span className="text-[9px] font-black uppercase tracking-widest">Sem Foto</span>
+                              </div>
+                            </>
                           ) : (
                             <div className="flex flex-col items-center gap-2 text-slate-300">
                               <Car size={48} strokeWidth={1.5} />
@@ -1458,9 +1489,22 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                       >
                         {vehicleFormData.photo ? (
                           <>
-                            <img src={vehicleFormData.photo} alt="Veículo" className="w-full h-full object-contain p-2" />
+                            <img 
+                              src={vehicleFormData.photo} 
+                              alt="Veículo" 
+                              className="w-full h-full object-contain p-2" 
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const fallback = e.currentTarget.nextSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                               <Camera className="text-white" size={24} />
+                            </div>
+                            <div className="flex flex-col items-center justify-center text-slate-300 w-full h-full" style={{ display: 'none' }}>
+                              <ImageIcon className="mb-2" size={32} />
+                              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Foto do Veículo</span>
                             </div>
                           </>
                         ) : (
@@ -1577,7 +1621,21 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                         <div key={v.id} className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex gap-3 group hover:border-blue-200 transition-all">
                           <div className="w-16 h-16 rounded-xl bg-slate-50 overflow-hidden shrink-0 border border-slate-100 flex items-center justify-center">
                             {v.photo ? (
-                              <img src={v.photo} alt={v.plate} className="w-full h-full object-contain p-1" />
+                              <>
+                                <img 
+                                  src={v.photo} 
+                                  alt={v.plate} 
+                                  className="w-full h-full object-contain p-1" 
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    const fallback = e.currentTarget.nextSibling as HTMLElement;
+                                    if (fallback) fallback.style.display = 'flex';
+                                  }}
+                                />
+                                <div className="w-full h-full flex items-center justify-center text-slate-300" style={{ display: 'none' }}>
+                                  <Car size={20} />
+                                </div>
+                              </>
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-slate-300">
                                 <Car size={20} />

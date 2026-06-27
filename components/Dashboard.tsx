@@ -576,7 +576,23 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                             <div key={`fuel-${supply.id}-${idx}`} className="flex flex-col justify-between p-4 bg-white hover:bg-slate-50 transition-all rounded-3xl border border-slate-200 hover:border-emerald-200 shadow-sm group gap-4">
                               <div className="flex items-start gap-3 w-full">
                                 <div className="w-12 h-10 bg-emerald-50/80 rounded-2xl overflow-hidden border border-emerald-100 shrink-0 flex items-center justify-center shadow-sm relative">
-                                  {vehicle?.photo ? <img src={vehicle.photo} alt={supply.plate} className="absolute inset-0 w-full h-full object-cover" /> : <Car size={16} className="text-emerald-400" />}
+                                  {vehicle?.photo ? (
+                                    <>
+                                      <img 
+                                        src={vehicle.photo} 
+                                        alt={supply.plate} 
+                                        className="absolute inset-0 w-full h-full object-cover" 
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                          const fallback = e.currentTarget.nextSibling as HTMLElement;
+                                          if (fallback) fallback.style.display = 'block';
+                                        }}
+                                      />
+                                      <Car size={16} className="text-emerald-400" style={{ display: 'none' }} />
+                                    </>
+                                  ) : (
+                                    <Car size={16} className="text-emerald-400" />
+                                  )}
                                 </div>
                                 <div className="min-w-0 flex-1 pt-0.5">
                                   <p className="font-black text-slate-800 text-[11px] uppercase truncate">
@@ -846,7 +862,19 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-8 bg-white/20 rounded-lg overflow-hidden border border-white/30 flex items-center justify-center shrink-0">
                         {bestVehicle.photo ? (
-                          <img src={bestVehicle.photo} alt={bestVehicle.name} className="w-full h-full object-contain p-0.5" />
+                          <>
+                            <img 
+                              src={bestVehicle.photo} 
+                              alt={bestVehicle.name} 
+                              className="w-full h-full object-contain p-0.5" 
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const fallback = e.currentTarget.nextSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'block';
+                              }}
+                            />
+                            <Car size={14} className="text-white/50" style={{ display: 'none' }} />
+                          </>
                         ) : (
                           <Car size={14} className="text-white/50" />
                         )}
@@ -1023,7 +1051,19 @@ const Dashboard: React.FC<Props> = ({ providers, attendance, fuelSupplies, vehic
                           <div className="flex items-center gap-3">
                             <div className={`w-10 h-8 rounded-lg overflow-hidden border flex items-center justify-center shrink-0 ${filterVehicle === item.name ? 'bg-white/20 border-white/30' : 'bg-white border-slate-200'}`}>
                               {item.photo ? (
-                                <img src={item.photo} alt={item.name} className="w-full h-full object-contain p-0.5" />
+                                <>
+                                  <img 
+                                    src={item.photo} 
+                                    alt={item.name} 
+                                    className="w-full h-full object-contain p-0.5" 
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                      const fallback = e.currentTarget.nextSibling as HTMLElement;
+                                      if (fallback) fallback.style.display = 'block';
+                                    }}
+                                  />
+                                  <Car size={14} className={filterVehicle === item.name ? 'text-white' : 'text-slate-300'} style={{ display: 'none' }} />
+                                </>
                               ) : (
                                 <Car size={14} className={filterVehicle === item.name ? 'text-white' : 'text-slate-300'} />
                               )}
