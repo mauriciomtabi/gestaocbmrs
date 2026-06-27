@@ -35,15 +35,26 @@ const Toast: React.FC<{ message: string; type: 'success' | 'error'; onClose: () 
 };
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'dashboard' | 'providers' | 'details' | 'reports' | 'settings' | 'fuel' | 'face-checkin' | 'help' | 'swaps'>('dashboard');
-  const [dashboardTab, setDashboardTab] = useState<'geral' | 'prestadores' | 'abastecimento'>('geral');
+  const [view, setView] = useState<'dashboard' | 'providers' | 'details' | 'reports' | 'settings' | 'fuel' | 'face-checkin' | 'help' | 'swaps'>(() => {
+    const saved = localStorage.getItem('cbm_active_view');
+    // Fallback security check
+    if (saved === 'details' && !localStorage.getItem('cbm_selected_provider_id')) {
+      return 'providers';
+    }
+    return (saved as any) || 'dashboard';
+  });
+  const [dashboardTab, setDashboardTab] = useState<'geral' | 'prestadores' | 'abastecimento'>(() => {
+    return (localStorage.getItem('cbm_dashboard_tab') as any) || 'geral';
+  });
   
   const navigateToDashboard = (tab: 'geral' | 'prestadores' | 'abastecimento') => {
     setDashboardTab(tab);
     setView('dashboard');
   };
 
-  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(() => {
+    return localStorage.getItem('cbm_selected_provider_id');
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
@@ -51,6 +62,23 @@ const App: React.FC = () => {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [connectionError, setConnectionError] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
+
+  // Sincronizar navegação com o localStorage
+  useEffect(() => {
+    localStorage.setItem('cbm_active_view', view);
+  }, [view]);
+
+  useEffect(() => {
+    localStorage.setItem('cbm_dashboard_tab', dashboardTab);
+  }, [dashboardTab]);
+
+  useEffect(() => {
+    if (selectedProviderId) {
+      localStorage.setItem('cbm_selected_provider_id', selectedProviderId);
+    } else {
+      localStorage.removeItem('cbm_selected_provider_id');
+    }
+  }, [selectedProviderId]);
 
   // Scroll para o topo sempre que a view mudar
   useEffect(() => {
@@ -186,12 +214,13 @@ const App: React.FC = () => {
 
       setCurrentUser(operator);
       
-      // Se a tela padrão 'dashboard' não for permitida para este operador, redireciona para a primeira tela permitida
+      // Restaura a tela salva do localStorage se for permitida para este operador
+      const savedView = localStorage.getItem('cbm_active_view');
       if (operator.allowedScreens && operator.allowedScreens.length > 0) {
-        if (!operator.allowedScreens.includes('dashboard')) {
-          const firstAllowed = operator.allowedScreens[0] as any;
-          setView(firstAllowed);
-        }
+        const defaultView = savedView && operator.allowedScreens.includes(savedView) 
+          ? (savedView as any) 
+          : (operator.allowedScreens.includes('dashboard') ? 'dashboard' : operator.allowedScreens[0]);
+        setView(defaultView);
       }
 
       await fetchData();
@@ -284,6 +313,9 @@ const App: React.FC = () => {
     } catch (e) {
       console.error("Erro ao fazer logout:", e);
     }
+    localStorage.removeItem('cbm_active_view');
+    localStorage.removeItem('cbm_dashboard_tab');
+    localStorage.removeItem('cbm_selected_provider_id');
     setCurrentUser(null);
     setProviders([]);
     setAttendance([]);
