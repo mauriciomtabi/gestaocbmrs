@@ -542,7 +542,7 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen print:h-auto overflow-hidden print:overflow-visible bg-slate-50 flex flex-col md:flex-row font-sans text-slate-900 animate-in fade-in zoom-in-95 duration-700">
-      <nav className={`bg-blue-950 text-white w-full md:w-64 p-2 md:p-4 fixed bottom-0 md:relative z-[100] md:h-full flex md:flex-col items-center md:items-start justify-around md:justify-start gap-1 md:gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] md:shadow-xl shrink-0 md:overflow-y-auto print:hidden ${view === 'details' && !isReadOnly ? 'overflow-hidden' : 'overflow-x-auto no-scrollbar'}`}>
+      <nav className={`bg-blue-950 text-white w-full md:w-64 p-2 md:p-4 fixed bottom-0 md:relative z-[100] md:h-full flex md:flex-col items-center md:items-start justify-around md:justify-start gap-1 md:gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] md:shadow-xl shrink-0 md:overflow-y-auto print:hidden ${view === 'details' && !isReadOnly ? 'overflow-visible' : 'overflow-x-auto no-scrollbar'}`}>
         <div className="hidden md:flex flex-col mb-8 w-full px-2 gap-4">
           <div className="flex items-center gap-4">
             <img src="https://i.postimg.cc/T1nny2hc/Brasao-cbmrs.png" alt="Logo Gestão CBM" className="w-14 h-14 object-contain" />
@@ -586,13 +586,13 @@ const App: React.FC = () => {
 
               {/* Botão de Câmera Central Sobressaído */}
               <div className="relative w-16 h-10 shrink-0 flex items-center justify-center transition-all duration-500 scale-100 animate-in zoom-in-50 duration-300">
-                <div className="absolute -top-7 w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center shadow-lg border border-slate-200/40">
+                <div className="absolute -top-5 w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center shadow-lg border border-slate-200/40">
                   <button 
                     onClick={() => setOcrTrigger(prev => prev + 1)}
-                    className="bg-blue-600 text-white w-11 h-11 rounded-full flex items-center justify-center shadow-md hover:bg-blue-700 active:scale-90 active:bg-blue-800 transition-all focus:outline-none"
+                    className="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:bg-blue-700 active:scale-90 active:bg-blue-800 transition-all focus:outline-none"
                     title="Digitalizar Folha de Frequência"
                   >
-                    <Camera size={20} className="animate-pulse" />
+                    <Camera size={18} className="animate-pulse" />
                   </button>
                 </div>
               </div>
