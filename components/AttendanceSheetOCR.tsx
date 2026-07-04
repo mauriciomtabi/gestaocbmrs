@@ -213,23 +213,7 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
 
   const isIOS = typeof window !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
 
-  // Auto-dispara a câmera nativa no celular ao entrar e controla a exibição dos botões
-  useEffect(() => {
-    const isMobile = typeof window !== 'undefined' && /android|iphone|ipad|ipod/i.test(navigator.userAgent);
-    if (isMobile) {
-      const timer = setTimeout(() => {
-        const input = document.getElementById('camera-input');
-        if (input) {
-          (input as HTMLInputElement).click();
-        }
-        // Mostra os botões de upload caso o usuário cancele a câmera ou precise tentar novamente
-        setShowUploadButtons(true);
-      }, 350);
-      return () => clearTimeout(timer);
-    } else {
-      setShowUploadButtons(true);
-    }
-  }, []);
+
 
   return (
     <div className="fixed inset-0 bg-slate-900/80 z-[150] flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto">
