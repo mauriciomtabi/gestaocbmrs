@@ -703,6 +703,7 @@ const App: React.FC = () => {
             setNotification={(msg: string, type: 'success' | 'error') => setNotification({ message: msg, type })}
             isReadOnly={isReadOnly}
             ocrTrigger={ocrTrigger}
+            onResetOcrTrigger={() => setOcrTrigger(0)}
           />
         )}
         {view === 'reports' && (

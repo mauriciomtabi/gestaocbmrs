@@ -24,6 +24,7 @@ interface Props {
   setNotification?: (message: string, type: 'success' | 'error') => void;
   isReadOnly?: boolean;
   ocrTrigger?: number;
+  onResetOcrTrigger?: () => void;
 }
 
 const Speedometer = ({ percentage, value, label }: { percentage: number; value: string; label: string }) => {
@@ -87,7 +88,7 @@ const Speedometer = ({ percentage, value, label }: { percentage: number; value: 
 
 const ATTENDANCE_ITEMS_PER_PAGE = 50;
 
-const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpdateAttendance, onDeleteAttendance, onUpdateProvider, onEditProvider, currentUser = "Operador", setNotification, isReadOnly = false, ocrTrigger = 0 }) => {
+const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpdateAttendance, onDeleteAttendance, onUpdateProvider, onEditProvider, currentUser = "Operador", setNotification, isReadOnly = false, ocrTrigger = 0, onResetOcrTrigger }) => {
   const [activeTab, setActiveTab] = useState<'attendance' | 'evaluation' | 'history'>('attendance');
   const [isOcrOpen, setIsOcrOpen] = useState(false);
   const [isSavingOcr, setIsSavingOcr] = useState(false);
@@ -95,8 +96,11 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
   useEffect(() => {
     if (ocrTrigger > 0) {
       setIsOcrOpen(true);
+      if (onResetOcrTrigger) {
+        onResetOcrTrigger();
+      }
     }
-  }, [ocrTrigger]);
+  }, [ocrTrigger, onResetOcrTrigger]);
 
   // Evaluation states
   const currentDate = new Date();
