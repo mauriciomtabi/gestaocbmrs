@@ -12,13 +12,15 @@ interface Props {
   vehicles: Vehicle[];
   fuelSupplies: FuelSupply[];
   stationNicknames: StationNickname[];
-  onUpdateVehicles: () => void;
-  onNavigateDashboard: () => void;
-  setNotification: (msg: string, type: 'success' | 'error') => void;
+  onUpdateVehicles?: () => void;
+  onNavigateDashboard?: () => void;
+  setNotification?: (msg: string, type: 'success' | 'error') => void;
   isReadOnly?: boolean;
+  ocrTrigger?: number;
+  onResetOcrTrigger?: () => void;
 }
 
-const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplies, stationNicknames, onUpdateVehicles, onNavigateDashboard, setNotification, isReadOnly = false }) => {
+const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplies, stationNicknames, onUpdateVehicles, onNavigateDashboard, setNotification, isReadOnly = false, ocrTrigger = 0, onResetOcrTrigger }) => {
   const isIOS = typeof window !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
   const [supplies, setSupplies] = useState<FuelSupply[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +28,16 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isNicknameModalOpen, setIsNicknameModalOpen] = useState(false);
   const [isOcrOpen, setIsOcrOpen] = useState(false);
+
+  useEffect(() => {
+    if (ocrTrigger > 0) {
+      setIsOcrOpen(true);
+      if (onResetOcrTrigger) {
+        onResetOcrTrigger();
+      }
+    }
+  }, [ocrTrigger, onResetOcrTrigger]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [viewingAttachment, setViewingAttachment] = useState<string | null>(null);
   const [zoomScale, setZoomScale] = useState(1);
@@ -432,7 +444,7 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
               <button 
                 onClick={() => setIsOcrOpen(true)}
                 title="Digitalizar Nota Fiscal"
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-blue-600 px-4 md:px-6 py-3 rounded-2xl border border-blue-100 hover:bg-blue-50 transition-all font-black text-xs shadow-sm active:scale-95"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-4 md:px-6 py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-xs active:scale-95"
               >
                 <Camera size={18} />
                 <span className="hidden md:inline">Digitalizar Nota</span>
@@ -440,7 +452,7 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
               <button 
                 onClick={() => { setEditingId(null); setFormData(initialFormData); setIsModalOpen(true); setActiveTab('form'); }}
                 title="Novo Registro de Abastecimento"
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-4 md:px-6 py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-xs active:scale-95"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-blue-600 px-4 md:px-6 py-3 rounded-2xl border border-blue-100 hover:bg-blue-50 transition-all font-black text-xs shadow-sm active:scale-95"
               >
                 <Plus size={18} />
                 <span className="hidden md:inline">Novo Registro</span>

@@ -542,7 +542,7 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen print:h-auto overflow-hidden print:overflow-visible bg-slate-50 flex flex-col md:flex-row font-sans text-slate-900 animate-in fade-in zoom-in-95 duration-700">
-      <nav className={`bg-blue-950 text-white w-full md:w-64 p-2 md:p-4 fixed bottom-0 md:relative z-[100] md:h-full flex md:flex-col items-center md:items-start justify-around md:justify-start gap-1 md:gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] md:shadow-xl shrink-0 md:overflow-y-auto print:hidden ${view === 'details' && !isReadOnly ? 'overflow-visible' : 'overflow-x-auto no-scrollbar'}`}>
+      <nav className={`bg-blue-950 text-white w-full md:w-64 p-2 md:p-4 fixed bottom-0 md:relative z-[100] md:h-full flex md:flex-col items-center md:items-start justify-around md:justify-start gap-1 md:gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] md:shadow-xl shrink-0 md:overflow-y-auto print:hidden ${(view === 'details' || view === 'fuel') && !isReadOnly ? 'overflow-visible' : 'overflow-x-auto no-scrollbar'}`}>
         <div className="hidden md:flex flex-col mb-8 w-full px-2 gap-4">
           <div className="flex items-center gap-4">
             <img src="https://i.postimg.cc/T1nny2hc/Brasao-cbmrs.png" alt="Logo Gestão CBM" className="w-14 h-14 object-contain" />
@@ -568,7 +568,7 @@ const App: React.FC = () => {
 
         {/* Lado Mobile */}
         <div className="flex md:hidden items-center w-full relative transition-all duration-500">
-          {view === 'details' && !isReadOnly ? (
+          {(view === 'details' || view === 'fuel') && !isReadOnly ? (
             <div className="flex w-full items-center justify-between transition-all duration-500 px-2">
               {/* Grupo Esquerdo */}
               <div className="flex justify-around items-center flex-1 transition-all duration-500 animate-in slide-in-from-left-4 duration-300">
@@ -578,7 +578,7 @@ const App: React.FC = () => {
                     icon={item.icon} 
                     label={item.label} 
                     target={item.target} 
-                    active={item.target === 'providers'} 
+                    active={view === item.target || (item.target === 'providers' && view === 'details')} 
                     onClick={item.onClick} 
                   />
                 ))}
@@ -590,7 +590,7 @@ const App: React.FC = () => {
                   <button 
                     onClick={() => setOcrTrigger(prev => prev + 1)}
                     className="bg-blue-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 active:scale-90 active:bg-blue-800 transition-all focus:outline-none border-0"
-                    title="Digitalizar Folha de Frequência"
+                    title={view === 'fuel' ? "Digitalizar Nota Fiscal" : "Digitalizar Folha de Frequência"}
                   >
                     <Camera size={26} className="animate-pulse" />
                   </button>
@@ -605,14 +605,14 @@ const App: React.FC = () => {
                     icon={item.icon} 
                     label={item.label} 
                     target={item.target} 
-                    active={false} 
+                    active={view === item.target} 
                     onClick={item.onClick} 
                   />
                 ))}
               </div>
             </div>
           ) : (
-            /* Layout normal quando não está nos detalhes do prestador */
+            /* Layout normal quando não está em detalhes do prestador nem na gestão de combustível */
             <div className="flex justify-around items-center w-full gap-1 animate-in fade-in duration-300">
               {allowedNavItems.map((item) => (
                 <NavItem 
@@ -723,6 +723,8 @@ const App: React.FC = () => {
             onNavigateDashboard={() => navigateToDashboard('abastecimento')}
             setNotification={(msg: string, type: 'success' | 'error') => setNotification({ message: msg, type })}
             isReadOnly={isReadOnly}
+            ocrTrigger={ocrTrigger}
+            onResetOcrTrigger={() => setOcrTrigger(0)}
           />
         )}
         {view === 'face-checkin' && (
