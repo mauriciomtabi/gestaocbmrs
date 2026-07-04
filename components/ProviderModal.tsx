@@ -82,6 +82,7 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
   const [showReferralOptions, setShowReferralOptions] = useState(false);
   const [msgIndex, setMsgIndex] = useState(0);
   const [currentMessages, setCurrentMessages] = useState(processingMessages);
+  const isIOS = typeof window !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
   const [formData, setFormData] = useState({
     name: '',
     processNumber: '',
@@ -503,7 +504,7 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
                 {formData.referralDoc ? 'Anexado' : 'Anexar'}
               </button>
               <input type="file" ref={referralInputRef} onChange={handleReferralChange} accept="image/*,application/pdf" className="hidden" />
-              <input type="file" ref={referralCameraInputRef} onChange={handleReferralChange} accept="image/*" capture="environment" className="hidden" />
+              <input type="file" ref={referralCameraInputRef} onChange={handleReferralChange} accept="image/*" capture={isIOS ? undefined : true} className="hidden" />
 
               {showReferralOptions && (
                 <>

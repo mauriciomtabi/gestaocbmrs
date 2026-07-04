@@ -10,6 +10,7 @@ interface Props {
 }
 
 const UserProfile: React.FC<Props> = ({ user, onUpdate, onBack }) => {
+  const isIOS = typeof window !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -138,7 +139,7 @@ const UserProfile: React.FC<Props> = ({ user, onUpdate, onBack }) => {
                 ref={cameraInputRef} 
                 onChange={handlePhotoUpload} 
                 accept="image/*" 
-                capture="environment"
+                capture={isIOS ? undefined : true}
                 className="hidden" 
               />
             </div>

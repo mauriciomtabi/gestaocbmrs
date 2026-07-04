@@ -211,6 +211,8 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
   const isNameMismatched = extractedName && 
     !providerName.toLowerCase().split(' ').some(part => extractedName.toLowerCase().includes(part));
 
+  const isIOS = typeof window !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
+
   return (
     <div className="fixed inset-0 bg-slate-900/80 z-[150] flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto">
       <style>{`
@@ -280,7 +282,14 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                       Fazer Upload
                     </label>
 
-                    <input id="camera-input" type="file" onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" />
+                    <input 
+                      id="camera-input" 
+                      type="file" 
+                      onChange={handleFileChange} 
+                      accept="image/*" 
+                      capture={isIOS ? undefined : true} 
+                      className="hidden" 
+                    />
                     <input id="gallery-input" type="file" onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />
                   </div>
                 </div>

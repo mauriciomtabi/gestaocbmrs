@@ -21,7 +21,7 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
   
   // Imagens capturadas (cropped base64)
   const [images, setImages] = useState<{ nf: string | null, ticket: string | null }>({ nf: null, ticket: null });
-  
+  const isIOS = typeof window !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -486,7 +486,14 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
                 <button onClick={() => { setCaptureMethod('camera'); const input = document.getElementById('camera-input'); if (input) input.click(); }} className="flex-1 py-6 bg-blue-600 text-white font-black rounded-3xl shadow-xl flex flex-col items-center justify-center gap-3 uppercase text-xs hover:bg-blue-700 transition-all active:scale-95">
                   <Camera size={32} /> Câmera do Dispositivo
                 </button>
-                <input id="camera-input" type="file" onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" />
+                <input 
+                  id="camera-input" 
+                  type="file" 
+                  onChange={handleFileChange} 
+                  accept="image/*" 
+                  capture={isIOS ? undefined : true} 
+                  className="hidden" 
+                />
 
                 <button onClick={() => { setCaptureMethod('upload'); const input = document.getElementById('gallery-input'); if (input) input.click(); }} className="flex-1 py-6 bg-slate-100 text-slate-600 font-black rounded-3xl border border-slate-200 flex flex-col items-center justify-center gap-3 uppercase text-xs hover:bg-slate-200 transition-all active:scale-95">
                   <Upload size={32} /> Escolher da Galeria
@@ -530,7 +537,14 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
               </div>
 
               {/* Inputs invisíveis específicos dessa tela */}
-              <input id="camera-input-next" type="file" onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" />
+              <input 
+                id="camera-input-next" 
+                type="file" 
+                onChange={handleFileChange} 
+                accept="image/*" 
+                capture={isIOS ? undefined : true} 
+                className="hidden" 
+              />
               <input id="gallery-input-next" type="file" onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />
             </div>
           )}

@@ -19,6 +19,7 @@ interface Props {
 }
 
 const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplies, stationNicknames, onUpdateVehicles, onNavigateDashboard, setNotification, isReadOnly = false }) => {
+  const isIOS = typeof window !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
   const [supplies, setSupplies] = useState<FuelSupply[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1246,7 +1247,7 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                             id="nf-upload"
                             type="file" 
                             accept="image/*,application/pdf"
-                            capture="environment"
+                            capture={isIOS ? undefined : true}
                             className="hidden"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
@@ -1291,7 +1292,7 @@ const FuelSupplyManager: React.FC<Props> = ({ currentUser, vehicles, fuelSupplie
                             id="tl-upload"
                             type="file" 
                             accept="image/*,application/pdf"
-                            capture="environment"
+                            capture={isIOS ? undefined : true}
                             className="hidden"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
