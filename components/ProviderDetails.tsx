@@ -23,6 +23,7 @@ interface Props {
   currentUser?: string;
   setNotification?: (message: string, type: 'success' | 'error') => void;
   isReadOnly?: boolean;
+  ocrTrigger?: number;
 }
 
 const Speedometer = ({ percentage, value, label }: { percentage: number; value: string; label: string }) => {
@@ -86,7 +87,7 @@ const Speedometer = ({ percentage, value, label }: { percentage: number; value: 
 
 const ATTENDANCE_ITEMS_PER_PAGE = 50;
 
-const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpdateAttendance, onDeleteAttendance, onUpdateProvider, onEditProvider, currentUser = "Operador", setNotification, isReadOnly = false }) => {
+const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpdateAttendance, onDeleteAttendance, onUpdateProvider, onEditProvider, currentUser = "Operador", setNotification, isReadOnly = false, ocrTrigger = 0 }) => {
   const [activeTab, setActiveTab] = useState<'attendance' | 'evaluation' | 'history'>('attendance');
   const [isOcrOpen, setIsOcrOpen] = useState(() => {
     return localStorage.getItem('cbm_is_ocr_open') === 'true';
@@ -100,6 +101,12 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
       localStorage.removeItem('cbm_is_ocr_open');
     }
   }, [isOcrOpen]);
+
+  useEffect(() => {
+    if (ocrTrigger > 0) {
+      setIsOcrOpen(true);
+    }
+  }, [ocrTrigger]);
 
   // Evaluation states
   const currentDate = new Date();
@@ -805,56 +812,37 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
             <div className="p-5 flex flex-wrap sm:flex-row justify-between items-center gap-3 bg-white">
               <h3 className="hidden sm:block text-base font-black text-slate-800 uppercase tracking-tight">Registro de Frequência</h3>
               {provider.status === 'active' && (
-                <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 justify-center">
-                  {isReadOnly ? (
-                    <button 
-                      onClick={() => setIsBlankSheetModalOpen(true)} 
-                      title="Imprimir Folha"
-                      className="w-full sm:w-auto bg-white text-slate-600 border border-slate-200 p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-sm"
-                    >
-                      <Printer size={16} /> <span>Imprimir Folha</span>
-                    </button>
-                  ) : (
+                <div className="flex w-full sm:w-auto gap-2 justify-center flex-wrap">
+                  <button 
+                    onClick={() => setIsBlankSheetModalOpen(true)} 
+                    title="Imprimir Folha"
+                    className="flex-1 sm:flex-none bg-white text-slate-600 border border-slate-200 p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-sm"
+                  >
+                    <Printer size={16} /> <span className="hidden sm:inline">Imprimir Folha</span>
+                  </button>
+                  {!isReadOnly && (
                     <>
-                      {/* Botão Digitalizar em Destaque no Mobile */}
+                      <button 
+                        onClick={() => setIsJustificationOpen(true)} 
+                        title="Justificativa"
+                        className="flex-1 sm:flex-none bg-white text-amber-600 border border-amber-600 p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-amber-50 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-sm"
+                      >
+                        <FileWarning size={16} /> <span className="hidden sm:inline">Justificativa</span>
+                      </button>
+                      <button 
+                        onClick={() => setIsManualEntryOpen(true)} 
+                        title="Manual"
+                        className="flex-1 sm:flex-none bg-white text-blue-600 border border-blue-600 p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-blue-50 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-sm"
+                      >
+                        <Plus size={16} /> <span className="hidden sm:inline">Manual</span>
+                      </button>
                       <button 
                         onClick={() => setIsOcrOpen(true)} 
                         title="Digitalizar"
-                        className="w-full sm:w-auto bg-blue-600 text-white p-3 sm:px-4 sm:py-2.5 rounded-2xl sm:rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-lg shadow-blue-500/20 active:scale-95"
+                        className="flex-1 sm:flex-none bg-blue-600 text-white p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-lg shadow-blue-500/30"
                       >
-                        <Scan size={16} className="animate-pulse" /> 
-                        <span>Digitalizar</span>
+                        <Scan size={16} /> <span className="hidden sm:inline">Digitalizar</span>
                       </button>
-
-                      {/* Outras Ações Secundárias Lado a Lado no Mobile */}
-                      <div className="flex w-full sm:w-auto gap-2">
-                        <button 
-                          onClick={() => setIsBlankSheetModalOpen(true)} 
-                          title="Imprimir Folha"
-                          className="flex-1 bg-white text-slate-600 border border-slate-200 p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-sm"
-                        >
-                          <Printer size={16} /> 
-                          <span className="hidden sm:inline">Imprimir Folha</span>
-                        </button>
-                        
-                        <button 
-                          onClick={() => setIsJustificationOpen(true)} 
-                          title="Justificativa"
-                          className="flex-1 bg-white text-amber-600 border border-amber-200 p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-amber-50 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-sm"
-                        >
-                          <FileWarning size={16} /> 
-                          <span className="hidden sm:inline">Justificativa</span>
-                        </button>
-                        
-                        <button 
-                          onClick={() => setIsManualEntryOpen(true)} 
-                          title="Manual"
-                          className="flex-1 bg-white text-blue-600 border border-blue-200 p-2.5 sm:px-4 sm:py-2.5 rounded-xl hover:bg-blue-50 transition-all flex items-center justify-center gap-2 text-[10px] font-black shadow-sm"
-                        >
-                          <Plus size={16} /> 
-                          <span className="hidden sm:inline">Manual</span>
-                        </button>
-                      </div>
                     </>
                   )}
                 </div>

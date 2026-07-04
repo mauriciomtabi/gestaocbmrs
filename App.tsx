@@ -14,7 +14,7 @@ import FaceCheckIn from './components/FaceCheckIn';
 import Settings from './components/Settings';
 import HelpCenter from './components/HelpCenter';
 import ServiceSwapManager from './components/ServiceSwapManager';
-import { Users, LayoutDashboard, FileText, Loader2, ShieldCheck, ShieldAlert, Cpu, Database, Network, Sparkles, LogOut, UserCircle, CheckCircle2, X, Smartphone, Fuel, ScanFace, Settings as SettingsIcon, HelpCircle, RefreshCw } from 'lucide-react';
+import { Users, LayoutDashboard, FileText, Loader2, ShieldCheck, ShieldAlert, Cpu, Database, Network, Sparkles, LogOut, UserCircle, CheckCircle2, X, Smartphone, Fuel, ScanFace, Settings as SettingsIcon, HelpCircle, RefreshCw, Camera } from 'lucide-react';
 import { getProviders, getAttendance, createProvider, updateProvider, saveAttendance, deleteAttendance, saveAuditLog, supabase, getFuelSupplies, getVehicles, getStationNicknames } from './services/supabaseService';
 
 const Toast: React.FC<{ message: string; type: 'success' | 'error'; onClose: () => void }> = ({ message, type, onClose }) => {
@@ -61,6 +61,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<Operator | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [connectionError, setConnectionError] = useState(false);
+  const [ocrTrigger, setOcrTrigger] = useState(0);
   const mainRef = useRef<HTMLElement>(null);
 
   // Sincronizar navegação com o localStorage
@@ -529,9 +530,19 @@ const App: React.FC = () => {
     </button>
   );
 
+  const allowedNavItems = [
+    currentUser.allowedScreens?.includes('dashboard') && { icon: LayoutDashboard, label: "Painel", target: "dashboard", onClick: () => navigateToDashboard('geral') },
+    currentUser.allowedScreens?.includes('providers') && { icon: Users, label: "Prestadores", target: "providers" },
+    currentUser.allowedScreens?.includes('face-checkin') && { icon: ScanFace, label: "Check-in", target: "face-checkin" },
+    currentUser.allowedScreens?.includes('fuel') && { icon: Fuel, label: "Combustível", target: "fuel" },
+    currentUser.allowedScreens?.includes('swaps') && { icon: RefreshCw, label: "Trocas", target: "swaps" },
+    currentUser.allowedScreens?.includes('settings') && { icon: SettingsIcon, label: "Ajustes", target: "settings" },
+    { icon: HelpCircle, label: "Ajuda", target: "help" }
+  ].filter(Boolean) as { icon: any; label: string; target: string; onClick?: () => void }[];
+
   return (
     <div className="h-screen print:h-auto overflow-hidden print:overflow-visible bg-slate-50 flex flex-col md:flex-row font-sans text-slate-900 animate-in fade-in zoom-in-95 duration-700">
-      <nav className="bg-blue-950 text-white w-full md:w-64 p-2 md:p-4 fixed bottom-0 md:relative z-[100] md:h-full flex md:flex-col items-center md:items-start justify-around md:justify-start gap-1 md:gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] md:shadow-xl shrink-0 overflow-x-auto md:overflow-y-auto no-scrollbar print:hidden">
+      <nav className={`bg-blue-950 text-white w-full md:w-64 p-2 md:p-4 fixed bottom-0 md:relative z-[100] md:h-full flex md:flex-col items-center md:items-start justify-around md:justify-start gap-1 md:gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] md:shadow-xl shrink-0 md:overflow-y-auto print:hidden ${view === 'details' && !isReadOnly ? 'overflow-hidden' : 'overflow-x-auto no-scrollbar'}`}>
         <div className="hidden md:flex flex-col mb-8 w-full px-2 gap-4">
           <div className="flex items-center gap-4">
             <img src="https://i.postimg.cc/T1nny2hc/Brasao-cbmrs.png" alt="Logo Gestão CBM" className="w-14 h-14 object-contain" />
@@ -541,26 +552,80 @@ const App: React.FC = () => {
           </div>
         </div>
         
-        <div className="flex md:flex-col gap-1 md:gap-2 w-full md:max-w-none">
-          {currentUser.allowedScreens?.includes('dashboard') && (
-            <NavItem icon={LayoutDashboard} label="Painel" target="dashboard" active={view === 'dashboard'} onClick={() => navigateToDashboard('geral')} />
+        {/* Lado Desktop */}
+        <div className="hidden md:flex md:flex-col gap-1 md:gap-2 w-full md:max-w-none">
+          {allowedNavItems.map((item) => (
+            <NavItem 
+              key={item.target} 
+              icon={item.icon} 
+              label={item.label} 
+              target={item.target} 
+              active={view === item.target || (item.target === 'providers' && view === 'details')} 
+              onClick={item.onClick} 
+            />
+          ))}
+        </div>
+
+        {/* Lado Mobile */}
+        <div className="flex md:hidden items-center w-full relative transition-all duration-500">
+          {view === 'details' && !isReadOnly ? (
+            <div className="flex w-full items-center justify-between transition-all duration-500 px-2">
+              {/* Grupo Esquerdo */}
+              <div className="flex justify-around items-center flex-1 transition-all duration-500 animate-in slide-in-from-left-4 duration-300">
+                {allowedNavItems.slice(0, 2).map((item) => (
+                  <NavItem 
+                    key={item.target} 
+                    icon={item.icon} 
+                    label={item.label} 
+                    target={item.target} 
+                    active={item.target === 'providers'} 
+                    onClick={item.onClick} 
+                  />
+                ))}
+              </div>
+
+              {/* Botão de Câmera Central Sobressaído */}
+              <div className="relative w-16 h-10 shrink-0 flex items-center justify-center transition-all duration-500 scale-100 animate-in zoom-in-50 duration-300">
+                <div className="absolute -top-7 w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center shadow-lg border border-slate-200/40">
+                  <button 
+                    onClick={() => setOcrTrigger(prev => prev + 1)}
+                    className="bg-blue-600 text-white w-11 h-11 rounded-full flex items-center justify-center shadow-md hover:bg-blue-700 active:scale-90 active:bg-blue-800 transition-all focus:outline-none"
+                    title="Digitalizar Folha de Frequência"
+                  >
+                    <Camera size={20} className="animate-pulse" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Grupo Direito */}
+              <div className="flex justify-around items-center flex-1 transition-all duration-500 animate-in slide-in-from-right-4 duration-300">
+                {allowedNavItems.slice(2, 4).map((item) => (
+                  <NavItem 
+                    key={item.target} 
+                    icon={item.icon} 
+                    label={item.label} 
+                    target={item.target} 
+                    active={false} 
+                    onClick={item.onClick} 
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* Layout normal quando não está nos detalhes do prestador */
+            <div className="flex justify-around items-center w-full gap-1 animate-in fade-in duration-300">
+              {allowedNavItems.map((item) => (
+                <NavItem 
+                  key={item.target} 
+                  icon={item.icon} 
+                  label={item.label} 
+                  target={item.target} 
+                  active={view === item.target || (item.target === 'providers' && view === 'details')} 
+                  onClick={item.onClick} 
+                />
+              ))}
+            </div>
           )}
-          {currentUser.allowedScreens?.includes('providers') && (
-            <NavItem icon={Users} label="Prestadores" target="providers" active={view === 'providers' || view === 'details'} />
-          )}
-          {currentUser.allowedScreens?.includes('face-checkin') && (
-            <NavItem icon={ScanFace} label="Check-in Facial" target="face-checkin" active={view === 'face-checkin'} />
-          )}
-          {currentUser.allowedScreens?.includes('fuel') && (
-            <NavItem icon={Fuel} label="Abastecimento" target="fuel" active={view === 'fuel'} />
-          )}
-          {currentUser.allowedScreens?.includes('swaps') && (
-            <NavItem icon={RefreshCw} label="Troca de Serviço" target="swaps" active={view === 'swaps'} />
-          )}
-          {currentUser.allowedScreens?.includes('settings') && (
-            <NavItem icon={SettingsIcon} label="Configurações" target="settings" active={view === 'settings'} />
-          )}
-          <NavItem icon={HelpCircle} label="Ajuda e Documentação" target="help" active={view === 'help'} />
         </div>
 
         <div className="hidden md:flex flex-col mt-auto w-full px-2 space-y-2 py-4">
@@ -637,6 +702,7 @@ const App: React.FC = () => {
             currentUser={formattedMilitaryName}
             setNotification={(msg: string, type: 'success' | 'error') => setNotification({ message: msg, type })}
             isReadOnly={isReadOnly}
+            ocrTrigger={ocrTrigger}
           />
         )}
         {view === 'reports' && (
