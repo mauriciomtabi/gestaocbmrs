@@ -84,7 +84,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
                 </div>
                 <div className="flex-1 py-1 px-2 flex items-center gap-1 overflow-hidden whitespace-nowrap">
                   <span className="font-bold">Mês de cumprimento:</span> 
-                  <span className="font-bold text-blue-900">{month} / {year}</span>
+                  <span className="font-bold text-slate-900" style={{ backgroundColor: '#fef08a', padding: '1px 6px', borderRadius: '4px' }}>{month} / {year}</span>
                 </div>
               </div>
             </td>
@@ -93,7 +93,18 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
           {/* Nome */}
           <tr>
             <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
-              <span className="font-bold">Nome do Prestador:</span> <span className="uppercase">{provider.name}</span>
+              <span className="font-bold">Nome do Prestador:</span>{' '}
+              {(() => {
+                const nameParts = provider.name.trim().split(/\s+/);
+                const firstName = nameParts[0];
+                const restOfName = nameParts.slice(1).join(' ');
+                return (
+                  <span className="uppercase">
+                    <span style={{ backgroundColor: '#fef08a', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold' }}>{firstName}</span>
+                    {restOfName ? ` ${restOfName}` : ''}
+                  </span>
+                );
+              })()}
             </td>
           </tr>
           
@@ -260,12 +271,15 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
           <tr>
             <td colSpan={5} className="py-2 px-3 font-bold" style={{ border: '1px solid black', fontSize: '11pt' }}>
               <span>Total de horas cumpridas no mês: </span>
-              <span style={{ color: '#1e40af', backgroundColor: '#eff6ff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #bfdbfe', fontWeight: 900 }}>
-                {(() => {
-                  const totalMins = records.reduce((sum, r) => sum + (r.durationMinutes || 0), 0);
-                  return formatMinutesToHHMM(totalMins);
-                })()}
-              </span>
+              {(() => {
+                const totalMins = records.reduce((sum, r) => sum + (r.durationMinutes || 0), 0);
+                if (totalMins === 0) return null;
+                return (
+                  <span style={{ color: '#1e40af', backgroundColor: '#eff6ff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #bfdbfe', fontWeight: 900 }}>
+                    {formatMinutesToHHMM(totalMins)}
+                  </span>
+                );
+              })()}
             </td>
           </tr>
         </tbody>
