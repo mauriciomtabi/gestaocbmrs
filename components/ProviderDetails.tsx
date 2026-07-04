@@ -89,18 +89,8 @@ const ATTENDANCE_ITEMS_PER_PAGE = 50;
 
 const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpdateAttendance, onDeleteAttendance, onUpdateProvider, onEditProvider, currentUser = "Operador", setNotification, isReadOnly = false, ocrTrigger = 0 }) => {
   const [activeTab, setActiveTab] = useState<'attendance' | 'evaluation' | 'history'>('attendance');
-  const [isOcrOpen, setIsOcrOpen] = useState(() => {
-    return localStorage.getItem('cbm_is_ocr_open') === 'true';
-  });
+  const [isOcrOpen, setIsOcrOpen] = useState(false);
   const [isSavingOcr, setIsSavingOcr] = useState(false);
-
-  useEffect(() => {
-    if (isOcrOpen) {
-      localStorage.setItem('cbm_is_ocr_open', 'true');
-    } else {
-      localStorage.removeItem('cbm_is_ocr_open');
-    }
-  }, [isOcrOpen]);
 
   useEffect(() => {
     if (ocrTrigger > 0) {
