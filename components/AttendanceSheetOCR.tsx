@@ -264,27 +264,21 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                     <p className="text-slate-500 text-sm mt-2 font-medium">Posicione a folha de frequência em um local iluminado para facilitar a leitura inteligente.</p>
                   </div>
                   <div className="flex flex-col sm:flex-row w-full gap-3 pt-4">
-                    <button 
-                      onClick={() => {
-                        const input = document.getElementById('camera-input');
-                        if (input) input.click();
-                      }}
-                      className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest"
+                    <label 
+                      htmlFor="camera-input"
+                      className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest cursor-pointer select-none text-center"
                     >
                       <Camera size={18} />
                       Tirar Foto
-                    </button>
+                    </label>
                     
-                    <button 
-                      onClick={() => {
-                        const input = document.getElementById('gallery-input');
-                        if (input) input.click();
-                      }} 
-                      className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest border border-slate-200"
+                    <label 
+                      htmlFor="gallery-input"
+                      className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest border border-slate-200 cursor-pointer select-none text-center"
                     >
                       <Upload size={18} />
                       Fazer Upload
-                    </button>
+                    </label>
 
                     <input id="camera-input" type="file" onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" />
                     <input id="gallery-input" type="file" onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />

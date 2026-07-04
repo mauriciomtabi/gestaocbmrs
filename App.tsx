@@ -217,7 +217,8 @@ const App: React.FC = () => {
       // Restaura a tela salva do localStorage se for permitida para este operador
       const savedView = localStorage.getItem('cbm_active_view');
       if (operator.allowedScreens && operator.allowedScreens.length > 0) {
-        const defaultView = savedView && operator.allowedScreens.includes(savedView) 
+        const isAllowed = operator.allowedScreens.includes(savedView) || (savedView === 'details' && operator.allowedScreens.includes('providers'));
+        const defaultView = savedView && isAllowed
           ? (savedView as any) 
           : (operator.allowedScreens.includes('dashboard') ? 'dashboard' : operator.allowedScreens[0]);
         setView(defaultView);
