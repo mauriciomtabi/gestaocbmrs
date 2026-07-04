@@ -586,13 +586,13 @@ const App: React.FC = () => {
 
               {/* Botão de Câmera Central Sobressaído */}
               <div className="relative w-16 h-10 shrink-0 flex items-center justify-center transition-all duration-500 scale-100 animate-in zoom-in-50 duration-300">
-                <div className="absolute -top-5 w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center shadow-lg border border-slate-200/40">
+                <div className="absolute -top-7 w-14 h-14 bg-blue-950 rounded-full flex items-center justify-center shadow-[0_-4px_12px_rgba(0,0,0,0.2)] border border-blue-900/50">
                   <button 
                     onClick={() => setOcrTrigger(prev => prev + 1)}
-                    className="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:bg-blue-700 active:scale-90 active:bg-blue-800 transition-all focus:outline-none"
+                    className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-md hover:bg-blue-700 active:scale-90 active:bg-blue-800 transition-all focus:outline-none"
                     title="Digitalizar Folha de Frequência"
                   >
-                    <Camera size={18} className="animate-pulse" />
+                    <Camera size={22} className="animate-pulse" />
                   </button>
                 </div>
               </div>

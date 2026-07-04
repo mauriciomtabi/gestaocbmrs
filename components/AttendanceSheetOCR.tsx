@@ -40,6 +40,7 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
   const [extractedEvaluation, setExtractedEvaluation] = useState<any | null>(null);
   const [step, setStep] = useState<'upload' | 'review'>('upload');
   const [msgIndex, setMsgIndex] = useState(0);
+  const [showUploadButtons, setShowUploadButtons] = useState(false);
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -213,7 +214,7 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
 
   const isIOS = typeof window !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent);
 
-  // Auto-dispara a câmera nativa no celular ao entrar
+  // Auto-dispara a câmera nativa no celular ao entrar e controla a exibição dos botões
   useEffect(() => {
     const isMobile = typeof window !== 'undefined' && /android|iphone|ipad|ipod/i.test(navigator.userAgent);
     if (isMobile) {
@@ -222,8 +223,12 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
         if (input) {
           (input as HTMLInputElement).click();
         }
+        // Mostra os botões de upload caso o usuário cancele a câmera ou precise tentar novamente
+        setShowUploadButtons(true);
       }, 350);
       return () => clearTimeout(timer);
+    } else {
+      setShowUploadButtons(true);
     }
   }, []);
 
@@ -271,31 +276,11 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
           {step === 'upload' ? (
             <div className="space-y-6">
               {!preview && !converting ? (
-                <div className="flex flex-col items-center text-center space-y-6 pt-4">
-                  <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mb-2">
-                    <Camera size={40} />
-                  </div>
-                  <div>
-                    <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight">Capturar Folha</h4>
-                    <p className="text-slate-500 text-sm mt-2 font-medium">Posicione a folha de frequência em um local iluminado para facilitar a leitura inteligente.</p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row w-full gap-3 pt-4">
-                    <label 
-                      htmlFor="camera-input"
-                      className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest cursor-pointer select-none text-center"
-                    >
-                      <Camera size={18} />
-                      Tirar Foto
-                    </label>
+                !showUploadButtons ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                    <Loader2 className="animate-spin text-blue-600" size={36} />
+                    <p className="text-slate-500 text-xs font-extrabold uppercase tracking-widest animate-pulse">Iniciando câmera traseira...</p>
                     
-                    <label 
-                      htmlFor="gallery-input"
-                      className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest border border-slate-200 cursor-pointer select-none text-center"
-                    >
-                      <Upload size={18} />
-                      Fazer Upload
-                    </label>
-
                     <input 
                       id="camera-input" 
                       type="file" 
@@ -306,7 +291,44 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                     />
                     <input id="gallery-input" type="file" onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />
                   </div>
-                </div>
+                ) : (
+                  <div className="flex flex-col items-center text-center space-y-6 pt-4">
+                    <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mb-2">
+                      <Camera size={40} />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight">Capturar Folha</h4>
+                      <p className="text-slate-500 text-sm mt-2 font-medium">Posicione a folha de frequência em um local iluminado para facilitar a leitura inteligente.</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row w-full gap-3 pt-4">
+                      <label 
+                        htmlFor="camera-input"
+                        className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest cursor-pointer select-none text-center"
+                      >
+                        <Camera size={18} />
+                        Tirar Foto
+                      </label>
+                      
+                      <label 
+                        htmlFor="gallery-input"
+                        className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest border border-slate-200 cursor-pointer select-none text-center"
+                      >
+                        <Upload size={18} />
+                        Fazer Upload
+                      </label>
+
+                      <input 
+                        id="camera-input" 
+                        type="file" 
+                        onChange={handleFileChange} 
+                        accept="image/*" 
+                        capture={isIOS ? undefined : true} 
+                        className="hidden" 
+                      />
+                      <input id="gallery-input" type="file" onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />
+                    </div>
+                  </div>
+                )
               ) : (
                 <div className="space-y-4">
                   <div className="relative rounded-2xl overflow-hidden border bg-slate-50 flex items-center justify-center min-h-[350px]">
