@@ -86,6 +86,49 @@ const App: React.FC = () => {
       mainRef.current.scrollTo({ top: 0, behavior: 'instant' });
     }
   }, [view]);
+
+  const isPopStateRef = useRef(false);
+
+  // Sincronizar navegação de voltar nativa do celular (Popstate)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state as { view: string; selectedProviderId: string | null } | null;
+      isPopStateRef.current = true;
+      if (state && state.view) {
+        setView(state.view as any);
+        setSelectedProviderId(state.selectedProviderId);
+      } else {
+        const defaultView = currentUser?.allowedScreens?.includes('dashboard') ? 'dashboard' : (currentUser?.allowedScreens?.[0] || 'dashboard');
+        setView(defaultView as any);
+        setSelectedProviderId(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentUser]);
+
+  // Sincronizar estado do React com o histórico de navegação do navegador
+  useEffect(() => {
+    if (isPopStateRef.current) {
+      isPopStateRef.current = false;
+      return;
+    }
+
+    if (!currentUser) return;
+
+    const state = {
+      view,
+      selectedProviderId
+    };
+
+    const currentState = window.history.state as { view: string; selectedProviderId: string | null } | null;
+    if (!currentState) {
+      window.history.replaceState(state, '', '');
+    } else if (currentState.view !== view || currentState.selectedProviderId !== selectedProviderId) {
+      window.history.pushState(state, '', '');
+    }
+  }, [view, selectedProviderId, currentUser]);
   
   const [isBooting, setIsBooting] = useState(true);
   const [bootProgress, setBootProgress] = useState(0);
