@@ -67,7 +67,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
       style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', color: '#000', width: '100%', boxSizing: 'border-box' }}
     >
       {/* Cabeçalho */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4 mb-3">
         <img 
           src="/brasao.png" 
           alt="Brasão Estado" 
@@ -79,13 +79,13 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
         </div>
       </div>
 
-      <div className="mb-4 leading-tight">
+      <div className="mb-2 leading-tight">
         <div>Comarca de Sapucaia do Sul – Vara de Execução Criminais</div>
         <div>Programa Prestação de Serviços à Comunidade (PSC)</div>
       </div>
 
       {/* Tabela Principal */}
-      <table className="w-full border-collapse mb-6 text-slate-900 frequency-table" style={{ border: '1px solid black' }}>
+      <table className="w-full border-collapse mb-3 text-slate-900 frequency-table" style={{ border: '1px solid black' }}>
         <tbody>
           {/* Título */}
           <tr>
@@ -282,7 +282,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
             return (
               <tr 
                 key={r.id} 
-                style={{ height: '36px' }}
+                style={{ height: '24px' }}
                 className={onShowRecordDetails ? "cursor-pointer hover:bg-slate-50 transition-colors" : ""}
                 onClick={onShowRecordDetails ? () => onShowRecordDetails(r) : undefined}
               >
@@ -322,7 +322,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
 
           {/* Linhas vazias complementares */}
           {displayRows.empty.map((_, idx) => (
-            <tr key={`empty-${idx}`} style={{ height: '36px' }}>
+            <tr key={`empty-${idx}`} style={{ height: '24px' }}>
               <td style={{ border: '1px solid black' }}></td>
               <td style={{ border: '1px solid black' }}></td>
               <td style={{ border: '1px solid black' }}></td>
@@ -350,7 +350,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
       </table>
 
       {/* Questionário Rodapé */}
-      <div className="space-y-1.5" style={{ fontSize: '11pt', color: '#000' }}>
+      <div className="space-y-0.5" style={{ fontSize: '11pt', color: '#000' }}>
         <div className="flex flex-col">
           <span>Faltas no período?</span>
           <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.hadAbsences, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.hadAbsences, false)}&nbsp; )</span>
@@ -373,7 +373,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
       </div>
 
       {evaluation && (
-        <div className="mt-6 pt-2 border-t border-slate-100 flex items-center justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wide">
+        <div className="mt-2 pt-1 border-t border-slate-100 flex items-center justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wide">
           <span>Avaliado por: {evaluation.evaluatedBy}</span>
           <span>Em: {new Date(evaluation.createdAt).toLocaleDateString('pt-BR')}</span>
         </div>

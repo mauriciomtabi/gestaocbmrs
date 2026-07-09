@@ -571,8 +571,8 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
           return (
             <div 
               key={p.id} 
-              style={{ pageBreakBefore: 'always', paddingTop: '1.5cm' }} 
-              className={`print:pt-0 ${!hasEvaluation ? 'border-2 border-dashed border-red-300 bg-red-50/10 p-6 rounded-[2.5rem] mb-8 shadow-xl shadow-red-50 print:border-0 print:p-0 print:m-0 print:shadow-none print:bg-transparent print:mb-0' : ''}`}
+              style={{ pageBreakBefore: 'always' }} 
+              className={`pt-6 print:pt-0 ${!hasEvaluation ? 'border-2 border-dashed border-red-300 bg-red-50/10 p-6 rounded-[2.5rem] mb-8 shadow-xl shadow-red-50 print:border-0 print:p-0 print:m-0 print:shadow-none print:bg-transparent print:mb-0' : ''}`}
             >
               <div className={`no-print mb-4 p-3 rounded-2xl flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${!hasEvaluation ? 'bg-red-50 border border-red-200 text-red-800 animate-pulse' : 'bg-blue-50 border border-blue-100 text-blue-800'}`}>
                 <FileText size={16} />
