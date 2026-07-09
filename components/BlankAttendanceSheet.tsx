@@ -350,34 +350,46 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
       </table>
 
       {/* Questionário Rodapé */}
-      <div className="space-y-0.5" style={{ fontSize: '11pt', color: '#000' }}>
-        <div className="flex flex-col">
-          <span>Faltas no período?</span>
-          <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.hadAbsences, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.hadAbsences, false)}&nbsp; )</span>
+      <div className="flex justify-between items-end gap-6 mt-4" style={{ color: '#000', fontSize: '10.5pt' }}>
+        {/* Lado Esquerdo: Perguntas alinhadas horizontalmente */}
+        <div className="space-y-1 flex-1">
+          <div className="flex justify-between items-center text-xs border-b border-dashed border-slate-200 py-0.5">
+            <span>Faltas no período?</span>
+            <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.hadAbsences, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.hadAbsences, false)}&nbsp; )</span>
+          </div>
+
+          <div className="flex justify-between items-center text-xs border-b border-dashed border-slate-200 py-0.5">
+            <span>Apresentou bom comportamento?</span>
+            <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.goodBehavior, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.goodBehavior, false)}&nbsp; )</span>
+          </div>
+
+          <div className="flex justify-between items-center text-xs border-b border-dashed border-slate-200 py-0.5">
+            <span>Cometeu atos indisciplinares?</span>
+            <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.disciplinaryIssues, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.disciplinaryIssues, false)}&nbsp; )</span>
+          </div>
+
+          <div className="flex justify-between items-center text-xs py-0.5">
+            <span>A qualidade do serviço prestado foi satisfatória?</span>
+            <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.satisfactoryService, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.satisfactoryService, false)}&nbsp; )</span>
+          </div>
         </div>
 
-        <div className="flex flex-col">
-          <span>Apresentou bom comportamento?</span>
-          <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.goodBehavior, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.goodBehavior, false)}&nbsp; )</span>
-        </div>
-
-        <div className="flex flex-col">
-          <span>Cometeu atos indisciplinares?</span>
-          <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.disciplinaryIssues, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.disciplinaryIssues, false)}&nbsp; )</span>
-        </div>
-
-        <div className="flex flex-col">
-          <span>A qualidade do serviço prestado foi satisfatória?</span>
-          <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.satisfactoryService, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.satisfactoryService, false)}&nbsp; )</span>
-        </div>
+        {/* Lado Direito: Responsável e Data (Somente se houver avaliação) */}
+        {evaluation && (
+          <div 
+            className="flex flex-col text-right justify-end border-l border-slate-300 pl-6 shrink-0"
+            style={{ minWidth: '220px', fontSize: '8.5pt', fontFamily: '"Times New Roman", Times, serif', lineHeight: '1.4' }}
+          >
+            <div className="font-bold uppercase tracking-tight text-slate-900">Responsável pela Avaliação</div>
+            <div className="font-mono uppercase text-slate-800 font-extrabold mt-0.5" style={{ fontSize: '8pt' }}>
+              {evaluation.evaluatedBy}
+            </div>
+            <div className="text-slate-500 mt-0.5" style={{ fontSize: '7.5pt' }}>
+              Data: {new Date(evaluation.createdAt).toLocaleDateString('pt-BR')}
+            </div>
+          </div>
+        )}
       </div>
-
-      {evaluation && (
-        <div className="mt-2 pt-1 border-t border-slate-100 flex items-center justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wide">
-          <span>Avaliado por: {evaluation.evaluatedBy}</span>
-          <span>Em: {new Date(evaluation.createdAt).toLocaleDateString('pt-BR')}</span>
-        </div>
-      )}
     </div>
   );
 };
