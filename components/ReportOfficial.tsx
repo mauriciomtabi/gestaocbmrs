@@ -264,71 +264,62 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
     const content = document.getElementById('official-document-content');
     if (!content) return;
 
+    // Clonar o conteúdo e remover elementos que não devem ser impressos
     const contentClone = content.cloneNode(true) as HTMLElement;
     contentClone.querySelectorAll('.no-print').forEach(el => el.remove());
 
-    const printWindow = window.open('', '_blank', 'width=900,height=700');
-    if (!printWindow) {
-      alert('Popup bloqueado. Permita popups para este site e tente novamente.');
-      return;
-    }
-
-    const parentStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
-      .map(el => el.outerHTML)
-      .join('\n');
-
-    printWindow.document.write(
-      '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8" /><title>Oficio</title>' +
-      parentStyles +
-      '<style>' +
-      '@page { size: A4 portrait; margin: 1.5cm 2cm; }' +
-      '* { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }' +
-      'html, body { margin: 0; padding: 0; background: white !important; font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; color: #000 !important; }' +
-      'table.consolidated-table { border-collapse: collapse; width: 100%; }' +
-      'table.consolidated-table th, table.consolidated-table td { border: 1px solid black; padding: 4px 12px; }' +
-      'table.frequency-table { border-collapse: collapse; width: 100%; }' +
-      'table.frequency-table th, table.frequency-table td { border: 1px solid black; padding: 4px 6px; }' +
-      'thead tr { background-color: #f8fafc !important; }' +
-      '#official-document-content { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; max-width: none !important; min-width: auto !important; }' +
-      '</style></head><body>' +
-      contentClone.innerHTML +
-      '</body></html>'
-    );
-    printWindow.document.close();
-    printWindow.focus();
-
-    const styleLinks = Array.from(printWindow.document.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[];
+    // Criar um container temporário de impressão no corpo do próprio documento pai
+    const printContainer = document.createElement('div');
+    printContainer.id = 'temp-print-container';
     
-    if (styleLinks.length === 0) {
-      setTimeout(() => {
-        printWindow.print();
-        setTimeout(() => printWindow.close(), 500);
-      }, 500);
-    } else {
-      let completed = 0;
-      const onStyleLoad = () => {
-        completed++;
-        if (completed === styleLinks.length) {
-          setTimeout(() => {
-            printWindow.print();
-            setTimeout(() => printWindow.close(), 500);
-          }, 300);
+    // Injetar estilos CSS específicos de impressão na tag temporária
+    printContainer.innerHTML = `
+      <style id="temp-print-styles">
+        @media print {
+          /* Esconde absolutamente tudo exceto o nosso container temporário */
+          body > *:not(#temp-print-container) {
+            display: none !important;
+          }
+          #temp-print-container {
+            display: block !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          /* Estilos específicos de página */
+          @page { 
+            size: A4 portrait; 
+            margin: 1.5cm 2cm; 
+          }
+          * { 
+            box-sizing: border-box; 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+          }
+          table.consolidated-table { border-collapse: collapse; width: 100%; }
+          table.consolidated-table th, table.consolidated-table td { border: 1px solid black; padding: 4px 12px; }
+          table.frequency-table { border-collapse: collapse; width: 100%; }
+          table.frequency-table th, table.frequency-table td { border: 1px solid black; padding: 4px 6px; }
+          thead tr { background-color: #f8fafc !important; }
         }
-      };
-
-      styleLinks.forEach(link => {
-        link.onload = onStyleLoad;
-        link.onerror = onStyleLoad;
-      });
-
-      // Fallback timer
-      setTimeout(() => {
-        if (completed < styleLinks.length) {
-          printWindow.print();
-          setTimeout(() => printWindow.close(), 500);
+        @media screen {
+          #temp-print-container {
+            display: none !important;
+          }
         }
-      }, 2500);
-    }
+      </style>
+      <div id="official-document-content" style="background: white !important; font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; color: #000 !important; width: 100%;">
+        ${contentClone.innerHTML}
+      </div>
+    `;
+
+    document.body.appendChild(printContainer);
+    
+    // Dispara a impressão imediatamente na janela principal carregada
+    window.print();
+    
+    // Remove o container do DOM após o diálogo fechar/iniciar
+    document.body.removeChild(printContainer);
   };
 
   const handlePrintClick = () => {
