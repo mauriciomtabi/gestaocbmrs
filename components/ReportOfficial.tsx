@@ -292,10 +292,39 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
     );
     printWindow.document.close();
     printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      setTimeout(() => printWindow.close(), 500);
-    }, 800);
+
+    const styleLinks = Array.from(printWindow.document.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[];
+    
+    if (styleLinks.length === 0) {
+      setTimeout(() => {
+        printWindow.print();
+        setTimeout(() => printWindow.close(), 500);
+      }, 500);
+    } else {
+      let completed = 0;
+      const onStyleLoad = () => {
+        completed++;
+        if (completed === styleLinks.length) {
+          setTimeout(() => {
+            printWindow.print();
+            setTimeout(() => printWindow.close(), 500);
+          }, 300);
+        }
+      };
+
+      styleLinks.forEach(link => {
+        link.onload = onStyleLoad;
+        link.onerror = onStyleLoad;
+      });
+
+      // Fallback timer
+      setTimeout(() => {
+        if (completed < styleLinks.length) {
+          printWindow.print();
+          setTimeout(() => printWindow.close(), 500);
+        }
+      }, 2500);
+    }
   };
 
   const selectClasses = "bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all cursor-pointer";
@@ -392,18 +421,18 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
         <div id="official-document-content" className="min-w-[21cm] max-w-[21cm] mx-auto p-[1.5cm] md:p-[2cm] shadow-2xl md:shadow-lg animate-in zoom-in-95 duration-700 print:shadow-none print:m-0 print:p-[1.5cm] print:max-w-none print:w-full" style={{ backgroundColor: '#ffffff', color: '#000000', fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: '1.5' }}>
           
           {/* Brasão e Cabeçalho */}
-        <div className="text-center mb-10 flex flex-col items-center outline-none" contentEditable suppressContentEditableWarning>
+        <div className="text-center mb-10 flex flex-col items-center outline-none" style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2.5rem' }} contentEditable suppressContentEditableWarning>
           <img 
             src="/brasao.png" 
             style={{ 
               width: '100px', 
               height: 'auto', 
               display: 'block',
-              marginBottom: '12px'
+              margin: '0 auto 12px auto'
             }}
             alt="Brasão do Estado" 
           />
-          <div className="font-bold uppercase leading-tight" style={{ fontSize: '10pt' }}>
+          <div className="font-bold uppercase leading-tight" style={{ fontSize: '10pt', fontWeight: 'bold' }}>
             <p>ESTADO DO RIO GRANDE DO SUL</p>
             <p>SECRETARIA DA SEGURANÇA PÚBLICA</p>
             <p>CORPO DE BOMBEIROS MILITAR</p>
@@ -411,7 +440,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
             <p>1ª COMPANHIA DE BOMBEIRO MILITAR</p>
             <p>3º PELBM SAPUCAIA DO SUL</p>
           </div>
-          <div className="uppercase mt-2" style={{ fontSize: '9pt' }}>
+          <div className="uppercase mt-2" style={{ fontSize: '9pt', textTransform: 'uppercase', marginTop: '8px' }}>
             HENRIQUE DIAS, Nº 58, BAIRRO SANTA CATARINA – SAPUCAIA DO SUL – CEP 93.214-130
           </div>
           <div style={{ fontSize: '9pt' }}>
@@ -420,17 +449,17 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
         </div>
 
         {/* Número do Ofício */}
-        <div className="mb-4 outline-none" contentEditable suppressContentEditableWarning>
+        <div className="mb-4 outline-none" style={{ marginBottom: '1rem' }} contentEditable suppressContentEditableWarning>
           Ofício nº 088/3ºPelBM/1ªCiaBM/8ºBBM/2025.
         </div>
 
         {/* Data - Alinhada à direita */}
-        <div className="text-right mb-16 outline-none" contentEditable suppressContentEditableWarning>
+        <div className="text-right mb-16 outline-none" style={{ textAlign: 'right', marginBottom: '4rem' }} contentEditable suppressContentEditableWarning>
           Sapucaia do Sul, {today}.
         </div>
 
         {/* Destinatário */}
-        <div className="mb-6 outline-none" contentEditable suppressContentEditableWarning>
+        <div className="mb-6 outline-none" style={{ marginBottom: '1.5rem' }} contentEditable suppressContentEditableWarning>
           <p>Ao Fórum da Comarca de Sapucaia do Sul</p>
           <p>Vara de Execuções Criminais</p>
           <p>Av. João Pereira de Vargas, nº 431 – Centro</p>
@@ -438,31 +467,31 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
         </div>
 
         {/* Assunto */}
-        <div className="mb-10 outline-none" contentEditable suppressContentEditableWarning>
+        <div className="mb-10 outline-none" style={{ marginBottom: '2.5rem' }} contentEditable suppressContentEditableWarning>
           Assunto: Prestador de Serviço Comunitário
         </div>
 
         {/* Texto do Ofício */}
-        <div className="text-justify space-y-6 outline-none" contentEditable suppressContentEditableWarning>
-          <div className="flex gap-4">
-            <span className="shrink-0">1.</span>
-            <p>
+        <div className="text-justify space-y-6 outline-none" style={{ textAlign: 'justify' }} contentEditable suppressContentEditableWarning>
+          <div className="flex gap-4" style={{ display: 'flex', gap: '16px', marginBottom: '1.5rem' }}>
+            <span className="shrink-0" style={{ flexShrink: 0 }}>1.</span>
+            <p style={{ margin: 0 }}>
               Ao cumprimentá-los cordialmente, encaminho, em anexo, a folha de frequência referente 
               à prestação de serviço comunitário dos prestadores relacionados, contendo, ainda, a data do último 
               comparecimento destes a esta instituição, no mês de {getMonthLabel()}.
             </p>
           </div>
-          <div className="flex gap-4">
-            <span className="shrink-0">2.</span>
-            <p>
+          <div className="flex gap-4" style={{ display: 'flex', gap: '16px' }}>
+            <span className="shrink-0" style={{ flexShrink: 0 }}>2.</span>
+            <p style={{ margin: 0 }}>
               Cordiais saudações, renovo votos de estima e distinta consideração.
             </p>
           </div>
         </div>
 
         {/* Assinatura */}
-        <div className="mt-32 text-center flex flex-col items-center outline-none" contentEditable suppressContentEditableWarning>
-          <div className="font-bold uppercase">
+        <div className="mt-32 text-center flex flex-col items-center outline-none" style={{ marginTop: '8rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }} contentEditable suppressContentEditableWarning>
+          <div className="font-bold uppercase" style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>
             RONALDO GONCZOROSKI DE OLIVEIRA – 1º Sgt QPBM
           </div>
           <div style={{ fontSize: '11pt' }}>
