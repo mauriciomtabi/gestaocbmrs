@@ -48,6 +48,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
   });
 
   const [evalSaving, setEvalSaving] = useState(false);
+  const [pendingPrintAlert, setPendingPrintAlert] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (pendingEvaluation) {
@@ -263,6 +264,9 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
     const content = document.getElementById('official-document-content');
     if (!content) return;
 
+    const contentClone = content.cloneNode(true) as HTMLElement;
+    contentClone.querySelectorAll('.no-print').forEach(el => el.remove());
+
     const printWindow = window.open('', '_blank', 'width=900,height=700');
     if (!printWindow) {
       alert('Popup bloqueado. Permita popups para este site e tente novamente.');
@@ -287,7 +291,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
       'thead tr { background-color: #f8fafc !important; }' +
       '#official-document-content { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; max-width: none !important; min-width: auto !important; }' +
       '</style></head><body>' +
-      content.innerHTML +
+      contentClone.innerHTML +
       '</body></html>'
     );
     printWindow.document.close();
@@ -324,6 +328,30 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
           setTimeout(() => printWindow.close(), 500);
         }
       }, 2500);
+    }
+  };
+
+  const handlePrintClick = () => {
+    if (selectedYear === 'Todos' || selectedMonth === 'Todos') {
+      handleGeneratePDF();
+      return;
+    }
+
+    const pendingNames = filteredProviders
+      .filter(p => {
+        const hasEval = evaluations.some(ev => 
+          ev.providerId === p.id && 
+          ev.year === parseInt(selectedYear) && 
+          ev.month === parseInt(selectedMonth)
+        );
+        return !hasEval;
+      })
+      .map(p => p.name);
+
+    if (pendingNames.length > 0) {
+      setPendingPrintAlert(pendingNames);
+    } else {
+      handleGeneratePDF();
     }
   };
 
@@ -405,7 +433,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
             </div>
 
             <button 
-              onClick={handleGeneratePDF}
+              onClick={handlePrintClick}
               className={`w-full md:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 font-black text-sm active:scale-95 disabled:bg-slate-300 disabled:shadow-none no-print ml-auto`}
             >
               <FileDown size={20} />
@@ -731,6 +759,79 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
                 >
                   {evalSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                   Salvar Avaliação
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {pendingPrintAlert && (
+          <div 
+            style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+            className="fixed inset-0 bg-slate-900/60 z-[120] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300 no-print"
+          >
+            <div className="bg-white w-full max-w-md rounded-[2rem] overflow-hidden shadow-2xl flex flex-col border border-white/20 relative animate-in zoom-in-95 duration-200">
+              
+              {/* Header */}
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-amber-50 to-white">
+                <div className="flex items-center gap-3">
+                  <div className="bg-amber-500 p-2.5 rounded-xl text-white shadow-lg shadow-amber-200">
+                    <AlertTriangle size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-800">Avaliações Pendentes</h3>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                      {selectedMonthName} / {selectedYear}
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setPendingPrintAlert(null)} 
+                  className="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-100 rounded-full"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-4 max-h-[50vh] overflow-y-auto">
+                <p className="text-xs text-slate-500 font-medium leading-relaxed text-left">
+                  Os seguintes prestadores não possuem a avaliação mensal preenchida para o período selecionado:
+                </p>
+                
+                <div className="space-y-2 max-h-[200px] overflow-y-auto border border-slate-100 rounded-2xl p-3 bg-slate-50/50">
+                  {pendingPrintAlert.map((name, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-xs text-slate-700 font-bold uppercase tracking-tight text-left">
+                      <span className="w-1.5 h-1.5 bg-amber-500 rounded-full shrink-0" />
+                      <span>{name}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-xs font-bold text-slate-700 leading-relaxed text-left">
+                  Deseja prosseguir com a geração do PDF contendo as folhas de frequência incompletas?
+                </p>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-slate-100 flex gap-3 bg-slate-50/50">
+                <button 
+                  type="button" 
+                  onClick={() => setPendingPrintAlert(null)} 
+                  className="flex-1 py-3 text-xs text-slate-600 font-bold hover:bg-slate-100 rounded-2xl transition-all"
+                >
+                  Cancelar e Preencher
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setPendingPrintAlert(null);
+                    handleGeneratePDF();
+                  }} 
+                  className="flex-1 py-3 bg-amber-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-amber-700 shadow-lg shadow-amber-100 transition-all active:scale-[0.98] text-xs"
+                >
+                  <FileText size={16} />
+                  Gerar PDF
                 </button>
               </div>
             </div>
