@@ -20,6 +20,7 @@ interface AttendanceSheetPrintProps {
   evaluation: MonthlyEvaluation | null;
   onShowRecordDetails?: (record: AttendanceRecord) => void;
   numericMonth?: string;
+  showExcelLink?: boolean;
 }
 
 export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
@@ -29,7 +30,8 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
   year,
   evaluation,
   onShowRecordDetails,
-  numericMonth
+  numericMonth,
+  showExcelLink
 }) => {
   const displayRows = useMemo(() => {
     const rows = [...records];
@@ -63,11 +65,35 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
 
   return (
     <div 
-      className="bg-white mx-auto print:p-0"
-      style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', color: '#000', width: '100%', boxSizing: 'border-box' }}
+      className="bg-white mx-auto print:p-0 relative"
+      style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', color: '#000', width: '100%', boxSizing: 'border-box', position: 'relative' }}
     >
+      {showExcelLink && (
+        <div 
+          className="absolute top-0 right-0 flex items-center gap-1"
+          style={{ 
+            position: 'absolute', 
+            top: '0px', 
+            right: '0px', 
+            fontSize: '8pt', 
+            fontFamily: 'Arial, sans-serif'
+          }}
+        >
+          <span style={{ color: '#64748b', fontWeight: 'bold' }}>Excel:</span>
+          <a 
+            href={`${window.location.origin}/?view=public-export&providerId=${provider.id}&year=${year}&month=${resolvedMonthNum}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold font-mono hover:bg-emerald-100 transition-colors"
+            style={{ textDecoration: 'none' }}
+          >
+            📊 [XLSX]
+          </a>
+        </div>
+      )}
+
       {/* Cabeçalho */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4 mb-6 frequency-sheet-header">
         <img 
           src="/brasao.png" 
           alt="Brasão Estado" 
@@ -79,7 +105,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
         </div>
       </div>
 
-      <div className="mb-4 leading-tight">
+      <div className="mb-4 leading-tight frequency-sheet-subheader">
         <div>Comarca de Sapucaia do Sul – Vara de Execução Criminais</div>
         <div>Programa Prestação de Serviços à Comunidade (PSC)</div>
       </div>
@@ -330,7 +356,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
       </table>
 
       {/* Questionário Rodapé */}
-      <div className="space-y-1.5" style={{ fontSize: '11pt', color: '#000' }}>
+      <div className="space-y-1.5 frequency-sheet-footer" style={{ fontSize: '11pt', color: '#000' }}>
         <div className="flex flex-col">
           <span>Faltas no período?</span>
           <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.hadAbsences, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.hadAbsences, false)}&nbsp; )</span>
