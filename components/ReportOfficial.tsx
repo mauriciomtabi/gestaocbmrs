@@ -437,8 +437,33 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
 
       {/* Papel A4 Oficial - Container para o PDF */}
       <div className="w-full pb-12 md:pb-0 overflow-visible print:border-none print:shadow-none print:m-0 print:p-0">
-        <div id="official-document-content" className="min-w-[21cm] max-w-[21cm] mx-auto p-[1.5cm] md:p-[2cm] shadow-2xl md:shadow-lg animate-in zoom-in-95 duration-700 print:shadow-none print:m-0 print:p-[1.5cm] print:max-w-none print:w-full" style={{ backgroundColor: '#ffffff', color: '#000000', fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: '1.5' }}>
+        <div id="official-document-content" className="relative min-w-[21cm] max-w-[21cm] mx-auto p-[1.5cm] md:p-[2cm] shadow-2xl md:shadow-lg animate-in zoom-in-95 duration-700 print:shadow-none print:m-0 print:p-[1.5cm] print:max-w-none print:w-full" style={{ backgroundColor: '#ffffff', color: '#000000', fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: '1.5' }}>
           
+          {/* Link para download do Excel (Canto superior direito, muito discreto) */}
+          <div 
+            className="absolute top-4 right-4 flex items-center gap-1.5" 
+            style={{ 
+              position: 'absolute', 
+              top: '24px', 
+              right: '24px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px',
+              fontSize: '8pt',
+              fontFamily: 'Arial, sans-serif'
+            }}
+          >
+            <span style={{ color: '#64748b', fontWeight: 'bold' }}>Planilha de Apoio:</span>
+            <a 
+              href={`${window.location.origin}${window.location.pathname}?view=public-export&month=${selectedMonth}&year=${selectedYear}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded hover:bg-emerald-100 transition-all font-bold"
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+            >
+              📊 Baixar Excel
+            </a>
+          </div>
           {/* Brasão e Cabeçalho */}
         <div className="text-center mb-10 flex flex-col items-center outline-none" style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2.5rem' }} contentEditable suppressContentEditableWarning>
           <img 

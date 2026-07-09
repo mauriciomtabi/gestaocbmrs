@@ -67,7 +67,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
       style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', color: '#000', width: '100%', boxSizing: 'border-box' }}
     >
       {/* Cabeçalho */}
-      <div className="flex items-center gap-4 mb-3">
+      <div className="flex items-center gap-4 mb-6">
         <img 
           src="/brasao.png" 
           alt="Brasão Estado" 
@@ -79,13 +79,13 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
         </div>
       </div>
 
-      <div className="mb-2 leading-tight">
+      <div className="mb-4 leading-tight">
         <div>Comarca de Sapucaia do Sul – Vara de Execução Criminais</div>
         <div>Programa Prestação de Serviços à Comunidade (PSC)</div>
       </div>
 
       {/* Tabela Principal */}
-      <table className="w-full border-collapse mb-3 text-slate-900 frequency-table" style={{ border: '1px solid black' }}>
+      <table className="w-full border-collapse mb-6 text-slate-900 frequency-table" style={{ border: '1px solid black' }}>
         <tbody>
           {/* Título */}
           <tr>
@@ -156,26 +156,6 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
             </td>
           </tr>
 
-          {/* Planilha de Frequência Digital */}
-          <tr>
-            <td colSpan={5} className="py-1.5 px-2" style={{ border: '1px solid black' }}>
-              <div className="flex items-center justify-between text-[8.5pt]">
-                <div>
-                  <span className="font-bold">Planilha de Frequência Digital:</span>{' '}
-                  <span className="text-slate-500">Dados consolidados do mês para conciliação</span>
-                </div>
-                <a 
-                  href={`${window.location.origin}/?view=public-export&providerId=${provider.id}&year=${year}&month=${resolvedMonthNum}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 bg-emerald-600 text-white font-bold px-3 py-1 rounded-lg hover:bg-emerald-700 transition-all shadow shadow-emerald-200/50 print:bg-emerald-600 print:text-white"
-                  style={{ textDecoration: 'none', padding: '3px 8px' }}
-                >
-                  📥 BAIXAR PLANILHA EXCEL
-                </a>
-              </div>
-            </td>
-          </tr>
 
           {/* Cabeçalho da Grade */}
           <tr className="font-bold text-center" style={{ fontSize: '11pt', backgroundColor: '#f8fafc' }}>
@@ -282,7 +262,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
             return (
               <tr 
                 key={r.id} 
-                style={{ height: '24px' }}
+                style={{ height: '36px' }}
                 className={onShowRecordDetails ? "cursor-pointer hover:bg-slate-50 transition-colors" : ""}
                 onClick={onShowRecordDetails ? () => onShowRecordDetails(r) : undefined}
               >
@@ -322,7 +302,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
 
           {/* Linhas vazias complementares */}
           {displayRows.empty.map((_, idx) => (
-            <tr key={`empty-${idx}`} style={{ height: '24px' }}>
+            <tr key={`empty-${idx}`} style={{ height: '36px' }}>
               <td style={{ border: '1px solid black' }}></td>
               <td style={{ border: '1px solid black' }}></td>
               <td style={{ border: '1px solid black' }}></td>
@@ -350,46 +330,34 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
       </table>
 
       {/* Questionário Rodapé */}
-      <div className="flex justify-between items-end gap-6 mt-4" style={{ color: '#000', fontSize: '10.5pt' }}>
-        {/* Lado Esquerdo: Perguntas alinhadas horizontalmente */}
-        <div className="space-y-1 flex-1">
-          <div className="flex justify-between items-center text-xs border-b border-dashed border-slate-200 py-0.5">
-            <span>Faltas no período?</span>
-            <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.hadAbsences, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.hadAbsences, false)}&nbsp; )</span>
-          </div>
-
-          <div className="flex justify-between items-center text-xs border-b border-dashed border-slate-200 py-0.5">
-            <span>Apresentou bom comportamento?</span>
-            <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.goodBehavior, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.goodBehavior, false)}&nbsp; )</span>
-          </div>
-
-          <div className="flex justify-between items-center text-xs border-b border-dashed border-slate-200 py-0.5">
-            <span>Cometeu atos indisciplinares?</span>
-            <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.disciplinaryIssues, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.disciplinaryIssues, false)}&nbsp; )</span>
-          </div>
-
-          <div className="flex justify-between items-center text-xs py-0.5">
-            <span>A qualidade do serviço prestado foi satisfatória?</span>
-            <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.satisfactoryService, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.satisfactoryService, false)}&nbsp; )</span>
-          </div>
+      <div className="space-y-1.5" style={{ fontSize: '11pt', color: '#000' }}>
+        <div className="flex flex-col">
+          <span>Faltas no período?</span>
+          <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.hadAbsences, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.hadAbsences, false)}&nbsp; )</span>
         </div>
 
-        {/* Lado Direito: Responsável e Data (Somente se houver avaliação) */}
-        {evaluation && (
-          <div 
-            className="flex flex-col text-right justify-end border-l border-slate-300 pl-6 shrink-0"
-            style={{ minWidth: '220px', fontSize: '8.5pt', fontFamily: '"Times New Roman", Times, serif', lineHeight: '1.4' }}
-          >
-            <div className="font-bold uppercase tracking-tight text-slate-900">Responsável pela Avaliação</div>
-            <div className="font-mono uppercase text-slate-800 font-extrabold mt-0.5" style={{ fontSize: '8pt' }}>
-              {evaluation.evaluatedBy}
-            </div>
-            <div className="text-slate-500 mt-0.5" style={{ fontSize: '7.5pt' }}>
-              Data: {new Date(evaluation.createdAt).toLocaleDateString('pt-BR')}
-            </div>
-          </div>
-        )}
+        <div className="flex flex-col">
+          <span>Apresentou bom comportamento?</span>
+          <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.goodBehavior, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.goodBehavior, false)}&nbsp; )</span>
+        </div>
+
+        <div className="flex flex-col">
+          <span>Cometeu atos indisciplinares?</span>
+          <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.disciplinaryIssues, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.disciplinaryIssues, false)}&nbsp; )</span>
+        </div>
+
+        <div className="flex flex-col">
+          <span>A qualidade do serviço prestado foi satisfatória?</span>
+          <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.satisfactoryService, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.satisfactoryService, false)}&nbsp; )</span>
+        </div>
       </div>
+
+      {evaluation && (
+        <div className="mt-6 pt-2 border-t border-slate-100 flex items-center justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wide">
+          <span>Avaliado por: {evaluation.evaluatedBy}</span>
+          <span>Em: {new Date(evaluation.createdAt).toLocaleDateString('pt-BR')}</span>
+        </div>
+      )}
     </div>
   );
 };
