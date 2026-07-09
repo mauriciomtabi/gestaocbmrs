@@ -19,6 +19,7 @@ interface AttendanceSheetPrintProps {
   year: string;
   evaluation: MonthlyEvaluation | null;
   onShowRecordDetails?: (record: AttendanceRecord) => void;
+  numericMonth?: string;
 }
 
 export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
@@ -27,7 +28,8 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
   month,
   year,
   evaluation,
-  onShowRecordDetails
+  onShowRecordDetails,
+  numericMonth
 }) => {
   const displayRows = useMemo(() => {
     const rows = [...records];
@@ -35,6 +37,24 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
     const emptyArray = Array.from({ length: emptyNeeded });
     return { records: rows, empty: emptyArray };
   }, [records]);
+
+  const resolvedMonthNum = useMemo(() => {
+    if (numericMonth) return numericMonth;
+    const lower = month.toLowerCase();
+    if (lower.includes('jan')) return '01';
+    if (lower.includes('fev')) return '02';
+    if (lower.includes('mar')) return '03';
+    if (lower.includes('abr')) return '04';
+    if (lower.includes('mai')) return '05';
+    if (lower.includes('jun')) return '06';
+    if (lower.includes('jul')) return '07';
+    if (lower.includes('ago')) return '08';
+    if (lower.includes('set')) return '09';
+    if (lower.includes('out')) return '10';
+    if (lower.includes('nov')) return '11';
+    if (lower.includes('dez')) return '12';
+    return String(new Date().getMonth() + 1).padStart(2, '0');
+  }, [month, numericMonth]);
 
   const renderOption = (value?: boolean, expected?: boolean) => {
     if (value === undefined) return ' ';
@@ -136,6 +156,27 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
             </td>
           </tr>
 
+          {/* Planilha de Frequência Digital */}
+          <tr>
+            <td colSpan={5} className="py-1.5 px-2" style={{ border: '1px solid black' }}>
+              <div className="flex items-center justify-between text-[8.5pt]">
+                <div>
+                  <span className="font-bold">Planilha de Frequência Digital:</span>{' '}
+                  <span className="text-slate-500">Dados consolidados do mês para conciliação</span>
+                </div>
+                <a 
+                  href={`${window.location.origin}/?view=public-export&providerId=${provider.id}&year=${year}&month=${resolvedMonthNum}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 bg-emerald-600 text-white font-bold px-3 py-1 rounded-lg hover:bg-emerald-700 transition-all shadow shadow-emerald-200/50 print:bg-emerald-600 print:text-white"
+                  style={{ textDecoration: 'none', padding: '3px 8px' }}
+                >
+                  📥 BAIXAR PLANILHA EXCEL
+                </a>
+              </div>
+            </td>
+          </tr>
+
           {/* Cabeçalho da Grade */}
           <tr className="font-bold text-center" style={{ fontSize: '11pt', backgroundColor: '#f8fafc' }}>
             <td className="py-1" style={{ border: '1px solid black', width: '18%' }}>Data</td>
@@ -224,6 +265,20 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
               );
             }
 
+            const auditLink = r.id && !r.id.startsWith('temp-') ? (
+              <a 
+                href={`${window.location.origin}/?view=public-audit&id=${r.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center ml-1.5 opacity-70 hover:opacity-100 hover:scale-110 transition-all text-blue-600 print:text-blue-600 print:opacity-75 print:inline-block"
+                title="Visualizar registro de auditoria público"
+                onClick={(e) => e.stopPropagation()}
+                style={{ textDecoration: 'none', fontSize: '9.5pt' }}
+              >
+                🔎
+              </a>
+            ) : null;
+
             return (
               <tr 
                 key={r.id} 
@@ -240,17 +295,26 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
                 <td style={{ border: '1px solid black', textAlign: 'center', fontSize: '9.5pt' }}>
                   {isJustification ? '—' : r.exitTime}
                 </td>
-                <td style={{ border: '1px solid black', verticalAlign: 'middle', textAlign: 'center' }}>
+                <td style={{ border: '1px solid black', verticalAlign: 'middle', textAlign: 'center', padding: '4px' }}>
                   {isJustification && r.reason ? (
-                    <div style={{ fontSize: '8pt', color: '#334155', fontWeight: 'bold', padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.reason}>
-                      {r.reason}
+                    <div className="flex items-center justify-center gap-1.5">
+                      <div style={{ fontSize: '8pt', color: '#334155', fontWeight: 'bold', padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.reason}>
+                        {r.reason}
+                      </div>
+                      {auditLink}
                     </div>
                   ) : (
-                    providerSig
+                    <div className="flex items-center justify-center gap-1.5">
+                      {providerSig}
+                      {auditLink}
+                    </div>
                   )}
                 </td>
-                <td style={{ border: '1px solid black', verticalAlign: 'middle', textAlign: 'center' }}>
-                  {responsibleSig}
+                <td style={{ border: '1px solid black', verticalAlign: 'middle', textAlign: 'center', padding: '4px' }}>
+                  <div className="flex items-center justify-center gap-1.5">
+                    {responsibleSig}
+                    {auditLink}
+                  </div>
                 </td>
               </tr>
             );

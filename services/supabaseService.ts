@@ -1312,4 +1312,69 @@ export const unarchiveServiceSwap = async (
   }
 };
 
+// --- Funções Públicas de Auditoria e Exportação (Acesso sem Login) ---
+
+export const getPublicAttendanceRecord = async (id: string) => {
+  const { data: record, error: recordError } = await supabase
+    .from('attendance')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (recordError) throw recordError;
+
+  const { data: provider, error: providerError } = await supabase
+    .from('providers')
+    .select('*')
+    .eq('id', record.provider_id)
+    .single();
+  if (providerError) throw providerError;
+
+  const dateParts = record.date.split('-');
+  const year = parseInt(dateParts[0]);
+  const month = parseInt(dateParts[1]);
+
+  const { data: evaluations } = await supabase
+    .from('monthly_evaluations')
+    .select('*')
+    .eq('provider_id', record.provider_id)
+    .eq('year', year)
+    .eq('month', month)
+    .limit(1);
+
+  const evaluation = evaluations && evaluations.length > 0 ? evaluations[0] : null;
+
+  return {
+    record: mapAttendanceFromDB(record),
+    provider: mapProviderFromDB(provider),
+    evaluation: evaluation ? mapEvaluationFromDB(evaluation) : null
+  };
+};
+
+export const getPublicAttendanceForMonth = async (providerId: string, year: string, month: string) => {
+  const { data: provider, error: providerError } = await supabase
+    .from('providers')
+    .select('*')
+    .eq('id', providerId)
+    .single();
+  if (providerError) throw providerError;
+
+  const { data: records, error: recordsError } = await supabase
+    .from('attendance')
+    .select('*')
+    .eq('provider_id', providerId)
+    .order('date', { ascending: true });
+  if (recordsError) throw recordsError;
+
+  const filteredRecords = (records || []).map(mapAttendanceFromDB).filter(r => {
+    const parts = r.date.split('-');
+    return parts[0] === year && parts[1] === month;
+  });
+
+  return {
+    provider: mapProviderFromDB(provider),
+    records: filteredRecords
+  };
+};
+
+
 

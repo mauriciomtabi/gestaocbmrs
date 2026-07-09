@@ -549,6 +549,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
                 month={selectedMonthName}
                 year={selectedYear}
                 evaluation={pEvaluation}
+                numericMonth={selectedMonth}
                 onShowRecordDetails={(rec) => setAuditState({ record: rec, provider: p, evaluation: pEvaluation })}
               />
             </div>

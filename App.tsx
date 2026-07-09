@@ -15,7 +15,8 @@ import Settings from './components/Settings';
 import HelpCenter from './components/HelpCenter';
 import ServiceSwapManager from './components/ServiceSwapManager';
 import { Users, LayoutDashboard, FileText, Loader2, ShieldCheck, ShieldAlert, Cpu, Database, Network, Sparkles, LogOut, UserCircle, CheckCircle2, X, Smartphone, Fuel, ScanFace, Settings as SettingsIcon, HelpCircle, RefreshCw, Camera } from 'lucide-react';
-import { getProviders, getAttendance, createProvider, updateProvider, saveAttendance, deleteAttendance, saveAuditLog, supabase, getFuelSupplies, getVehicles, getStationNicknames } from './services/supabaseService';
+import { getProviders, getAttendance, createProvider, updateProvider, saveAttendance, deleteAttendance, saveAuditLog, supabase, getFuelSupplies, getVehicles, getStationNicknames, getPublicAttendanceRecord, getPublicAttendanceForMonth } from './services/supabaseService';
+import { PublicAuditView, PublicExportView } from './components/PublicAuditView';
 
 const Toast: React.FC<{ message: string; type: 'success' | 'error'; onClose: () => void }> = ({ message, type, onClose }) => {
   useEffect(() => {
@@ -35,6 +36,26 @@ const Toast: React.FC<{ message: string; type: 'success' | 'error'; onClose: () 
 };
 
 const App: React.FC = () => {
+  const [publicView, setPublicView] = useState<{ view: string; id?: string; providerId?: string; year?: string; month?: string } | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view');
+    if (viewParam === 'public-audit' || viewParam === 'public-export') {
+      return {
+        view: viewParam,
+        id: params.get('id') || undefined,
+        providerId: params.get('providerId') || undefined,
+        year: params.get('year') || undefined,
+        month: params.get('month') || undefined
+      };
+    }
+    return null;
+  });
+
+  const handleGoHome = () => {
+    setPublicView(null);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  };
+
   const [view, setView] = useState<'dashboard' | 'providers' | 'details' | 'reports' | 'settings' | 'fuel' | 'face-checkin' | 'help' | 'swaps'>(() => {
     const saved = localStorage.getItem('cbm_active_view');
     // Fallback security check
@@ -478,6 +499,22 @@ const App: React.FC = () => {
       setNotification({ message: "Erro ao atualizar prestador.", type: 'error' });
     }
   };
+
+  if (publicView) {
+    if (publicView.view === 'public-audit' && publicView.id) {
+      return <PublicAuditView recordId={publicView.id} onGoHome={handleGoHome} />;
+    }
+    if (publicView.view === 'public-export' && publicView.providerId && publicView.year && publicView.month) {
+      return (
+        <PublicExportView
+          providerId={publicView.providerId}
+          year={publicView.year}
+          month={publicView.month}
+          onGoHome={handleGoHome}
+        />
+      );
+    }
+  }
 
   if (isBooting) {
     return (
