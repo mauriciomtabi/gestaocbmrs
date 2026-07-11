@@ -331,13 +331,6 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
             font-size: 9.5pt !important;
             padding: 2px 4px !important;
           }
-          .frequency-sheet-header {
-            margin-bottom: 8px !important;
-          }
-          .frequency-sheet-subheader {
-            margin-bottom: 4px !important;
-            font-size: 10pt !important;
-          }
           table.frequency-table {
             margin-bottom: 6px !important;
           }
