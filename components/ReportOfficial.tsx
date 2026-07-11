@@ -296,6 +296,12 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important; 
           }
+          body, html, #temp-print-container, #official-document-content, .print-page, table, tr, td, th, div, span, p, a {
+            font-family: Arial, sans-serif !important;
+          }
+          .judiciario-logo-text, .judiciario-logo-text * {
+            font-family: 'Times New Roman', Times, serif !important;
+          }
           .print-page {
             width: 210mm !important;
             min-width: 210mm !important;
@@ -401,6 +407,14 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
             box-sizing: border-box !important;
             color: #000000 !important;
             position: relative;
+          }
+        }
+        @media print {
+          body, html, #temp-print-container, #official-document-content, .print-page, table, tr, td, th, div, span, p, a {
+            font-family: Arial, sans-serif !important;
+          }
+          .judiciario-logo-text, .judiciario-logo-text * {
+            font-family: 'Times New Roman', Times, serif !important;
           }
         }
       `}</style>

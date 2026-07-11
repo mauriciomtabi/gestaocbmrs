@@ -132,7 +132,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
           alt="Brasão Estado" 
           style={{ width: '65px', height: 'auto', display: 'block' }}
         />
-        <div className="flex flex-col" style={{ fontFamily: '"Times New Roman", Times, serif', width: 'fit-content' }}>
+        <div className="flex flex-col judiciario-logo-text" style={{ fontFamily: '"Times New Roman", Times, serif', width: 'fit-content' }}>
           <div style={{ fontSize: '7.8pt', letterSpacing: '0.04em', lineHeight: '1', whiteSpace: 'nowrap' }}>ESTADO DO RIO GRANDE DO SUL</div>
           <div style={{ fontSize: '14.5pt', letterSpacing: '0.015em', lineHeight: '1', whiteSpace: 'nowrap' }}>PODER JUDICIÁRIO</div>
         </div>
@@ -768,6 +768,12 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, attendance = [], onCl
           width: 210mm !important;
           height: 297mm !important;
           overflow: hidden !important;
+        }
+        body, html, #temp-print-container, .print-page, table, tr, td, th, div, span, p, a {
+          font-family: Arial, sans-serif !important;
+        }
+        .judiciario-logo-text, .judiciario-logo-text * {
+          font-family: 'Times New Roman', Times, serif !important;
         }
         div, main { overflow: visible !important; height: auto !important; }
         table.frequency-table { border-collapse: collapse; width: 100%; }
