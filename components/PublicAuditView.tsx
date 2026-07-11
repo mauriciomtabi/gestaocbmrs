@@ -420,3 +420,267 @@ export const PublicExportView: React.FC<PublicExportViewProps> = ({ providerId, 
     </div>
   );
 };
+
+interface PublicProviderAuditViewProps {
+  providerId: string;
+  year: string;
+  month: string;
+  onGoHome: () => void;
+}
+
+export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = ({
+  providerId,
+  year,
+  month,
+  onGoHome
+}) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<any | null>(null);
+  const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const res = await getPublicAttendanceForMonth(providerId, year, month);
+        setData(res);
+      } catch (err: any) {
+        console.error(err);
+        setError("Não foi possível carregar o histórico de auditoria deste prestador.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [providerId, year, month]);
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center text-white">
+        <Loader2 className="animate-spin text-blue-500 mb-4" size={48} />
+        <p className="text-sm font-extrabold uppercase tracking-widest text-slate-400">Carregando histórico de auditoria...</p>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
+        <AlertCircle className="text-red-500 mb-4" size={48} />
+        <h3 className="text-xl font-black uppercase mb-2">Erro de Acesso</h3>
+        <p className="text-slate-400 text-sm max-w-md mb-6">{error || 'Não foi possível carregar os dados.'}</p>
+        <button onClick={onGoHome} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl transition-all active:scale-95 text-xs uppercase tracking-wider">
+          Ir para Página Inicial
+        </button>
+      </div>
+    );
+  }
+
+  const { provider, records, evaluation } = data;
+
+  const monthsBr = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  const monthName = monthsBr[parseInt(month) - 1] || month;
+
+  // Calculo de horas
+  const totalMins = records.reduce((sum: number, r: any) => sum + (r.durationMinutes || 0), 0);
+  const formattedTotalHours = `${Math.floor(totalMins / 60)}h ${String(totalMins % 60).padStart(2, '0')}m`;
+
+  return (
+    <div className="min-h-screen bg-slate-900 py-10 px-4 md:px-8 text-slate-800 flex flex-col justify-between font-sans">
+      <div className="max-w-4xl w-full mx-auto bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 flex flex-col">
+        {/* Header */}
+        <div className="px-8 py-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50 gap-4">
+          <div className="text-left">
+            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Painel de Auditoria Pública</span>
+            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">
+              Linha do Tempo de Presenças
+            </h3>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => downloadProviderExcel(provider.id, provider.name, year, month)}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-emerald-200/50"
+            >
+              <Download size={16} />
+              Excel (.xlsx)
+            </button>
+            <button
+              onClick={onGoHome}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
+            >
+              Acesso Restrito
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-8 space-y-8 flex-1">
+          {/* Card Resumo do Prestador */}
+          <div className="bg-slate-50 border border-slate-100 p-6 rounded-3xl grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="text-left">
+              <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Prestador</span>
+              <h4 className="text-base font-black text-slate-900 uppercase tracking-tight">{provider.name}</h4>
+              <p className="text-xs text-slate-500 font-semibold">Processo: {provider.processNumber || 'Sem número'}</p>
+            </div>
+            <div className="text-left">
+              <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Período</span>
+              <h4 className="text-base font-black text-slate-900 uppercase tracking-tight">{monthName} / {year}</h4>
+              <p className="text-xs text-slate-500 font-semibold">Total de Horas: <span className="text-blue-600 font-black">{formattedTotalHours}</span></p>
+            </div>
+            <div className="text-left">
+              <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Avaliação Mensal</span>
+              {evaluation ? (
+                <div>
+                  <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tight mt-0.5">
+                    ✓ Homologada
+                  </span>
+                  <p className="text-[9px] text-slate-500 font-bold mt-1 uppercase tracking-tight">Avaliado por: {evaluation.evaluatedBy}</p>
+                </div>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tight mt-0.5">
+                  ⚠️ Pendente
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Timeline de Registros */}
+          <div className="space-y-6 text-left">
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-400">Linha do Tempo ({records.length} Dias)</h3>
+            {records.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl">
+                Nenhum registro encontrado para este período.
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {records.map((r: any) => {
+                  const isJust = r.type === 'justification';
+                  const isFace = r.id && r.id.startsWith('face-');
+                  
+                  let reasonObj: any = {};
+                  if (r.reason) {
+                    try {
+                      reasonObj = JSON.parse(r.reason);
+                    } catch (e) {
+                      reasonObj = { rawText: r.reason };
+                    }
+                  }
+
+                  const entryOp = reasonObj.entryOperator || (isFace ? 'CB COBOM' : (evaluation?.evaluatedBy || '1º SGT GONCZOROSKI'));
+                  const exitOp = reasonObj.exitOperator || (isFace ? 'CB COBOM' : (evaluation?.evaluatedBy || '1º SGT GONCZOROSKI'));
+
+                  let entryLoc = reasonObj.entry;
+                  let exitLoc = reasonObj.exit;
+                  let perimeter = reasonObj.perimeter;
+
+                  if (!entryLoc && !exitLoc && r.reason) {
+                    const m = r.reason.match(/lat=([-\d.]+).*lng=([-\d.]+)/);
+                    if (m) {
+                      entryLoc = { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+                    }
+                  }
+
+                  return (
+                    <div key={r.id} className="border border-slate-100 rounded-3xl p-6 hover:shadow-lg transition-all bg-white relative flex flex-col md:flex-row justify-between gap-6">
+                      {/* Left: Info */}
+                      <div className="flex-1 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-black text-slate-900">{r.date.split('-').reverse().join('/')}</span>
+                          <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
+                            isJust ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                            isFace ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                            'bg-blue-50 text-blue-700 border border-blue-200'
+                          }`}>
+                            {isJust ? 'Falta Justificada' : isFace ? 'Check-in Facial' : 'Homologação'}
+                          </span>
+                        </div>
+
+                        {isJust ? (
+                          <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-100/50">
+                            <span className="text-[8px] font-black uppercase text-slate-400 block mb-0.5">Motivo da Justificativa</span>
+                            <p className="text-xs text-slate-700 font-bold uppercase tracking-tight">{r.reason || 'Documento Anexado'}</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Entrada */}
+                            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100/50 space-y-1">
+                              <span className="text-[8px] font-black uppercase text-slate-400 block">Entrada</span>
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-base font-black text-slate-800">{r.entryTime || '--:--'}</span>
+                                <span className="text-[9px] text-slate-500 font-bold uppercase truncate">Resp: {entryOp}</span>
+                              </div>
+                              {r.attachmentData && (
+                                <button 
+                                  onClick={() => setExpandedPhoto(r.attachmentData)}
+                                  className="mt-1 text-[8px] font-black text-blue-600 hover:underline uppercase tracking-wide flex items-center gap-0.5"
+                                >
+                                  📷 Ver Foto Entrada
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Saída */}
+                            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100/50 space-y-1">
+                              <span className="text-[8px] font-black uppercase text-slate-400 block">Saída</span>
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-base font-black text-slate-800">{r.exitTime || '--:--'}</span>
+                                <span className="text-[9px] text-slate-500 font-bold uppercase truncate">Resp: {exitOp}</span>
+                              </div>
+                              {r.exitAttachmentData && (
+                                <button 
+                                  onClick={() => setExpandedPhoto(r.exitAttachmentData)}
+                                  className="mt-1 text-[8px] font-black text-blue-600 hover:underline uppercase tracking-wide flex items-center gap-0.5"
+                                >
+                                  📷 Ver Foto Saída
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right: Map coordinates (if exist) */}
+                      {!isJust && perimeter && (entryLoc || exitLoc) && (
+                        <div className="w-full md:w-[260px] h-[150px] shrink-0 rounded-2xl overflow-hidden border border-slate-100 relative">
+                          <GeoMapViewer 
+                            perimeterCenter={perimeter.center}
+                            perimeterRadius={perimeter.radius}
+                            entryCoords={entryLoc}
+                            exitCoords={exitLoc}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-8 py-4 border-t border-slate-100 bg-slate-50 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">
+          Corpo de Bombeiros Militar de Sapucaia do Sul — Vara de Execução Criminais
+        </div>
+      </div>
+
+      {/* Expanded Photo Modal */}
+      {expandedPhoto && (
+        <div 
+          onClick={() => setExpandedPhoto(null)}
+          className="fixed inset-0 bg-slate-950/90 z-[200] flex items-center justify-center p-4 cursor-zoom-out"
+        >
+          <img 
+            src={expandedPhoto} 
+            alt="Foto de Auditoria Expandida" 
+            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+          />
+        </div>
+      )}
+    </div>
+  );
+};

@@ -70,25 +70,48 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
     >
       {showExcelLink && (
         <div 
-          className="absolute top-0 right-0 flex items-center gap-1"
+          className="flex justify-between items-center w-full pb-2 mb-4 border-b border-slate-100"
           style={{ 
-            position: 'absolute', 
-            top: '0px', 
-            right: '0px', 
-            fontSize: '8pt', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            width: '100%', 
+            paddingBottom: '8px', 
+            marginBottom: '16px',
+            borderBottom: '1px solid #e2e8f0',
+            fontSize: '9pt',
             fontFamily: 'Arial, sans-serif'
           }}
         >
-          <span style={{ color: '#64748b', fontWeight: 'bold' }}>Excel:</span>
+          {/* Canto Esquerdo: Auditoria */}
           <a 
-            href={`${window.location.origin}/?view=public-export&providerId=${provider.id}&year=${year}&month=${resolvedMonthNum}`}
+            href={`${window.location.origin}/?view=public-provider-audit&providerId=${provider.id}&year=${year}&month=${resolvedMonthNum}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold font-mono hover:bg-emerald-100 transition-colors"
-            style={{ textDecoration: 'none' }}
+            className="flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-lg hover:bg-blue-100 transition-colors font-bold"
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            📊 [XLSX]
+            🔍 Auditoria
           </a>
+
+          {/* Canto Direito: Baixar Excel com ícone do Google Planilhas / Excel */}
+          <div className="flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: '#64748b', fontWeight: 'bold' }}>Baixar Excel:</span>
+            <a 
+              href={`${window.location.origin}/?view=public-export&providerId=${provider.id}&year=${year}&month=${resolvedMonthNum}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center hover:scale-105 transition-transform"
+              title="Baixar planilha de frequência Excel"
+              style={{ display: 'inline-flex', alignItems: 'center' }}
+            >
+              <svg style={{ width: '20px', height: '20px', display: 'block' }} viewBox="0 0 24 24" fill="none">
+                <path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z" fill="#107C41"/>
+                <path d="M14 2v6h6L14 2z" fill="#33c481"/>
+                <path d="M8 13h8v2H8v-2zm0-3h8v2H8v-2zm0 6h5v2H8v-2z" fill="#fff"/>
+              </svg>
+            </a>
+          </div>
         </div>
       )}
 
@@ -206,20 +229,20 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
             let providerSig = null;
             if (isJustification) {
               providerSig = (
-                <div style={{ fontSize: '7.5pt', color: '#b45309', fontWeight: 'bold', textTransform: 'uppercase', border: '1px dashed #b45309', borderRadius: '4px', padding: '1px 4px', textAlign: 'center', lineHeight: '1.1', margin: '0 auto', width: 'fit-content', backgroundColor: '#fef3c7' }}>
+                <div style={{ fontSize: '7.5pt', color: '#b45309', fontWeight: 'bold', textTransform: 'uppercase', border: '1px dashed #b45309', borderRadius: '4px', padding: '2px 6px', textAlign: 'center', lineHeight: '1.1', margin: '0 auto', width: 'fit-content', backgroundColor: '#fef3c7' }}>
                   JUSTIFICADO
                 </div>
               );
             } else if (r.id && r.id.startsWith('face-')) {
               providerSig = (
-                <div style={{ fontSize: '6.2pt', color: '#047857', fontWeight: 'bold', textTransform: 'uppercase', border: '1px dashed #047857', borderRadius: '4px', padding: '1px 4px', textAlign: 'center', lineHeight: '1.1', margin: '0 auto', width: 'fit-content', backgroundColor: '#ecfdf5' }}>
-                  [✓] ASSINATURA BIOMÉTRICA: {providerNameShort}
+                <div style={{ fontSize: '7.5pt', color: '#047857', fontWeight: 'bold', textTransform: 'uppercase', border: '1px dashed #047857', borderRadius: '4px', padding: '2px 6px', textAlign: 'center', lineHeight: '1.1', margin: '0 auto', width: 'fit-content', backgroundColor: '#ecfdf5' }}>
+                  {providerNameShort}
                 </div>
               );
             } else {
               providerSig = (
-                <div style={{ fontSize: '6.2pt', color: '#1d4ed8', fontWeight: 'bold', textTransform: 'uppercase', border: '1px dashed #1d4ed8', borderRadius: '4px', padding: '1px 4px', textAlign: 'center', lineHeight: '1.1', margin: '0 auto', width: 'fit-content', backgroundColor: '#eff6ff' }}>
-                  [✓] PRESENÇA CONFIRMADA: {providerNameShort}
+                <div style={{ fontSize: '7.5pt', color: '#1d4ed8', fontWeight: 'bold', textTransform: 'uppercase', border: '1px dashed #1d4ed8', borderRadius: '4px', padding: '2px 6px', textAlign: 'center', lineHeight: '1.1', margin: '0 auto', width: 'fit-content', backgroundColor: '#eff6ff' }}>
+                  {providerNameShort}
                 </div>
               );
             }
@@ -262,28 +285,13 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
               const isFace = r.id && r.id.startsWith('face-');
               const badgeColor = isFace ? '#047857' : '#1d4ed8';
               const badgeBg = isFace ? '#ecfdf5' : '#eff6ff';
-              const label = isFace ? `[✓] VALIDADO POR: ${opText}` : `[✓] HOMOLOGADO POR: ${opText}`;
 
               responsibleSig = (
-                <div style={{ fontSize: '6.2pt', color: badgeColor, fontWeight: 'bold', textTransform: 'uppercase', border: `1px dashed ${badgeColor}`, borderRadius: '4px', padding: '1px 4px', textAlign: 'center', lineHeight: '1.1', margin: '0 auto', width: 'fit-content', backgroundColor: badgeBg }}>
-                  {label}
+                <div style={{ fontSize: '7.5pt', color: badgeColor, fontWeight: 'bold', textTransform: 'uppercase', border: `1px dashed ${badgeColor}`, borderRadius: '4px', padding: '2px 6px', textAlign: 'center', lineHeight: '1.1', margin: '0 auto', width: 'fit-content', backgroundColor: badgeBg }}>
+                  {opText}
                 </div>
               );
             }
-
-            const auditLink = r.id && !r.id.startsWith('temp-') ? (
-              <a 
-                href={`${window.location.origin}/?view=public-audit&id=${r.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center ml-1.5 opacity-70 hover:opacity-100 hover:scale-110 transition-all text-blue-600 print:text-blue-600 print:opacity-75 print:inline-block"
-                title="Visualizar registro de auditoria público"
-                onClick={(e) => e.stopPropagation()}
-                style={{ textDecoration: 'none', fontSize: '9.5pt' }}
-              >
-                🔎
-              </a>
-            ) : null;
 
             return (
               <tr 
@@ -303,23 +311,32 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
                 </td>
                 <td style={{ border: '1px solid black', verticalAlign: 'middle', textAlign: 'center', padding: '4px' }}>
                   {isJustification && r.reason ? (
-                    <div className="flex items-center justify-center gap-1.5">
+                    <div className="flex items-center justify-center">
                       <div style={{ fontSize: '8pt', color: '#334155', fontWeight: 'bold', padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.reason}>
                         {r.reason}
                       </div>
-                      {auditLink}
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center gap-1.5">
-                      {providerSig}
-                      {auditLink}
+                    <div className="flex items-center justify-center">
+                      {r.id && !r.id.startsWith('temp-') ? (
+                        <a 
+                          href={`${window.location.origin}/?view=public-audit&id=${r.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ textDecoration: 'none', color: 'inherit' }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {providerSig}
+                        </a>
+                      ) : (
+                        providerSig
+                      )}
                     </div>
                   )}
                 </td>
                 <td style={{ border: '1px solid black', verticalAlign: 'middle', textAlign: 'center', padding: '4px' }}>
-                  <div className="flex items-center justify-center gap-1.5">
+                  <div className="flex items-center justify-center">
                     {responsibleSig}
-                    {auditLink}
                   </div>
                 </td>
               </tr>
@@ -356,34 +373,36 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
       </table>
 
       {/* Questionário Rodapé */}
-      <div className="space-y-1.5 frequency-sheet-footer" style={{ fontSize: '11pt', color: '#000' }}>
-        <div className="flex flex-col">
-          <span>Faltas no período?</span>
-          <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.hadAbsences, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.hadAbsences, false)}&nbsp; )</span>
+      <div className="frequency-sheet-footer-wrapper">
+        <div className="space-y-1.5 frequency-sheet-footer" style={{ fontSize: '11pt', color: '#000' }}>
+          <div className="flex flex-col">
+            <span>Faltas no período?</span>
+            <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.hadAbsences, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.hadAbsences, false)}&nbsp; )</span>
+          </div>
+
+          <div className="flex flex-col">
+            <span>Apresentou bom comportamento?</span>
+            <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.goodBehavior, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.goodBehavior, false)}&nbsp; )</span>
+          </div>
+
+          <div className="flex flex-col">
+            <span>Cometeu atos indisciplinares?</span>
+            <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.hadAbsences ? false : evaluation?.disciplinaryIssues, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.hadAbsences ? false : evaluation?.disciplinaryIssues, false)}&nbsp; )</span>
+          </div>
+
+          <div className="flex flex-col">
+            <span>A qualidade do serviço prestado foi satisfatória?</span>
+            <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.satisfactoryService, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.satisfactoryService, false)}&nbsp; )</span>
+          </div>
         </div>
 
-        <div className="flex flex-col">
-          <span>Apresentou bom comportamento?</span>
-          <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.goodBehavior, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.goodBehavior, false)}&nbsp; )</span>
-        </div>
-
-        <div className="flex flex-col">
-          <span>Cometeu atos indisciplinares?</span>
-          <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.disciplinaryIssues, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.disciplinaryIssues, false)}&nbsp; )</span>
-        </div>
-
-        <div className="flex flex-col">
-          <span>A qualidade do serviço prestado foi satisfatória?</span>
-          <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.satisfactoryService, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.satisfactoryService, false)}&nbsp; )</span>
-        </div>
+        {evaluation && (
+          <div className="mt-6 pt-2 border-t border-slate-100 flex items-center justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wide frequency-sheet-evaluator-info">
+            <span>Avaliado por: {evaluation.evaluatedBy}</span>
+            <span>Em: {new Date(evaluation.createdAt).toLocaleDateString('pt-BR')}</span>
+          </div>
+        )}
       </div>
-
-      {evaluation && (
-        <div className="mt-6 pt-2 border-t border-slate-100 flex items-center justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wide">
-          <span>Avaliado por: {evaluation.evaluatedBy}</span>
-          <span>Em: {new Date(evaluation.createdAt).toLocaleDateString('pt-BR')}</span>
-        </div>
-      )}
     </div>
   );
 };

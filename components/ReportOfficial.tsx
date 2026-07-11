@@ -325,12 +325,63 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
           table.frequency-table {
             margin-bottom: 6px !important;
           }
+          
+          /* Otimização do questionário de rodapé para 2 colunas e assinatura na lateral */
+          .frequency-sheet-footer-wrapper {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: flex-end !important;
+            gap: 20px !important;
+            margin-top: 10px !important;
+            border-top: 1px solid #e2e8f0 !important;
+            padding-top: 6px !important;
+          }
           .frequency-sheet-footer {
-            margin-top: 4px !important;
-            font-size: 10pt !important;
+            flex: 1 !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 4px 16px !important;
+            margin-top: 0 !important;
+            font-size: 8.5pt !important;
+            line-height: 1.2 !important;
           }
           .frequency-sheet-footer > div {
-            margin-bottom: 2px !important;
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            border-bottom: 1px dashed #e2e8f0 !important;
+            padding-bottom: 2px !important;
+            font-size: 8pt !important;
+          }
+          .frequency-sheet-footer > div:last-child,
+          .frequency-sheet-footer > div:nth-last-child(2) {
+            border-bottom: none !important;
+          }
+          .frequency-sheet-evaluator-info {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-end !important;
+            text-align: right !important;
+            border-left: 1px solid #cbd5e1 !important;
+            border-top: none !important;
+            padding-left: 16px !important;
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            min-width: 220px !important;
+            font-size: 8pt !important;
+            line-height: 1.3 !important;
+          }
+          .frequency-sheet-evaluator-info > span:first-child {
+            font-weight: bold !important;
+            color: #0f172a !important;
+            text-transform: uppercase !important;
+          }
+          .frequency-sheet-evaluator-info > span:last-child {
+            color: #64748b !important;
+            font-family: monospace !important;
+            margin-top: 2px !important;
           }
         }
         @media screen {

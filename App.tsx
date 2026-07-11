@@ -16,7 +16,7 @@ import HelpCenter from './components/HelpCenter';
 import ServiceSwapManager from './components/ServiceSwapManager';
 import { Users, LayoutDashboard, FileText, Loader2, ShieldCheck, ShieldAlert, Cpu, Database, Network, Sparkles, LogOut, UserCircle, CheckCircle2, X, Smartphone, Fuel, ScanFace, Settings as SettingsIcon, HelpCircle, RefreshCw, Camera } from 'lucide-react';
 import { getProviders, getAttendance, createProvider, updateProvider, saveAttendance, deleteAttendance, saveAuditLog, supabase, getFuelSupplies, getVehicles, getStationNicknames, getPublicAttendanceRecord, getPublicAttendanceForMonth } from './services/supabaseService';
-import { PublicAuditView, PublicExportView } from './components/PublicAuditView';
+import { PublicAuditView, PublicExportView, PublicProviderAuditView } from './components/PublicAuditView';
 
 const Toast: React.FC<{ message: string; type: 'success' | 'error'; onClose: () => void }> = ({ message, type, onClose }) => {
   useEffect(() => {
@@ -39,7 +39,7 @@ const App: React.FC = () => {
   const [publicView, setPublicView] = useState<{ view: string; id?: string; providerId?: string; year?: string; month?: string } | null>(() => {
     const params = new URLSearchParams(window.location.search);
     const viewParam = params.get('view');
-    if (viewParam === 'public-audit' || viewParam === 'public-export') {
+    if (viewParam === 'public-audit' || viewParam === 'public-export' || viewParam === 'public-provider-audit') {
       return {
         view: viewParam,
         id: params.get('id') || undefined,
@@ -507,6 +507,16 @@ const App: React.FC = () => {
     if (publicView.view === 'public-export' && publicView.providerId && publicView.year && publicView.month) {
       return (
         <PublicExportView
+          providerId={publicView.providerId}
+          year={publicView.year}
+          month={publicView.month}
+          onGoHome={handleGoHome}
+        />
+      );
+    }
+    if (publicView.view === 'public-provider-audit' && publicView.providerId && publicView.year && publicView.month) {
+      return (
+        <PublicProviderAuditView
           providerId={publicView.providerId}
           year={publicView.year}
           month={publicView.month}

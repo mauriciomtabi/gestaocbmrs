@@ -1370,9 +1370,20 @@ export const getPublicAttendanceForMonth = async (providerId: string, year: stri
     return parts[0] === year && parts[1] === month;
   });
 
+  const { data: evaluations } = await supabase
+    .from('monthly_evaluations')
+    .select('*')
+    .eq('provider_id', providerId)
+    .eq('year', parseInt(year))
+    .eq('month', parseInt(month))
+    .limit(1);
+
+  const evaluation = evaluations && evaluations.length > 0 ? evaluations[0] : null;
+
   return {
     provider: mapProviderFromDB(provider),
-    records: filteredRecords
+    records: filteredRecords,
+    evaluation: evaluation ? mapEvaluationFromDB(evaluation) : null
   };
 };
 
