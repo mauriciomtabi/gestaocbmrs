@@ -373,8 +373,11 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
       </table>
 
       {/* Questionário Rodapé */}
-      <div className="frequency-sheet-footer-wrapper">
-        <div className="space-y-1.5 frequency-sheet-footer" style={{ fontSize: '11pt', color: '#000' }}>
+      <div 
+        className="frequency-sheet-footer-wrapper flex justify-between items-end mt-4 pt-3 border-t border-slate-200"
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #e2e8f0' }}
+      >
+        <div className="space-y-1.5 frequency-sheet-footer" style={{ fontSize: '10.5pt', color: '#000', flex: 1 }}>
           <div className="flex flex-col">
             <span>Faltas no período?</span>
             <span className="font-mono">Sim ( &nbsp;{renderOption(evaluation?.hadAbsences, true)}&nbsp; ) &nbsp;&nbsp; Não ( &nbsp;{renderOption(evaluation?.hadAbsences, false)}&nbsp; )</span>
@@ -397,9 +400,12 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
         </div>
 
         {evaluation && (
-          <div className="mt-6 pt-2 border-t border-slate-100 flex items-center justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wide frequency-sheet-evaluator-info">
+          <div 
+            className="flex flex-col items-end text-right text-[10px] text-slate-500 font-bold uppercase tracking-wide frequency-sheet-evaluator-info"
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right', fontSize: '9pt', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', minWidth: '240px' }}
+          >
             <span>Avaliado por: {evaluation.evaluatedBy}</span>
-            <span>Em: {new Date(evaluation.createdAt).toLocaleDateString('pt-BR')}</span>
+            <span style={{ fontSize: '8pt', color: '#94a3b8', marginTop: '2px' }}>Em: {new Date(evaluation.createdAt).toLocaleDateString('pt-BR')}</span>
           </div>
         )}
       </div>
