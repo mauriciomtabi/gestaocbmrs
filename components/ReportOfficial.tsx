@@ -316,7 +316,8 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
           table.consolidated-table th, table.consolidated-table td { border: 1px solid black; padding: 4px 12px; }
           table.frequency-table { border-collapse: collapse; width: 100%; }
           table.frequency-table th, table.frequency-table td { border: 1px solid black; padding: 4px 6px; }
-          thead           /* Sobrescrever altura das linhas e espaçamento no lote do Ofício para evitar quebra de página */
+          thead tr { background-color: #f8fafc !important; }
+          /* Sobrescrever altura das linhas e espaçamento no lote do Ofício para evitar quebra de página */
           table.frequency-table tr, 
           table.frequency-table tr[style] {
             height: 30px !important;
