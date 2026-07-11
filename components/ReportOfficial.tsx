@@ -282,19 +282,35 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
           }
           #temp-print-container {
             display: block !important;
-            width: 100% !important;
+            width: 210mm !important;
             margin: 0 !important;
             padding: 0 !important;
           }
           /* Estilos específicos de página */
           @page { 
             size: A4 portrait; 
-            margin: 0.8cm 1.2cm; 
+            margin: 0 !important; 
           }
           * { 
             box-sizing: border-box; 
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important; 
+          }
+          .print-page {
+            width: 210mm !important;
+            min-width: 210mm !important;
+            max-width: 210mm !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
+            max-height: 297mm !important;
+            padding: 1.5cm 2.0cm !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            page-break-after: always !important;
+            page-break-inside: avoid !important;
+            overflow: hidden !important;
+            background: white !important;
+            color: #000000 !important;
           }
           table.consolidated-table { border-collapse: collapse; width: 100%; }
           table.consolidated-table th, table.consolidated-table td { border: 1px solid black; padding: 4px 12px; }
@@ -336,7 +352,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
           }
         }
       </style>
-      <div id="official-document-content" style="background: white !important; font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; color: #000 !important; width: 100%;">
+      <div id="official-document-content" style="background: white !important; font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; color: #000 !important; width: 210mm; margin: 0; padding: 0;">
         ${contentClone.innerHTML}
       </div>
     `;
@@ -378,6 +394,24 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 md:pb-0 print:bg-white print:p-0 print:border-none print:shadow-none">
+      <style>{`
+        /* Estilos de tela para emular páginas A4 */
+        @media screen {
+          .print-page {
+            background: white !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+            border-radius: 1.5rem !important;
+            padding: 1.5cm 2.0cm !important;
+            margin: 0 auto 2rem auto !important;
+            max-width: 21cm !important;
+            min-width: 21cm !important;
+            min-height: 29.7cm !important;
+            box-sizing: border-box !important;
+            color: #000000 !important;
+            position: relative;
+          }
+        }
+      `}</style>
       
       {/* Barra de Filtros (no-print) */}
       <div className="no-print space-y-4">
@@ -465,173 +499,176 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
 
       {/* Papel A4 Oficial - Container para o PDF */}
       <div className="w-full pb-12 md:pb-0 overflow-visible print:border-none print:shadow-none print:m-0 print:p-0">
-        <div id="official-document-content" className="min-w-[21cm] max-w-[21cm] mx-auto p-[1.5cm] md:p-[2cm] shadow-2xl md:shadow-lg animate-in zoom-in-95 duration-700 print:shadow-none print:m-0 print:p-[1.5cm] print:max-w-none print:w-full" style={{ backgroundColor: '#ffffff', color: '#000000', fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: '1.5' }}>
+        <div id="official-document-content" className="mx-auto print:shadow-none print:m-0 print:p-0" style={{ color: '#000000', fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: '1.5' }}>
           
-          {/* Brasão e Cabeçalho */}
-        <div className="text-center mb-10 flex flex-col items-center outline-none" style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2.5rem' }} contentEditable suppressContentEditableWarning>
-          <img 
-            src="/brasao.png" 
-            style={{ 
-              width: '100px', 
-              height: 'auto', 
-              display: 'block',
-              margin: '0 auto 12px auto'
-            }}
-            alt="Brasão do Estado" 
-          />
-          <div className="font-bold uppercase leading-tight" style={{ fontSize: '10pt', fontWeight: 'bold' }}>
-            <p>ESTADO DO RIO GRANDE DO SUL</p>
-            <p>SECRETARIA DA SEGURANÇA PÚBLICA</p>
-            <p>CORPO DE BOMBEIROS MILITAR</p>
-            <p>8º BATALHÃO DE BOMBEIRO MILITAR</p>
-            <p>1ª COMPANHIA DE BOMBEIRO MILITAR</p>
-            <p>3º PELBM SAPUCAIA DO SUL</p>
-          </div>
-          <div className="uppercase mt-2" style={{ fontSize: '9pt', textTransform: 'uppercase', marginTop: '8px' }}>
-            HENRIQUE DIAS, Nº 58, BAIRRO SANTA CATARINA – SAPUCAIA DO SUL – CEP 93.214-130
-          </div>
-          <div style={{ fontSize: '9pt' }}>
-            Fone: (51)3474-0211 – E-mail: sapucaiadosul@cbm.rs.gov.br
-          </div>
-        </div>
-
-        {/* Número do Ofício */}
-        <div className="mb-4 outline-none" style={{ marginBottom: '1rem' }} contentEditable suppressContentEditableWarning>
-          Ofício nº 088/3ºPelBM/1ªCiaBM/8ºBBM/2025.
-        </div>
-
-        {/* Data - Alinhada à direita */}
-        <div className="text-right mb-16 outline-none" style={{ textAlign: 'right', marginBottom: '4rem' }} contentEditable suppressContentEditableWarning>
-          Sapucaia do Sul, {today}.
-        </div>
-
-        {/* Destinatário */}
-        <div className="mb-6 outline-none" style={{ marginBottom: '1.5rem' }} contentEditable suppressContentEditableWarning>
-          <p>Ao Fórum da Comarca de Sapucaia do Sul</p>
-          <p>Vara de Execuções Criminais</p>
-          <p>Av. João Pereira de Vargas, nº 431 – Centro</p>
-          <p>93220-090 – Sapucaia do Sul – RS</p>
-        </div>
-
-        {/* Assunto */}
-        <div className="mb-10 outline-none" style={{ marginBottom: '2.5rem' }} contentEditable suppressContentEditableWarning>
-          Assunto: Prestador de Serviço Comunitário
-        </div>
-
-        {/* Texto do Ofício */}
-        <div className="text-justify space-y-6 outline-none" style={{ textAlign: 'justify' }} contentEditable suppressContentEditableWarning>
-          <div className="flex gap-4" style={{ display: 'flex', gap: '16px', marginBottom: '1.5rem' }}>
-            <span className="shrink-0" style={{ flexShrink: 0 }}>1.</span>
-            <p style={{ margin: 0 }}>
-              Ao cumprimentá-los cordialmente, encaminho, em anexo, a folha de frequência referente 
-              à prestação de serviço comunitário dos prestadores relacionados, contendo, ainda, a data do último 
-              comparecimento destes a esta instituição, no mês de {getMonthLabel()}.
-            </p>
-          </div>
-          <div className="flex gap-4" style={{ display: 'flex', gap: '16px' }}>
-            <span className="shrink-0" style={{ flexShrink: 0 }}>2.</span>
-            <p style={{ margin: 0 }}>
-              Cordiais saudações, renovo votos de estima e distinta consideração.
-            </p>
-          </div>
-        </div>
-
-        {/* Assinatura */}
-        <div className="mt-32 text-center flex flex-col items-center outline-none" style={{ marginTop: '8rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }} contentEditable suppressContentEditableWarning>
-          <div className="font-bold uppercase" style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>
-            RONALDO GONCZOROSKI DE OLIVEIRA – 1º Sgt QPBM
-          </div>
-          <div style={{ fontSize: '11pt' }}>
-            Comandante do Corpo de Bombeiros Militar de Sapucaia do Sul
-          </div>
-        </div>
-
-        {/* Anexo - Lista de Frequência */}
-        <div className="mt-20 pt-10" style={{ pageBreakBefore: 'always' }}>
-          <h3 className="text-center font-bold text-lg mb-8 uppercase" style={{ color: '#000000' }}>Frequência Prestadores Serviço Comunitário</h3>
-          
-          <table className="w-full border-collapse text-[10pt] consolidated-table" style={{ border: '1px solid black', color: '#000000' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f8fafc' }}>
-                <th className="px-4 py-2 text-left font-bold uppercase" style={{ border: '1px solid black' }}>PRESTADORES DE SERVIÇO</th>
-                <th className="px-4 py-2 text-center w-44 font-bold uppercase leading-tight" style={{ border: '1px solid black' }}>ÚLTIMO<br />COMPARECIMENTO</th>
-                <th className="px-4 py-2 text-center w-48 font-bold uppercase leading-tight" style={{ border: '1px solid black' }}>
-                  <span className="whitespace-nowrap">TOTAL DE HORAS</span><br />
-                  <span className="whitespace-nowrap">CUMPRIDAS</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {consolidatedData.map((row) => (
-                <tr key={row.providerId}>
-                  <td className="px-4 py-2 uppercase font-medium" style={{ border: '1px solid black' }}>{row.providerName}</td>
-                  <td className="px-4 py-2 text-center" style={{ border: '1px solid black' }}>{formatDateBR(row.lastVisit)}</td>
-                  <td className="px-4 py-2 text-center font-bold" style={{ border: '1px solid black' }}>{formatMinutesToHHMM(row.totalWorkedMinutes)}</td>
-                </tr>
-              ))}
-              {consolidatedData.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center italic" style={{ border: '1px solid black', color: '#000000' }}>
-                    Nenhum registro encontrado para o período selecionado.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Folhas de frequência individuais dos prestadores (impressas em lote no final do Ofício) */}
-        {selectedYear !== 'Todos' && selectedMonth !== 'Todos' && filteredProviders.map((p) => {
-          const pRecords = attendance.filter(a => {
-            if (a.providerId !== p.id) return false;
-            const parts = a.date.split('-');
-            return parts[0] === selectedYear && parts[1] === selectedMonth;
-          }).sort((a, b) => a.date.localeCompare(b.date));
-
-          const pEvaluation = evaluations.find(ev => 
-            ev.providerId === p.id && 
-            ev.year === parseInt(selectedYear) && 
-            ev.month === parseInt(selectedMonth)
-          ) || null;
-
-          const hasEvaluation = pEvaluation !== null;
-
-          return (
-            <div 
-              key={p.id} 
-              style={{ pageBreakBefore: 'always' }} 
-              className={`pt-6 print:pt-0 ${!hasEvaluation ? 'border-2 border-dashed border-red-300 bg-red-50/10 p-6 rounded-[2.5rem] mb-8 shadow-xl shadow-red-50 print:border-0 print:p-0 print:m-0 print:shadow-none print:bg-transparent print:mb-0' : ''}`}
-            >
-              <div className={`no-print mb-4 p-3 rounded-2xl flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${!hasEvaluation ? 'bg-red-50 border border-red-200 text-red-800 animate-pulse' : 'bg-blue-50 border border-blue-100 text-blue-800'}`}>
-                <FileText size={16} />
-                <span>
-                  {!hasEvaluation 
-                    ? `⚠️ Avaliação Mensal Pendente — Folha de Frequência: ${p.name}` 
-                    : `Anexo: Folha de Frequência — ${p.name}`
-                  }
-                </span>
-                {!hasEvaluation && (
-                  <button
-                    onClick={() => setPendingEvaluation({ provider: p, year: parseInt(selectedYear), month: parseInt(selectedMonth) })}
-                    className="ml-auto bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-md shadow-red-200 hover:shadow-lg flex items-center gap-1 active:scale-[0.98]"
-                  >
-                    Preencher Avaliação
-                  </button>
-                )}
-              </div>
-              <AttendanceSheetPrint 
-                provider={p}
-                records={pRecords}
-                month={selectedMonthName}
-                year={selectedYear}
-                evaluation={pEvaluation}
-                numericMonth={selectedMonth}
-                onShowRecordDetails={(rec) => setAuditState({ record: rec, provider: p, evaluation: pEvaluation })}
-                showExcelLink={true}
+          {/* Pagina 1: Texto do Ofício */}
+          <div className="print-page">
+            {/* Brasão e Cabeçalho */}
+            <div className="text-center mb-10 flex flex-col items-center outline-none" style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2.5rem' }} contentEditable suppressContentEditableWarning>
+              <img 
+                src="/brasao.png" 
+                style={{ 
+                  width: '100px', 
+                  height: 'auto', 
+                  display: 'block',
+                  margin: '0 auto 12px auto'
+                }}
+                alt="Brasão do Estado" 
               />
+              <div className="font-bold uppercase leading-tight" style={{ fontSize: '10pt', fontWeight: 'bold' }}>
+                <p>ESTADO DO RIO GRANDE DO SUL</p>
+                <p>SECRETARIA DA SEGURANÇA PÚBLICA</p>
+                <p>CORPO DE BOMBEIROS MILITAR</p>
+                <p>8º BATALHÃO DE BOMBEIRO MILITAR</p>
+                <p>1ª COMPANHIA DE BOMBEIRO MILITAR</p>
+                <p>3º PELBM SAPUCAIA DO SUL</p>
+              </div>
+              <div className="uppercase mt-2" style={{ fontSize: '9pt', textTransform: 'uppercase', marginTop: '8px' }}>
+                HENRIQUE DIAS, Nº 58, BAIRRO SANTA CATARINA – SAPUCAIA DO SUL – CEP 93.214-130
+              </div>
+              <div style={{ fontSize: '9pt' }}>
+                Fone: (51)3474-0211 – E-mail: sapucaiadosul@cbm.rs.gov.br
+              </div>
             </div>
-          );
-        })}
+
+            {/* Número do Ofício */}
+            <div className="mb-4 outline-none" style={{ marginBottom: '1rem' }} contentEditable suppressContentEditableWarning>
+              Ofício nº 088/3ºPelBM/1ªCiaBM/8ºBBM/2025.
+            </div>
+
+            {/* Data - Alinhada à direita */}
+            <div className="text-right mb-16 outline-none" style={{ textAlign: 'right', marginBottom: '4rem' }} contentEditable suppressContentEditableWarning>
+              Sapucaia do Sul, {today}.
+            </div>
+
+            {/* Destinatário */}
+            <div className="mb-6 outline-none" style={{ marginBottom: '1.5rem' }} contentEditable suppressContentEditableWarning>
+              <p>Ao Fórum da Comarca de Sapucaia do Sul</p>
+              <p>Vara de Execuções Criminais</p>
+              <p>Av. João Pereira de Vargas, nº 431 – Centro</p>
+              <p>93220-090 – Sapucaia do Sul – RS</p>
+            </div>
+
+            {/* Assunto */}
+            <div className="mb-10 outline-none" style={{ marginBottom: '2.5rem' }} contentEditable suppressContentEditableWarning>
+              Assunto: Prestador de Serviço Comunitário
+            </div>
+
+            {/* Texto do Ofício */}
+            <div className="text-justify space-y-6 outline-none" style={{ textAlign: 'justify' }} contentEditable suppressContentEditableWarning>
+              <div className="flex gap-4" style={{ display: 'flex', gap: '16px', marginBottom: '1.5rem' }}>
+                <span className="shrink-0" style={{ flexShrink: 0 }}>1.</span>
+                <p style={{ margin: 0 }}>
+                  Ao cumprimentá-los cordialmente, encaminho, em anexo, a folha de frequência referente 
+                  à prestação de serviço comunitário dos prestadores relacionados, contendo, ainda, a data do último 
+                  comparecimento destes a esta instituição, no mês de {getMonthLabel()}.
+                </p>
+              </div>
+              <div className="flex gap-4" style={{ display: 'flex', gap: '16px' }}>
+                <span className="shrink-0" style={{ flexShrink: 0 }}>2.</span>
+                <p style={{ margin: 0 }}>
+                  Cordiais saudações, renovo votos de estima e distinta consideração.
+                </p>
+              </div>
+            </div>
+
+            {/* Assinatura */}
+            <div className="mt-32 text-center flex flex-col items-center outline-none" style={{ marginTop: '8rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }} contentEditable suppressContentEditableWarning>
+              <div className="font-bold uppercase" style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>
+                RONALDO GONCZOROSKI DE OLIVEIRA – 1º Sgt QPBM
+              </div>
+              <div style={{ fontSize: '11pt' }}>
+                Comandante do Corpo de Bombeiros Militar de Sapucaia do Sul
+              </div>
+            </div>
+          </div>
+
+          {/* Pagina 2: Tabela Consolidada (Anexo) */}
+          <div className="print-page" style={{ pageBreakBefore: 'always' }}>
+            <h3 className="text-center font-bold text-lg mb-8 uppercase" style={{ color: '#000000' }}>Frequência Prestadores Serviço Comunitário</h3>
+            
+            <table className="w-full border-collapse text-[10pt] consolidated-table" style={{ border: '1px solid black', color: '#000000' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc' }}>
+                  <th className="px-4 py-2 text-left font-bold uppercase" style={{ border: '1px solid black' }}>PRESTADORES DE SERVIÇO</th>
+                  <th className="px-4 py-2 text-center w-44 font-bold uppercase leading-tight" style={{ border: '1px solid black' }}>ÚLTIMO<br />COMPARECIMENTO</th>
+                  <th className="px-4 py-2 text-center w-48 font-bold uppercase leading-tight" style={{ border: '1px solid black' }}>
+                    <span className="whitespace-nowrap">TOTAL DE HORAS</span><br />
+                    <span className="whitespace-nowrap">CUMPRIDAS</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {consolidatedData.map((row) => (
+                  <tr key={row.providerId}>
+                    <td className="px-4 py-2 uppercase font-medium" style={{ border: '1px solid black' }}>{row.providerName}</td>
+                    <td className="px-4 py-2 text-center" style={{ border: '1px solid black' }}>{formatDateBR(row.lastVisit)}</td>
+                    <td className="px-4 py-2 text-center font-bold" style={{ border: '1px solid black' }}>{formatMinutesToHHMM(row.totalWorkedMinutes)}</td>
+                  </tr>
+                ))}
+                {consolidatedData.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="px-4 py-8 text-center italic" style={{ border: '1px solid black', color: '#000000' }}>
+                      Nenhum registro encontrado para o período selecionado.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Paginas 3+: Folhas de frequência individuais dos prestadores */}
+          {selectedYear !== 'Todos' && selectedMonth !== 'Todos' && filteredProviders.map((p) => {
+            const pRecords = attendance.filter(a => {
+              if (a.providerId !== p.id) return false;
+              const parts = a.date.split('-');
+              return parts[0] === selectedYear && parts[1] === selectedMonth;
+            }).sort((a, b) => a.date.localeCompare(b.date));
+
+            const pEvaluation = evaluations.find(ev => 
+              ev.providerId === p.id && 
+              ev.year === parseInt(selectedYear) && 
+              ev.month === parseInt(selectedMonth)
+            ) || null;
+
+            const hasEvaluation = pEvaluation !== null;
+
+            return (
+              <div 
+                key={p.id} 
+                style={{ pageBreakBefore: 'always' }} 
+                className={`print-page ${!hasEvaluation ? 'border-2 border-dashed border-red-300 bg-red-50/10 p-6 rounded-[2.5rem] mb-8 shadow-xl shadow-red-50 print:border-0 print:p-0 print:m-0 print:shadow-none print:bg-transparent print:mb-0' : ''}`}
+              >
+                <div className={`no-print mb-4 p-3 rounded-2xl flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${!hasEvaluation ? 'bg-red-50 border border-red-200 text-red-800 animate-pulse' : 'bg-blue-50 border border-blue-100 text-blue-800'}`}>
+                  <FileText size={16} />
+                  <span>
+                    {!hasEvaluation 
+                      ? `⚠️ Avaliação Mensal Pendente — Folha de Frequência: ${p.name}` 
+                      : `Anexo: Folha de Frequência — ${p.name}`
+                    }
+                  </span>
+                  {!hasEvaluation && (
+                    <button
+                      onClick={() => setPendingEvaluation({ provider: p, year: parseInt(selectedYear), month: parseInt(selectedMonth) })}
+                      className="ml-auto bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-md shadow-red-200 hover:shadow-lg flex items-center gap-1 active:scale-[0.98]"
+                    >
+                      Preencher Avaliação
+                    </button>
+                  )}
+                </div>
+                <AttendanceSheetPrint 
+                  provider={p}
+                  records={pRecords}
+                  month={selectedMonthName}
+                  year={selectedYear}
+                  evaluation={pEvaluation}
+                  numericMonth={selectedMonth}
+                  onShowRecordDetails={(rec) => setAuditState({ record: rec, provider: p, evaluation: pEvaluation })}
+                  showExcelLink={true}
+                />
+              </div>
+            );
+          })}
         {auditState && (
           <AttendanceRecordDetailsModal 
             record={auditState.record}
