@@ -450,42 +450,13 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
     fetchData();
   }, [providerId, year, month]);
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center text-white">
-        <Loader2 className="animate-spin text-blue-500 mb-4" size={48} />
-        <p className="text-sm font-extrabold uppercase tracking-widest text-slate-400">Carregando histórico de auditoria...</p>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
-        <AlertCircle className="text-red-500 mb-4" size={48} />
-        <h3 className="text-xl font-black uppercase mb-2">Erro de Acesso</h3>
-        <p className="text-slate-400 text-sm max-w-md mb-6">{error || 'Não foi possível carregar os dados.'}</p>
-        <button onClick={onGoHome} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl transition-all active:scale-95 text-xs uppercase tracking-wider">
-          Ir para Página Inicial
-        </button>
-      </div>
-    );
-  }
-
-  const { provider, records, allRecords, evaluation } = data;
-
   const monthsBr = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
-  const monthName = monthsBr[parseInt(month) - 1] || month;
-
-  // Calculo de horas
-  const totalMins = records.reduce((sum: number, r: any) => sum + (r.durationMinutes || 0), 0);
-  const formattedTotalHours = `${Math.floor(totalMins / 60)}h ${String(totalMins % 60).padStart(2, '0')}m`;
 
   const chartData = React.useMemo(() => {
-    if (!data || !allRecords) return [];
+    if (!data || !data.allRecords) return [];
     const months = [];
     const targetYear = parseInt(year);
     const targetMonth = parseInt(month);
@@ -512,7 +483,7 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
     }
 
     return months.map(m => {
-      const monthMins = (allRecords || []).reduce((sum: number, r: any) => {
+      const monthMins = (data.allRecords || []).reduce((sum: number, r: any) => {
         const parts = r.date.split('-');
         const isMatch = parseInt(parts[0]) === m.year && parseInt(parts[1]) === m.month;
         return isMatch ? sum + (r.durationMinutes || 0) : sum;
@@ -523,7 +494,36 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
         hours: parseFloat((monthMins / 60).toFixed(1))
       };
     });
-  }, [allRecords, year, month]);
+  }, [data, year, month]);
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center text-white">
+        <Loader2 className="animate-spin text-blue-500 mb-4" size={48} />
+        <p className="text-sm font-extrabold uppercase tracking-widest text-slate-400">Carregando histórico de auditoria...</p>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
+        <AlertCircle className="text-red-500 mb-4" size={48} />
+        <h3 className="text-xl font-black uppercase mb-2">Erro de Acesso</h3>
+        <p className="text-slate-400 text-sm max-w-md mb-6">{error || 'Não foi possível carregar os dados.'}</p>
+        <button onClick={onGoHome} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl transition-all active:scale-95 text-xs uppercase tracking-wider">
+          Ir para Página Inicial
+        </button>
+      </div>
+    );
+  }
+
+  const { provider, records, evaluation } = data;
+  const monthName = monthsBr[parseInt(month) - 1] || month;
+
+  // Calculo de horas
+  const totalMins = records.reduce((sum: number, r: any) => sum + (r.durationMinutes || 0), 0);
+  const formattedTotalHours = `${Math.floor(totalMins / 60)}h ${String(totalMins % 60).padStart(2, '0')}m`;
 
   return (
     <div className="min-h-screen bg-slate-900 py-10 px-4 md:px-8 text-slate-800 flex flex-col justify-between font-sans">
