@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getPublicAttendanceRecord, getPublicAttendanceForMonth } from '../services/supabaseService';
-import { Clock, MapPin, ScanFace, FileText, AlertCircle, Loader2, Download, ExternalLink, Calendar, CheckCircle2 } from 'lucide-react';
+import { Clock, MapPin, ScanFace, FileText, AlertCircle, Loader2, Download, ExternalLink, Calendar, CheckCircle2, ArrowLeft } from 'lucide-react';
 import GeoMapViewer from './GeoMapViewer';
 import * as XLSX from 'xlsx';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
@@ -433,11 +433,13 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any | null>(null);
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
+  const [drillDownMonth, setDrillDownMonth] = useState<{ year: number; month: number; label: string } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setDrillDownMonth(null);
         const res = await getPublicAttendanceForMonth(providerId, year, month);
         setData(res);
       } catch (err: any) {
@@ -457,22 +459,29 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
 
   const chartData = React.useMemo(() => {
     if (!data || !data.allRecords) return [];
+    const dates = (data.allRecords || []).map((a: any) => a.date).filter(Boolean);
+    if (dates.length === 0) return [];
+    
+    // Sort dates to find the earliest
+    const sortedDates = [...dates].sort();
+    const firstDateParts = sortedDates[0].split('-');
+    const firstYear = parseInt(firstDateParts[0]);
+    const firstMonth = parseInt(firstDateParts[1]);
+    
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
     const months = [];
-    const targetYear = parseInt(year);
-    const targetMonth = parseInt(month);
+    let y = firstYear;
+    let m = firstMonth;
 
     const monthsBrShort = [
       'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
       'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
     ];
 
-    for (let i = 5; i >= 0; i--) {
-      let m = targetMonth - i;
-      let y = targetYear;
-      if (m <= 0) {
-        m += 12;
-        y -= 1;
-      }
+    while (y < currentYear || (y === currentYear && m <= currentMonth)) {
       months.push({
         year: y,
         month: m,
@@ -480,6 +489,11 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
         label: `${monthsBrShort[m - 1]} / ${String(y).slice(-2)}`,
         fullName: `${monthsBr[m - 1]} de ${y}`
       });
+      m++;
+      if (m > 12) {
+        m = 1;
+        y++;
+      }
     }
 
     return months.map(m => {
@@ -492,6 +506,8 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
       const min = monthMins % 60;
       const hoursLabel = `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
       return {
+        year: m.year,
+        month: m.month,
         label: m.label,
         fullName: m.fullName,
         hours: parseFloat((monthMins / 60).toFixed(1)),
@@ -499,6 +515,50 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
       };
     });
   }, [data, year, month]);
+
+  const drillDownData = React.useMemo(() => {
+    if (!drillDownMonth || !data || !data.allRecords) return [];
+    
+    const { year, month } = drillDownMonth;
+    
+    const weeks = [
+      { label: 'Semana 1 (01-07)', startDay: 1, endDay: 7, minutes: 0 },
+      { label: 'Semana 2 (08-14)', startDay: 8, endDay: 14, minutes: 0 },
+      { label: 'Semana 3 (15-21)', startDay: 15, endDay: 21, minutes: 0 },
+      { label: 'Semana 4 (22-28)', startDay: 22, endDay: 28, minutes: 0 },
+      { label: 'Semana 5 (29+)', startDay: 29, endDay: 31, minutes: 0 }
+    ];
+
+    const monthRecords = (data.allRecords || []).filter((r: any) => {
+      if (!r.date) return false;
+      const parts = r.date.split('-');
+      return parseInt(parts[0]) === year && parseInt(parts[1]) === month;
+    });
+
+    monthRecords.forEach((r: any) => {
+      const parts = r.date.split('-');
+      const day = parseInt(parts[2]);
+      const mins = r.durationMinutes || 0;
+      
+      const week = weeks.find(w => day >= w.startDay && day <= w.endDay);
+      if (week) {
+        week.minutes += mins;
+      } else {
+        weeks[4].minutes += mins;
+      }
+    });
+
+    return weeks.map(w => {
+      const h = Math.floor(w.minutes / 60);
+      const min = w.minutes % 60;
+      const hoursLabel = `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+      return {
+        label: w.label,
+        hours: parseFloat((w.minutes / 60).toFixed(1)),
+        hoursLabel
+      };
+    });
+  }, [drillDownMonth, data]);
 
   if (loading) {
     return (
@@ -582,20 +642,57 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
             </div>
           </div>
 
-          {/* Gráfico da Linha do Tempo dos Últimos 6 Meses */}
+          {/* Gráfico da Linha do Tempo de Horas */}
           <div className="bg-slate-50 border border-slate-100 p-6 rounded-3xl space-y-4">
-            <div className="text-left">
-              <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Histórico de Engajamento</span>
-              <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">Total de Horas Cumpridas (Últimos 6 Meses)</h4>
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Histórico de Engajamento</span>
+                <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                  {drillDownMonth 
+                    ? `Total de Horas por Semana - ${drillDownMonth.label}` 
+                    : 'Total de Horas Cumpridas (Histórico Completo)'}
+                </h4>
+                {!drillDownMonth && chartData.length > 0 && (
+                  <span className="text-[9px] text-slate-400 font-semibold block mt-0.5">💡 Clique em um mês no gráfico para ver o detalhamento por semanas</span>
+                )}
+              </div>
+              {drillDownMonth && (
+                <button 
+                  onClick={() => setDrillDownMonth(null)} 
+                  className="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-600 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm border border-slate-200"
+                >
+                  <ArrowLeft size={12} /> Voltar
+                </button>
+              )}
             </div>
             
             <div className="h-[200px] w-full font-sans">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 25, right: 25, left: -10, bottom: 0 }}>
+                <AreaChart 
+                  data={drillDownMonth ? drillDownData : chartData} 
+                  margin={{ top: 25, right: 25, left: -10, bottom: 0 }}
+                  onClick={(state) => {
+                    if (drillDownMonth) return;
+                    let clickedData = null;
+                    if (state && state.activeTooltipIndex !== undefined && chartData[state.activeTooltipIndex]) {
+                      clickedData = chartData[state.activeTooltipIndex];
+                    } else if (state && state.activePayload && state.activePayload[0]) {
+                      clickedData = state.activePayload[0].payload;
+                    }
+                    if (clickedData && clickedData.year) {
+                      setDrillDownMonth({ 
+                        year: clickedData.year, 
+                        month: clickedData.month, 
+                        label: clickedData.fullName 
+                      });
+                    }
+                  }}
+                  style={{ cursor: !drillDownMonth ? 'pointer' : 'default' }}
+                >
                   <defs>
                     <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor={drillDownMonth ? "#10b981" : "#3b82f6"} stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor={drillDownMonth ? "#10b981" : "#3b82f6"} stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -630,17 +727,20 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
                     }}
                     labelFormatter={(label, items) => {
                       const item = items && items[0] ? items[0].payload : null;
+                      if (drillDownMonth) {
+                        return `${label}`;
+                      }
                       return `Período: ${item ? item.fullName : label}`;
                     }}
                   />
                   <Area 
                     type="monotone" 
                     dataKey="hours" 
-                    stroke="#3b82f6" 
+                    stroke={drillDownMonth ? "#10b981" : "#3b82f6"} 
                     strokeWidth={2}
                     fillOpacity={1} 
                     fill="url(#colorHours)" 
-                    dot={{ r: 4, stroke: '#3b82f6', strokeWidth: 2, fill: '#ffffff' }}
+                    dot={{ r: 4, stroke: drillDownMonth ? "#10b981" : "#3b82f6", strokeWidth: 2, fill: '#ffffff' }}
                   >
                     <LabelList 
                       dataKey="hoursLabel" 
