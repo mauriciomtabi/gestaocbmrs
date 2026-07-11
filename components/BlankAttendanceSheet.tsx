@@ -68,6 +68,16 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
       className="bg-white mx-auto print:p-0 relative"
       style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', color: '#000', width: '100%', boxSizing: 'border-box', position: 'relative' }}
     >
+      <style>{`
+        table.frequency-table td.frequency-metadata-cell,
+        table.frequency-table div.frequency-metadata-cell {
+          padding-left: 14px !important;
+          padding-right: 8px !important;
+          padding-top: 6px !important;
+          padding-bottom: 6px !important;
+          font-size: 11.5pt !important;
+        }
+      `}</style>
       {showExcelLink && (
         <div 
           className="flex justify-between items-center w-full pb-2 mb-4 border-b border-slate-100"
@@ -147,11 +157,11 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
           <tr>
             <td colSpan={5} className="p-0" style={{ border: '1px solid black' }}>
               <div className="flex w-full">
-                <div className="flex-1 py-1 px-2 border-r border-black flex items-center gap-1 overflow-hidden whitespace-nowrap">
+                <div className="flex-1 py-1 px-2 border-r border-black flex items-center gap-1 overflow-hidden whitespace-nowrap frequency-metadata-cell">
                   <span className="font-bold">Processo nº:</span> 
                   <span>{provider.processNumber || '____________________'}</span>
                 </div>
-                <div className="flex-1 py-1 px-2 flex items-center gap-1 overflow-hidden whitespace-nowrap">
+                <div className="flex-1 py-1 px-2 flex items-center gap-1 overflow-hidden whitespace-nowrap frequency-metadata-cell">
                   <span className="font-bold">Mês de cumprimento:</span> 
                   <span className="font-bold text-slate-900" style={{ backgroundColor: '#fef08a', padding: '1px 6px', borderRadius: '4px' }}>{month} / {year}</span>
                 </div>
@@ -161,7 +171,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
           
           {/* Nome */}
           <tr>
-            <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
+            <td colSpan={5} className="py-1 px-2 frequency-metadata-cell" style={{ border: '1px solid black' }}>
               <span className="font-bold">Nome do Prestador:</span>{' '}
               {(() => {
                 const nameParts = provider.name.trim().split(/\s+/);
@@ -179,28 +189,28 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
           
           {/* Telefone */}
           <tr>
-            <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
+            <td colSpan={5} className="py-1 px-2 frequency-metadata-cell" style={{ border: '1px solid black' }}>
               <span className="font-bold">Telefone:</span> <span>{provider.phone || '____________________'}</span>
             </td>
           </tr>
           
           {/* Endereço */}
           <tr>
-            <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
+            <td colSpan={5} className="py-1 px-2 frequency-metadata-cell" style={{ border: '1px solid black' }}>
               <span className="font-bold">Endereço:</span> <span>{provider.address || '____________________'}</span>
             </td>
           </tr>
           
           {/* Entidade */}
           <tr>
-            <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
+            <td colSpan={5} className="py-1 px-2 frequency-metadata-cell" style={{ border: '1px solid black' }}>
               <span className="font-bold">Entidade Conveniada:</span> <span>Corpo de Bombeiros Militar de Sapucaia do Sul</span>
             </td>
           </tr>
           
           {/* E-mail */}
           <tr>
-            <td colSpan={5} className="py-1 px-2" style={{ border: '1px solid black' }}>
+            <td colSpan={5} className="py-1 px-2 frequency-metadata-cell" style={{ border: '1px solid black' }}>
               <span className="font-bold">E-mail Entidade Conveniada:</span> <span>sapucaiadosul@cbm.rs.gov.br</span>
             </td>
           </tr>
@@ -362,7 +372,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
                 const totalMins = records.reduce((sum, r) => sum + (r.durationMinutes || 0), 0);
                 if (totalMins === 0) return null;
                 return (
-                  <span style={{ color: '#1e40af', backgroundColor: '#eff6ff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #bfdbfe', fontWeight: 900 }}>
+                  <span style={{ fontWeight: 'bold' }}>
                     {formatMinutesToHHMM(totalMins)}
                   </span>
                 );
