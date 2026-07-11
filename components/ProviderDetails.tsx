@@ -3,6 +3,7 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Provider, AttendanceRecord, AuditLog, MonthlyEvaluation } from '../types';
 import { formatMinutesToHHMM, formatDateBR, getDayOfWeekBR, getLatestVisit, calculateDuration, sanitizeObservations } from '../utils/timeUtils';
 import { ArrowLeft, Scan, Calendar, History, MapPin, Phone, Eye, Edit2, Trash2, X, Check, FileText, Download, Plus, Clock, LogOut, AlertCircle, Save, Upload, RefreshCw, File, ListFilter, ClipboardCheck, ShieldCheck, FileCheck, Edit3, Target, Gauge as GaugeIcon, ChevronLeft, ChevronRight, FileWarning, ZoomIn, ZoomOut, RotateCcw, ScanFace, Filter, Printer, ThumbsUp, ThumbsDown, Star, AlertTriangle, Loader2, MessageSquare } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import AttendanceSheetOCR from './AttendanceSheetOCR';
 import BlankAttendanceSheet from './BlankAttendanceSheet';
 import FaceEnrollment from './FaceEnrollment';
@@ -312,6 +313,55 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
   const remainingMinutes = Math.max(0, totalRequiredMinutes - totalWorkedMinutes);
   const progressPercent = Math.min(100, (totalWorkedMinutes / totalRequiredMinutes) * 100);
   const lastVisit = getLatestVisit(attendance);
+  const chartData = useMemo(() => {
+    const months = [];
+    const now = new Date();
+    const targetYear = now.getFullYear();
+    const targetMonth = now.getMonth() + 1; // 1-indexed
+
+    const monthsBrShort = [
+      'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+    ];
+    const monthsBr = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+
+    for (let i = 5; i >= 0; i--) {
+      let m = targetMonth - i;
+      let y = targetYear;
+      if (m <= 0) {
+        m += 12;
+        y -= 1;
+      }
+      months.push({
+        year: y,
+        month: m,
+        monthStr: String(m).padStart(2, '0'),
+        label: `${monthsBrShort[m - 1]} / ${String(y).slice(-2)}`,
+        fullName: `${monthsBr[m - 1]} de ${y}`
+      });
+    }
+
+    return months.map(m => {
+      const monthMins = (attendance || []).reduce((sum: number, r: any) => {
+        const parts = r.date?.split('-');
+        if (!parts || parts.length < 2) return sum;
+        const isMatch = parseInt(parts[0]) === m.year && parseInt(parts[1]) === m.month;
+        return isMatch ? sum + (r.durationMinutes || 0) : sum;
+      }, 0);
+      const h = Math.floor(monthMins / 60);
+      const min = monthMins % 60;
+      const hoursLabel = `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+      return {
+        label: m.label,
+        fullName: m.fullName,
+        hours: parseFloat((monthMins / 60).toFixed(1)),
+        hoursLabel
+      };
+    });
+  }, [attendance]);
 
   const availableYears = useMemo(() => {
     const years = attendance
@@ -789,6 +839,78 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
               <div className="bg-gradient-to-r from-blue-600 to-emerald-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${progressPercent}%` }}></div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Gráfico da Linha do Tempo dos Últimos 6 Meses */}
+      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6 md:p-8 space-y-4 text-left">
+        <div>
+          <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Histórico de Engajamento</span>
+          <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">Total de Horas Cumpridas (Últimos 6 Meses)</h4>
+        </div>
+        
+        <div className="h-[200px] w-full font-sans">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 25, right: 25, left: -10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorHoursDetails" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis 
+                dataKey="label" 
+                stroke="#94a3b8" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false} 
+                padding={{ left: 30, right: 30 }}
+              />
+              <YAxis 
+                stroke="#94a3b8" 
+                fontSize={10} 
+                tickLine={false} 
+                axisLine={false} 
+                unit="h"
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#ffffff', 
+                  border: '1px solid #e2e8f0', 
+                  borderRadius: '12px',
+                  fontSize: '11px',
+                  fontFamily: 'sans-serif',
+                  fontWeight: 'bold',
+                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+                }} 
+                formatter={(value: any, name: any, item: any) => {
+                  const payload = item ? item.payload : null;
+                  return [`${payload ? payload.hoursLabel : value} horas`, 'Horas Cumpridas'];
+                }}
+                labelFormatter={(label, items) => {
+                  const item = items && items[0] ? items[0].payload : null;
+                  return `Período: ${item ? item.fullName : label}`;
+                }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="hours" 
+                stroke="#3b82f6" 
+                strokeWidth={2}
+                fillOpacity={1} 
+                fill="url(#colorHoursDetails)" 
+                dot={{ r: 4, stroke: '#3b82f6', strokeWidth: 2, fill: '#ffffff' }}
+              >
+                <LabelList 
+                  dataKey="hoursLabel" 
+                  position="top" 
+                  style={{ fontSize: '10px', fontWeight: 900, fill: '#475569' }}
+                  offset={8}
+                />
+              </Area>
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
