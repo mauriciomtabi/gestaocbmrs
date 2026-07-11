@@ -873,7 +873,7 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
           </div>
         </div>
 
-        <div className="lg:col-span-5 flex flex-col">
+        <div className="lg:col-span-5 hidden lg:flex flex-col">
           <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6 md:p-8 flex flex-col justify-between h-full space-y-8 bg-slate-50/30">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2"><GaugeIcon size={16} className="text-blue-600" />Progressão Operacional</h3>
@@ -905,7 +905,7 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
       </div>
 
       {/* Gráfico da Linha do Tempo de Horas */}
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6 md:p-8 space-y-4 text-left">
+      <div className="hidden lg:block bg-white rounded-[2rem] shadow-sm border border-slate-200 p-6 md:p-8 space-y-4 text-left">
         <div className="flex justify-between items-start">
           <div>
             <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Histórico de Engajamento</span>
@@ -934,15 +934,19 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
               data={drillDownMonth ? drillDownData : chartData} 
               margin={{ top: 25, right: 25, left: -10, bottom: 0 }}
               onClick={(state) => {
-                if (!drillDownMonth && state && state.activePayload && state.activePayload[0]) {
-                  const clickedData = state.activePayload[0].payload;
-                  if (clickedData && clickedData.year) {
-                    setDrillDownMonth({ 
-                      year: clickedData.year, 
-                      month: clickedData.month, 
-                      label: clickedData.fullName 
-                    });
-                  }
+                if (drillDownMonth) return;
+                let clickedData = null;
+                if (state && state.activeTooltipIndex !== undefined && chartData[state.activeTooltipIndex]) {
+                  clickedData = chartData[state.activeTooltipIndex];
+                } else if (state && state.activePayload && state.activePayload[0]) {
+                  clickedData = state.activePayload[0].payload;
+                }
+                if (clickedData && clickedData.year) {
+                  setDrillDownMonth({ 
+                    year: clickedData.year, 
+                    month: clickedData.month, 
+                    label: clickedData.fullName 
+                  });
                 }
               }}
               style={{ cursor: !drillDownMonth ? 'pointer' : 'default' }}
