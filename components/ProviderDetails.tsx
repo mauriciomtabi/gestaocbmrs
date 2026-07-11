@@ -928,7 +928,7 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
           )}
         </div>
         
-        <div className="h-[200px] w-full font-sans">
+        <div className="h-[200px] w-full font-sans outline-none">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart 
               data={drillDownMonth ? drillDownData : chartData} 
@@ -949,7 +949,7 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                   });
                 }
               }}
-              style={{ cursor: !drillDownMonth ? 'pointer' : 'default' }}
+              style={{ cursor: !drillDownMonth ? 'pointer' : 'default', outline: 'none' }}
             >
               <defs>
                 <linearGradient id="colorHoursDetails" x1="0" y1="0" x2="0" y2="1">

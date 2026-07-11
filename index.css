@@ -52,3 +52,11 @@ body {
   }
 }
 
+/* Remove browser focus outline from Recharts SVG and wrapper elements */
+.recharts-wrapper,
+.recharts-wrapper:focus,
+.recharts-surface,
+.recharts-surface:focus,
+.recharts-wrapper *:focus {
+  outline: none !important;
+}

@@ -666,7 +666,7 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
               )}
             </div>
             
-            <div className="h-[200px] w-full font-sans">
+            <div className="h-[200px] w-full font-sans outline-none">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart 
                   data={drillDownMonth ? drillDownData : chartData} 
@@ -687,7 +687,7 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
                       });
                     }
                   }}
-                  style={{ cursor: !drillDownMonth ? 'pointer' : 'default' }}
+                  style={{ cursor: !drillDownMonth ? 'pointer' : 'default', outline: 'none' }}
                 >
                   <defs>
                     <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
