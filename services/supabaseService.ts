@@ -1383,6 +1383,7 @@ export const getPublicAttendanceForMonth = async (providerId: string, year: stri
   return {
     provider: mapProviderFromDB(provider),
     records: filteredRecords,
+    allRecords: (records || []).map(mapAttendanceFromDB),
     evaluation: evaluation ? mapEvaluationFromDB(evaluation) : null
   };
 };

@@ -3,6 +3,7 @@ import { getPublicAttendanceRecord, getPublicAttendanceForMonth } from '../servi
 import { Clock, MapPin, ScanFace, FileText, AlertCircle, Loader2, Download, ExternalLink, Calendar, CheckCircle2 } from 'lucide-react';
 import GeoMapViewer from './GeoMapViewer';
 import * as XLSX from 'xlsx';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Utilitário para download do Excel
 export const downloadProviderExcel = async (providerId: string, providerName: string, year: string, month: string) => {
@@ -471,7 +472,7 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
     );
   }
 
-  const { provider, records, evaluation } = data;
+  const { provider, records, allRecords, evaluation } = data;
 
   const monthsBr = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -482,6 +483,47 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
   // Calculo de horas
   const totalMins = records.reduce((sum: number, r: any) => sum + (r.durationMinutes || 0), 0);
   const formattedTotalHours = `${Math.floor(totalMins / 60)}h ${String(totalMins % 60).padStart(2, '0')}m`;
+
+  const chartData = React.useMemo(() => {
+    if (!data || !allRecords) return [];
+    const months = [];
+    const targetYear = parseInt(year);
+    const targetMonth = parseInt(month);
+
+    const monthsBrShort = [
+      'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+    ];
+
+    for (let i = 5; i >= 0; i--) {
+      let m = targetMonth - i;
+      let y = targetYear;
+      if (m <= 0) {
+        m += 12;
+        y -= 1;
+      }
+      months.push({
+        year: y,
+        month: m,
+        monthStr: String(m).padStart(2, '0'),
+        label: `${monthsBrShort[m - 1]} / ${String(y).slice(-2)}`,
+        fullName: `${monthsBr[m - 1]} de ${y}`
+      });
+    }
+
+    return months.map(m => {
+      const monthMins = (allRecords || []).reduce((sum: number, r: any) => {
+        const parts = r.date.split('-');
+        const isMatch = parseInt(parts[0]) === m.year && parseInt(parts[1]) === m.month;
+        return isMatch ? sum + (r.durationMinutes || 0) : sum;
+      }, 0);
+      return {
+        label: m.label,
+        fullName: m.fullName,
+        hours: parseFloat((monthMins / 60).toFixed(1))
+      };
+    });
+  }, [allRecords, year, month]);
 
   return (
     <div className="min-h-screen bg-slate-900 py-10 px-4 md:px-8 text-slate-800 flex flex-col justify-between font-sans">
@@ -533,6 +575,66 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
                   ⚠️ Pendente
                 </span>
               )}
+            </div>
+          </div>
+
+          {/* Gráfico da Linha do Tempo dos Últimos 6 Meses */}
+          <div className="bg-slate-50 border border-slate-100 p-6 rounded-3xl space-y-4">
+            <div className="text-left">
+              <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Histórico de Engajamento</span>
+              <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">Total de Horas Cumpridas (Últimos 6 Meses)</h4>
+            </div>
+            
+            <div className="h-[200px] w-full font-sans">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="label" 
+                    stroke="#94a3b8" 
+                    fontSize={10} 
+                    tickLine={false} 
+                    axisLine={false} 
+                  />
+                  <YAxis 
+                    stroke="#94a3b8" 
+                    fontSize={10} 
+                    tickLine={false} 
+                    axisLine={false} 
+                    unit="h"
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#ffffff', 
+                      border: '1px solid #e2e8f0', 
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontFamily: 'sans-serif',
+                      fontWeight: 'bold',
+                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+                    }} 
+                    formatter={(value: any) => [`${value} horas`, 'Horas Cumpridas']}
+                    labelFormatter={(label, items) => {
+                      const item = items && items[0] ? items[0].payload : null;
+                      return `Período: ${item ? item.fullName : label}`;
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="hours" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorHours)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </div>
 

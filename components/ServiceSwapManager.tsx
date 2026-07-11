@@ -122,6 +122,8 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
   }, []);
 
   const [activeTab, setActiveTab] = useState<'todas' | 'minhas' | 'aprovar' | 'arquivadas'>('todas');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 25;
 
   const [rejectModal, setRejectModal] = useState<{
     isOpen: boolean;
@@ -508,6 +510,15 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
       return true;
     });
   }, [unifiedSwaps, activeTab, statusFilter, searchTerm, dateFilter, currentUser.id, showPendingPaybacksOnly]);
+
+  const paginatedUnifiedSwaps = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredUnifiedSwaps.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredUnifiedSwaps, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, statusFilter, searchTerm, dateFilter, showPendingPaybacksOnly]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1247,7 +1258,7 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredUnifiedSwaps.map(u => {
+                  {paginatedUnifiedSwaps.map(u => {
                     const isIdaArchived = !!u.ida.observacao?.startsWith('[ARQUIVADO]');
                     const isVoltaArchived = u.volta ? !!u.volta.observacao?.startsWith('[ARQUIVADO]') : false;
 
@@ -1369,12 +1380,68 @@ const ServiceSwapManager: React.FC<Props> = ({ currentUser, setNotification, isR
               </table>
             </div>
 
-            {/* Footer */}
-            <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                {filteredUnifiedSwaps.length} registro{filteredUnifiedSwaps.length !== 1 ? 's' : ''}
-              </p>
-            </div>
+            {/* Pagination Footer */}
+            {(() => {
+              const totalPages = Math.ceil(filteredUnifiedSwaps.length / ITEMS_PER_PAGE);
+              return totalPages > 1 ? (
+                <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 bg-slate-50 border-t border-slate-100 gap-4 font-sans">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Mostrando <span className="text-slate-700">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> a{' '}
+                    <span className="text-slate-700">{Math.min(currentPage * ITEMS_PER_PAGE, filteredUnifiedSwaps.length)}</span> de{' '}
+                    <span className="text-slate-700">{filteredUnifiedSwaps.length}</span> registros
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      className="px-3 py-1.5 bg-white border border-slate-200/80 rounded-xl text-[10px] font-black uppercase text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:pointer-events-none transition-all active:scale-95 cursor-pointer"
+                    >
+                      Anterior
+                    </button>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(page => {
+                        return page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1;
+                      })
+                      .map((page, index, array) => {
+                        const showEllipsis = index > 0 && page - array[index - 1] > 1;
+                        return (
+                          <React.Fragment key={page}>
+                            {showEllipsis && <span className="px-2 text-slate-400 text-xs font-bold">...</span>}
+                            <button
+                              type="button"
+                              onClick={() => setCurrentPage(page)}
+                              className={`w-7 h-7 flex items-center justify-center rounded-xl text-[10px] font-black transition-all cursor-pointer ${
+                                currentPage === page
+                                  ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                                  : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-100 active:scale-95'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          </React.Fragment>
+                        );
+                      })}
+
+                    <button
+                      type="button"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      className="px-3 py-1.5 bg-white border border-slate-200/80 rounded-xl text-[10px] font-black uppercase text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:pointer-events-none transition-all active:scale-95 cursor-pointer"
+                    >
+                      Próxima
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    {filteredUnifiedSwaps.length} registro{filteredUnifiedSwaps.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
