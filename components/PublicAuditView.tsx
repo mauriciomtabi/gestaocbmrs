@@ -172,12 +172,6 @@ export const PublicAuditView: React.FC<PublicAuditViewProps> = ({ recordId, onGo
               <Download size={16} />
               Excel (.xlsx)
             </button>
-            <button
-              onClick={onGoHome}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
-            >
-              Acesso Restrito
-            </button>
           </div>
         </div>
 
@@ -507,12 +501,6 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
             >
               <Download size={16} />
               Excel (.xlsx)
-            </button>
-            <button
-              onClick={onGoHome}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
-            >
-              Acesso Restrito
             </button>
           </div>
         </div>
