@@ -339,6 +339,9 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
           table.frequency-table {
             margin-bottom: 6px !important;
           }
+          table.frequency-table td.process-td {
+            padding: 0 !important;
+          }
           
           .frequency-sheet-footer-wrapper {
             margin-top: 10px !important;
@@ -415,6 +418,9 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
           }
           .judiciario-logo-text, .judiciario-logo-text * {
             font-family: 'Times New Roman', Times, serif !important;
+          }
+          table.frequency-table td.process-td {
+            padding: 0 !important;
           }
         }
       `}</style>

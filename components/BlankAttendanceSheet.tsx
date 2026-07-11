@@ -77,6 +77,9 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
           padding-bottom: 4px !important;
           font-size: 11.5pt !important;
         }
+        table.frequency-table td.process-td {
+          padding: 0 !important;
+        }
       `}</style>
       {showExcelLink && (
         <div 
@@ -148,14 +151,14 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
         <tbody>
           {/* Título */}
           <tr>
-            <td colSpan={5} className="font-bold text-center uppercase py-1" style={{ border: '1px solid black', fontSize: '11pt', color: '#000000', backgroundColor: '#f8fafc' }}>
+            <td colSpan={5} className="font-bold text-center uppercase py-1" style={{ border: '1px solid black', fontSize: '13.5pt', color: '#000000', backgroundColor: '#f8fafc' }}>
               FOLHA DE FREQUÊNCIA
             </td>
           </tr>
           
           {/* Informações 1 (Processo e Mês) */}
           <tr>
-            <td colSpan={5} className="p-0" style={{ border: '1px solid black' }}>
+            <td colSpan={5} className="p-0 process-td" style={{ border: '1px solid black' }}>
               <div className="flex w-full">
                 <div className="flex-1 py-1 px-2 border-r border-black flex items-center gap-1 overflow-hidden whitespace-nowrap frequency-metadata-cell">
                   <span className="font-bold">Processo nº:</span> 
@@ -367,7 +370,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
           {/* Total Horas */}
           <tr>
             <td colSpan={5} className="py-2 px-3 font-bold" style={{ border: '1px solid black', fontSize: '11pt' }}>
-              <span>Total de horas cumpridas no mês: </span>
+              <span>Total de horas: </span>
               {(() => {
                 const totalMins = records.reduce((sum, r) => sum + (r.durationMinutes || 0), 0);
                 if (totalMins === 0) return null;
@@ -778,6 +781,7 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, attendance = [], onCl
         div, main { overflow: visible !important; height: auto !important; }
         table.frequency-table { border-collapse: collapse; width: 100%; }
         table.frequency-table th, table.frequency-table td { border: 1px solid black; padding: 4px 6px; }
+        table.frequency-table td.process-td { padding: 0 !important; }
       }
     `;
     document.head.appendChild(style);
