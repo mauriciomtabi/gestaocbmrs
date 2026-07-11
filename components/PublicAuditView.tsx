@@ -3,7 +3,7 @@ import { getPublicAttendanceRecord, getPublicAttendanceForMonth } from '../servi
 import { Clock, MapPin, ScanFace, FileText, AlertCircle, Loader2, Download, ExternalLink, Calendar, CheckCircle2 } from 'lucide-react';
 import GeoMapViewer from './GeoMapViewer';
 import * as XLSX from 'xlsx';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 
 // Utilitário para download do Excel
 export const downloadProviderExcel = async (providerId: string, providerName: string, year: string, month: string) => {
@@ -632,7 +632,15 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
                     strokeWidth={2}
                     fillOpacity={1} 
                     fill="url(#colorHours)" 
-                  />
+                  >
+                    <LabelList 
+                      dataKey="hours" 
+                      position="top" 
+                      formatter={(val: number) => `${val}h`}
+                      style={{ fontSize: '10px', fontWeight: 900, fill: '#475569' }}
+                      offset={8}
+                    />
+                  </Area>
                 </AreaChart>
               </ResponsiveContainer>
             </div>
