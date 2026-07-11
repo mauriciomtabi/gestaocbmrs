@@ -73,8 +73,8 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
         table.frequency-table div.frequency-metadata-cell {
           padding-left: 14px !important;
           padding-right: 8px !important;
-          padding-top: 6px !important;
-          padding-bottom: 6px !important;
+          padding-top: 4px !important;
+          padding-bottom: 4px !important;
           font-size: 11.5pt !important;
         }
       `}</style>

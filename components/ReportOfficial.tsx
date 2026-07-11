@@ -316,20 +316,18 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
           table.consolidated-table th, table.consolidated-table td { border: 1px solid black; padding: 4px 12px; }
           table.frequency-table { border-collapse: collapse; width: 100%; }
           table.frequency-table th, table.frequency-table td { border: 1px solid black; padding: 4px 6px; }
-          thead tr { background-color: #f8fafc !important; }
-
-          /* Sobrescrever altura das linhas e espaçamento no lote do Ofício para evitar quebra de página */
+          thead           /* Sobrescrever altura das linhas e espaçamento no lote do Ofício para evitar quebra de página */
           table.frequency-table tr, 
           table.frequency-table tr[style] {
-            height: 25px !important;
+            height: 30px !important;
           }
           table.frequency-table td {
-            padding: 2px 4px !important;
-            font-size: 8.5pt !important;
+            padding: 4px 6px !important;
+            font-size: 9.5pt !important;
           }
           table.frequency-table th {
-            font-size: 9.5pt !important;
-            padding: 2px 4px !important;
+            font-size: 10pt !important;
+            padding: 4px 6px !important;
           }
           table.frequency-table {
             margin-bottom: 6px !important;
@@ -345,7 +343,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
           }
         }
       </style>
-      <div id="official-document-content" style="background: white !important; font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; color: #000 !important; width: 210mm; margin: 0; padding: 0;">
+      <div id="official-document-content" style="background: white !important; font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #000 !important; width: 210mm; margin: 0; padding: 0;">
         ${contentClone.innerHTML}
       </div>
     `;
@@ -492,7 +490,7 @@ const ReportOfficial: React.FC<Props> = ({ providers, attendance, currentUser })
 
       {/* Papel A4 Oficial - Container para o PDF */}
       <div className="w-full pb-12 md:pb-0 overflow-visible print:border-none print:shadow-none print:m-0 print:p-0">
-        <div id="official-document-content" className="mx-auto print:shadow-none print:m-0 print:p-0" style={{ color: '#000000', fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: '1.5' }}>
+        <div id="official-document-content" className="mx-auto print:shadow-none print:m-0 print:p-0" style={{ color: '#000000', fontFamily: 'Arial, sans-serif', fontSize: '11pt', lineHeight: '1.5' }}>
           
           {/* Pagina 1: Texto do Ofício */}
           <div className="print-page">
