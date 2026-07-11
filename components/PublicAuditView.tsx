@@ -488,10 +488,14 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
         const isMatch = parseInt(parts[0]) === m.year && parseInt(parts[1]) === m.month;
         return isMatch ? sum + (r.durationMinutes || 0) : sum;
       }, 0);
+      const h = Math.floor(monthMins / 60);
+      const min = monthMins % 60;
+      const hoursLabel = `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
       return {
         label: m.label,
         fullName: m.fullName,
-        hours: parseFloat((monthMins / 60).toFixed(1))
+        hours: parseFloat((monthMins / 60).toFixed(1)),
+        hoursLabel
       };
     });
   }, [data, year, month]);
@@ -587,7 +591,7 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
             
             <div className="h-[200px] w-full font-sans">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 25, right: 25, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
@@ -601,6 +605,7 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
                     fontSize={10} 
                     tickLine={false} 
                     axisLine={false} 
+                    padding={{ left: 30, right: 30 }}
                   />
                   <YAxis 
                     stroke="#94a3b8" 
@@ -619,7 +624,10 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
                       fontWeight: 'bold',
                       boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
                     }} 
-                    formatter={(value: any) => [`${value} horas`, 'Horas Cumpridas']}
+                    formatter={(value: any, name: any, item: any) => {
+                      const payload = item ? item.payload : null;
+                      return [`${payload ? payload.hoursLabel : value} horas`, 'Horas Cumpridas'];
+                    }}
                     labelFormatter={(label, items) => {
                       const item = items && items[0] ? items[0].payload : null;
                       return `Período: ${item ? item.fullName : label}`;
@@ -632,11 +640,11 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
                     strokeWidth={2}
                     fillOpacity={1} 
                     fill="url(#colorHours)" 
+                    dot={{ r: 4, stroke: '#3b82f6', strokeWidth: 2, fill: '#ffffff' }}
                   >
                     <LabelList 
-                      dataKey="hours" 
+                      dataKey="hoursLabel" 
                       position="top" 
-                      formatter={(val: number) => `${val}h`}
                       style={{ fontSize: '10px', fontWeight: 900, fill: '#475569' }}
                       offset={8}
                     />
