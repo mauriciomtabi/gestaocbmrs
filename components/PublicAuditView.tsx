@@ -481,7 +481,7 @@ export const PublicProviderAuditView: React.FC<PublicProviderAuditViewProps> = (
       'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
     ];
 
-    while (y < currentYear || (y === currentYear && m <= currentMonth)) {
+    while (y < currentYear || (y === currentYear && m < currentMonth)) {
       months.push({
         year: y,
         month: m,
