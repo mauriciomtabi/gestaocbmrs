@@ -9,6 +9,7 @@ const getAI = (): GoogleGenAI => {
     console.error('[Gemini] ERRO: Chave de API não encontrada!');
     throw new Error("Chave de API do Gemini (VITE_GEMINI_API_KEY) não encontrada. Verifique a configuração.");
   }
+  console.log('[Gemini Active Key]:', `${apiKey.slice(0, 8)}...${apiKey.slice(-4)}`);
   return new GoogleGenAI({ apiKey });
 };
 
