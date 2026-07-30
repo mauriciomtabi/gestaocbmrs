@@ -249,9 +249,9 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
           observations: sanitizeObservations(data.observations || prev.observations)
         }));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Erro ao processar o documento digitalizado.");
+      alert(err?.message || "Erro ao processar o documento digitalizado.");
     } finally {
       setLoading(false);
     }
@@ -316,9 +316,9 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
         receiptDate: data.receiptDate || prev.receiptDate,
         observations: sanitizeObservations(data.observations || prev.observations)
       }));
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Erro ao processar o documento digitalizado.");
+      alert(err?.message || "Erro ao processar o documento digitalizado.");
     } finally {
       setLoading(false);
     }

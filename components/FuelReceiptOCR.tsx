@@ -2,7 +2,8 @@ import React, { useState, useRef, SyntheticEvent } from 'react';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { X, Camera, Upload, Loader2, CheckCircle2, AlertCircle, FileText, Cpu, Receipt, ArrowRight, SkipForward, Wrench, Fuel } from 'lucide-react';
-import { GoogleGenAI, Type } from "@google/genai";
+import { Type } from "@google/genai";
+import { callGeminiModel } from '../services/geminiService';
 import { FuelSupply } from '../types';
 
 interface Props {
@@ -165,13 +166,6 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
       // Só executa a IA se tiver a Nota Fiscal capturada
       if (finalImages.nf) {
         const base64Data = finalImages.nf.split(',')[1];
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (globalThis as any).process?.env?.GEMINI_API_KEY;
-        
-        if (!apiKey) {
-          throw new Error("API Key do Gemini não configurada.");
-        }
-        
-        const ai = new GoogleGenAI({ apiKey });
         
         const prompt = entryType === 'manutencao'
           ? `Analise esta nota fiscal de manutenção/revisão/troca de óleo e extraia os seguintes dados em formato JSON.
@@ -276,8 +270,7 @@ const FuelReceiptOCR: React.FC<Props> = ({ onExtracted, onCancel }) => {
               }
             };
 
-        const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
+        const response = await callGeminiModel({
           contents: [
             {
               parts: [

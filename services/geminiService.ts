@@ -6,12 +6,32 @@ const getAI = (): GoogleGenAI => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (globalThis as any).process?.env?.GEMINI_API_KEY;
   if (!apiKey) {
     console.error('[Gemini] ERRO: Chave de API não encontrada!');
-    throw new Error("GEMINI_API_KEY não está configurado. Contate o administrador do sistema.");
+    throw new Error("Chave de API do Gemini (VITE_GEMINI_API_KEY) não encontrada. Verifique a configuração.");
   }
-  // Log mais visível para depuração de ambiente
-  const maskedKey = apiKey.slice(0, 8) + '...' + apiKey.slice(-4);
-  console.log('[Gemini] Initializing with key:', maskedKey);
   return new GoogleGenAI({ apiKey });
+};
+
+export const callGeminiModel = async (options: { contents: any; config?: any }) => {
+  const ai = getAI();
+  const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+  let lastError: any = null;
+
+  for (const model of modelsToTry) {
+    try {
+      console.log(`[Gemini] Chamando modelo: ${model}`);
+      const response = await ai.models.generateContent({
+        model,
+        contents: options.contents,
+        config: options.config
+      });
+      return response;
+    } catch (err: any) {
+      console.warn(`[Gemini] Falha no modelo ${model}:`, err?.message || err);
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error("Falha ao chamar a IA do Gemini.");
 };
 
 export const detectFaceInDocument = async (base64Data: string, mimeType: string) => {
@@ -23,8 +43,7 @@ export const detectFaceInDocument = async (base64Data: string, mimeType: string)
   `;
 
   try {
-    const response = await getAI().models.generateContent({
-      model: 'gemini-2.5-flash',
+    const response = await callGeminiModel({
       contents: {
         parts: [
           { inlineData: { mimeType: mimeType, data: base64Data } },
@@ -73,8 +92,7 @@ export const extractAttendanceFromFile = async (base64Data: string, mimeType: st
   `;
 
   try {
-    const response = await getAI().models.generateContent({
-      model: 'gemini-2.5-flash',
+    const response = await callGeminiModel({
       contents: {
         parts: [
           { inlineData: { mimeType: mimeType, data: base64Data } },
@@ -192,8 +210,7 @@ export const extractReferralData = async (base64Data: string, mimeType: string) 
   `;
 
   try {
-    const response = await getAI().models.generateContent({
-      model: 'gemini-2.5-flash',
+    const response = await callGeminiModel({
       contents: {
         parts: [
           { inlineData: { mimeType: mimeType, data: base64Data } },
