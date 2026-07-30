@@ -15,7 +15,7 @@ const getAI = (): GoogleGenAI => {
 
 export const callGeminiModel = async (options: { contents: any; config?: any }) => {
   const ai = getAI();
-  const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+  const modelsToTry = ['gemini-1.5-flash', 'gemini-2.0-flash'];
   let lastError: any = null;
 
   for (const model of modelsToTry) {
@@ -30,17 +30,12 @@ export const callGeminiModel = async (options: { contents: any; config?: any }) 
     } catch (err: any) {
       console.warn(`[Gemini] Falha no modelo ${model}:`, err?.message || err);
       lastError = err;
-      
-      const errStr = JSON.stringify(err?.message || err || '');
-      if (errStr.includes('429') || errStr.includes('RESOURCE_EXHAUSTED') || errStr.includes('Quota exceeded')) {
-        throw new Error("Limite de cota da API do Gemini excedido (Erro 429 - Cota Excedida). Verifique o faturamento ou a chave de API no Google AI Studio.");
-      }
     }
   }
 
   const errMsg = lastError?.message || JSON.stringify(lastError || '');
   if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('Quota exceeded')) {
-    throw new Error("Limite de cota da API do Gemini excedido (Erro 429 - Cota Excedida). Verifique o faturamento ou a chave de API no Google AI Studio.");
+    throw new Error("Limite de cota da API do Gemini excedido (Erro 429 - Cota Excedida). Verifique se o faturamento está ativo ou tente novamente em instantes.");
   }
 
   throw lastError || new Error("Falha ao chamar a IA do Gemini.");
