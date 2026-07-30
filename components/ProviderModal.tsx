@@ -300,7 +300,8 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
     setMsgIndex(0);
     setCurrentMessages(processingMessages);
     try {
-      const data = await extractReferralData(base64.split(',')[1], 'image/png');
+      const mimeType = base64.match(/data:(.*?);base64/)?.[1] || 'image/jpeg';
+      const data = await extractReferralData(base64.split(',')[1], mimeType);
       if (data.totalHours) setIsCalculated(true);
       
       setFormData(prev => ({

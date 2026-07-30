@@ -15,7 +15,7 @@ const getAI = (): GoogleGenAI => {
 
 export const callGeminiModel = async (options: { contents: any; config?: any }) => {
   const ai = getAI();
-  const modelsToTry = ['gemini-1.5-flash', 'gemini-2.0-flash'];
+  const modelsToTry = ['gemini-2.0-flash'];
   let lastError: any = null;
 
   for (const model of modelsToTry) {
