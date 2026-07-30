@@ -2,6 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 // Lazy initialization: only create the client when needed, so a missing
 // API key does NOT crash the full app module on import.
+// Trigger rebuild with updated Vercel environment variables
 const getAI = (): GoogleGenAI => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (globalThis as any).process?.env?.GEMINI_API_KEY;
   if (!apiKey) {
