@@ -65,28 +65,28 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
       const warName = normalize(op.warName || '');
       const fullName = normalize(op.name || '');
 
-      if (warName && (normRaw.includes(warName) || warName.includes(normRaw))) {
-        return `${op.rank ? op.rank + ' ' : ''}${op.warName}`;
+      if (warName && warName.length > 2 && (normRaw.includes(warName) || warName.includes(normRaw))) {
+        return `${op.rank ? op.rank + ' ' : ''}${op.warName}`.trim();
       }
       if (rankWarName && normRaw.includes(rankWarName)) {
-        return `${op.rank ? op.rank + ' ' : ''}${op.warName}`;
+        return `${op.rank ? op.rank + ' ' : ''}${op.warName}`.trim();
       }
-      if (fullName && (normRaw.includes(fullName) || fullName.includes(normRaw))) {
-        return `${op.rank ? op.rank + ' ' : ''}${op.warName}`;
+      if (fullName && fullName.length > 3 && (normRaw.includes(fullName) || fullName.includes(normRaw))) {
+        return `${op.rank ? op.rank + ' ' : ''}${op.warName}`.trim();
       }
     }
 
-    const words = normRaw.split(/\s+/).filter(w => w.length > 2 && !['SD', 'SGT', 'CB', '1º', '2º', '3º', 'CAP', 'TEN'].includes(w));
+    const words = normRaw.split(/\s+/).filter(w => w.length > 2 && !['SD', 'SGT', 'CB', '1º', '2º', '3º', 'CAP', 'TEN', 'SOLDADO', 'SARGENTO', 'CABO'].includes(w));
     for (const word of words) {
       for (const op of ops) {
         const warName = normalize(op.warName || '');
-        if (warName && warName.includes(word)) {
-          return `${op.rank ? op.rank + ' ' : ''}${op.warName}`;
+        if (warName && warName === word) {
+          return `${op.rank ? op.rank + ' ' : ''}${op.warName}`.trim();
         }
       }
     }
 
-    return rawText;
+    return ''; // Jamais inventa nomes não cadastrados
   };
 
   // Efeito para alternar mensagens de processamento
@@ -200,11 +200,6 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
     );
 
     return canvas.toDataURL('image/jpeg', 0.8);
-  };
-
-  const applyGlobalResponsible = (opName: string) => {
-    if (!opName) return;
-    setExtractedData(prev => prev.map(r => ({ ...r, responsibleOperator: opName })));
   };
 
   const handleProcess = async () => {
@@ -474,34 +469,6 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                 </div>
               </div>
 
-              {systemOperators.length > 0 && (
-                <div className="bg-blue-50/70 p-3 rounded-2xl border border-blue-100 flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-black uppercase text-blue-900 flex items-center gap-1.5 shrink-0">
-                    <UserCheck size={14} className="text-blue-600" />
-                    Responsável em Massa:
-                  </span>
-                  <select 
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        applyGlobalResponsible(e.target.value);
-                        e.target.value = '';
-                      }
-                    }}
-                    className="flex-1 px-3 py-1.5 rounded-xl border border-blue-200 bg-white text-slate-800 text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
-                  >
-                    <option value="">-- Aplicar Militar a TODAS as Linhas --</option>
-                    {systemOperators.map(op => {
-                      const val = `${op.rank ? op.rank + ' ' : ''}${op.warName || op.name}`;
-                      return (
-                        <option key={'global-' + (op.id || val)} value={val}>
-                          {val} ({op.name})
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-              )}
-
               <div className="max-h-[40vh] overflow-y-auto space-y-3 pr-2">
                 {extractedData.map((record, idx) => {
                   const isDuplicate = existingRecords.some(key => {
@@ -511,8 +478,10 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                     return ent === record.entryTime && ext === record.exitTime;
                   });
                   
+                  const isUnselected = !record.responsibleOperator;
+
                   return (
-                    <div key={idx} className={`p-4 rounded-2xl border relative group transition-all ${isDuplicate ? 'bg-amber-50/50 border-amber-200 opacity-80' : 'bg-slate-50 border-slate-200'}`}>
+                    <div key={idx} className={`p-4 rounded-2xl border relative group transition-all ${isUnselected ? 'bg-red-50/40 border-red-200' : isDuplicate ? 'bg-amber-50/50 border-amber-200 opacity-80' : 'bg-slate-50 border-slate-200'}`}>
                       <div className="flex flex-col gap-3 pr-8">
                         <div className="w-full">
                           <div className="flex items-center justify-between mb-1">
@@ -536,33 +505,34 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
 
                         <div className="w-full pt-1 border-t border-slate-200/60">
                           <div className="flex items-center justify-between mb-1">
-                            <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-1">
-                              <UserCheck size={12} className="text-blue-600" />
+                            <label className={`text-[10px] font-black uppercase flex items-center gap-1 ${isUnselected ? 'text-red-700' : 'text-slate-500'}`}>
+                              <UserCheck size={12} className={isUnselected ? 'text-red-600' : 'text-blue-600'} />
                               <span>Militar Responsável (Folha)</span>
                             </label>
-                            {record.responsibleOperator && (
+                            {isUnselected ? (
+                              <span className="text-[8px] font-black text-red-600 bg-red-100 px-2 py-0.5 rounded border border-red-200 uppercase tracking-tighter animate-pulse">Selecione o Responsável *</span>
+                            ) : (
                               <span className="text-[8px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 uppercase tracking-tighter">Identificado</span>
                             )}
                           </div>
                           <select 
                             value={record.responsibleOperator || ''} 
                             onChange={(e) => handleUpdateField(idx, 'responsibleOperator', e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            className={`w-full px-3 py-2 rounded-xl text-xs focus:ring-2 focus:outline-none cursor-pointer transition-all ${
+                              isUnselected 
+                                ? 'border-2 border-red-500 bg-red-50 text-red-900 font-extrabold focus:ring-red-400 shadow-sm' 
+                                : 'border border-slate-200 bg-white text-slate-800 font-bold focus:ring-blue-500'
+                            }`}
                           >
-                            <option value="">-- Selecionar Militar do Sistema --</option>
+                            <option value="" disabled>-- SELECIONE O RESPONSÁVEL --</option>
                             {systemOperators.map(op => {
-                              const val = `${op.rank ? op.rank + ' ' : ''}${op.warName || op.name}`;
+                              const val = `${op.rank ? op.rank + ' ' : ''}${op.warName || op.name}`.trim();
                               return (
                                 <option key={op.id || val} value={val}>
-                                  {val} ({op.name})
+                                  {val}
                                 </option>
                               );
                             })}
-                            {record.responsibleOperator && !systemOperators.some(op => `${op.rank ? op.rank + ' ' : ''}${op.warName}` === record.responsibleOperator || op.warName === record.responsibleOperator) && (
-                              <option value={record.responsibleOperator}>
-                                {record.responsibleOperator} (Lido da folha)
-                              </option>
-                            )}
                           </select>
                         </div>
                       </div>
@@ -575,7 +545,14 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
               <div className="pt-4 border-t border-slate-100 flex gap-3">
                 <button onClick={() => setStep('upload')} className="flex-1 py-4 text-slate-600 font-bold hover:bg-slate-50 rounded-2xl">Voltar</button>
                 <button 
-                  onClick={() => onExtracted(extractedData as AttendanceRecord[], extractedEvaluation)} 
+                  onClick={() => {
+                    const unselectedCount = extractedData.filter(r => !r.responsibleOperator).length;
+                    if (unselectedCount > 0) {
+                      alert(`Atenção: Selecione o militar responsável nas ${unselectedCount} linha(s) destacada(s) em vermelho antes de confirmar.`);
+                      return;
+                    }
+                    onExtracted(extractedData as AttendanceRecord[], extractedEvaluation);
+                  }} 
                   className={`flex-1 py-4 px-2 text-[11px] sm:text-base text-white rounded-2xl font-bold shadow-xl flex items-center justify-center gap-1 sm:gap-2 transition-all ${isNameMismatched ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
                 >
                   <Save size={18} className="shrink-0" />
