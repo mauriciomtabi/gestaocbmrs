@@ -48,14 +48,15 @@ const SearchableOperatorSelect: React.FC<SearchableOperatorSelectProps> = ({
   const [search, setSearch] = useState('');
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  const close = () => { setIsOpen(false); setSearch(''); };
 
   const openDropdown = () => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownH = Math.min(290, window.innerHeight * 0.45);
       const spaceBelow = window.innerHeight - rect.bottom;
-      const dropdownH = Math.min(280, window.innerHeight * 0.45);
       const showAbove = spaceBelow < dropdownH + 12;
       setDropdownStyle({
         position: 'fixed',
@@ -68,121 +69,106 @@ const SearchableOperatorSelect: React.FC<SearchableOperatorSelectProps> = ({
       });
     }
     setIsOpen(true);
-    setTimeout(() => searchRef.current?.focus(), 50);
+    setTimeout(() => searchRef.current?.focus(), 60);
   };
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const close = (e: MouseEvent) => {
-      if (
-        buttonRef.current && buttonRef.current.contains(e.target as Node)
-      ) return;
-      if (
-        dropdownRef.current && dropdownRef.current.contains(e.target as Node)
-      ) return;
-      setIsOpen(false);
-      setSearch('');
-    };
-    const closeOnScroll = () => { setIsOpen(false); setSearch(''); };
-    document.addEventListener('mousedown', close);
-    window.addEventListener('scroll', closeOnScroll, true);
-    window.addEventListener('resize', closeOnScroll);
-    return () => {
-      document.removeEventListener('mousedown', close);
-      window.removeEventListener('scroll', closeOnScroll, true);
-      window.removeEventListener('resize', closeOnScroll);
-    };
-  }, [isOpen]);
 
   const filteredOperators = systemOperators.filter(op => {
     if (!search.trim()) return true;
     const label = `${op.rank ? op.rank + ' ' : ''}${op.warName || op.name}`.toLowerCase();
-    const s = search.toLowerCase().trim();
-    return label.includes(s);
+    return label.includes(search.toLowerCase().trim());
   });
 
   return (
-    <div className="relative w-full">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => isOpen ? (setIsOpen(false), setSearch('')) : openDropdown()}
-        className={`w-full px-3 py-2.5 rounded-xl text-xs font-black flex items-center justify-between transition-all cursor-pointer text-left ${
-          isUnselected
-            ? 'border-2 border-red-500 bg-red-50 text-red-900 shadow-sm'
-            : 'border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 shadow-sm'
-        }`}
-      >
-        <span className="truncate">{value || '-- SELECIONE O RESPONSÁVEL --'}</span>
-        <ChevronDown size={16} className={`shrink-0 ml-1 transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-600' : isUnselected ? 'text-red-500' : 'text-slate-400'}`} />
-      </button>
-
+    <>
+      {/* Backdrop invisível — fecha ao tocar fora, sem conflito com o botão */}
       {isOpen && (
         <div
-          ref={dropdownRef}
-          style={dropdownStyle}
-          className="bg-white rounded-2xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden"
+          className="fixed inset-0"
+          style={{ zIndex: 9998 }}
+          onClick={close}
+        />
+      )}
+
+      <div className="relative w-full">
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={() => isOpen ? close() : openDropdown()}
+          className={`w-full px-3 py-2.5 rounded-xl text-xs font-black flex items-center justify-between transition-all cursor-pointer text-left ${
+            isUnselected
+              ? 'border-2 border-red-500 bg-red-50 text-red-900 shadow-sm'
+              : 'border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 shadow-sm'
+          }`}
         >
-          {/* Search bar */}
-          <div className="p-2 border-b border-slate-100">
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 pointer-events-none" />
-              <input
-                ref={searchRef}
-                type="text"
-                placeholder="Buscar militar..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white transition-all"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onMouseDown={(e) => { e.preventDefault(); setSearch(''); }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
-                >
-                  <X size={12} />
-                </button>
+          <span className="truncate">{value || '-- SELECIONE O RESPONSÁVEL --'}</span>
+          <ChevronDown size={16} className={`shrink-0 ml-1 transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-600' : isUnselected ? 'text-red-500' : 'text-slate-400'}`} />
+        </button>
+
+        {isOpen && (
+          <div
+            style={dropdownStyle}
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden"
+          >
+            {/* Search bar */}
+            <div className="p-2 border-b border-slate-100">
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 pointer-events-none" />
+                <input
+                  ref={searchRef}
+                  type="text"
+                  placeholder="Buscar militar..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-8 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white transition-all"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setSearch(''); }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* List */}
+            <div className="overflow-y-auto p-1.5 space-y-0.5" style={{ maxHeight: 220 }}>
+              {filteredOperators.length === 0 ? (
+                <div className="py-4 text-center text-slate-400 text-xs font-semibold">
+                  Nenhum militar encontrado
+                </div>
+              ) : (
+                filteredOperators.map(op => {
+                  const label = `${op.rank ? op.rank + ' ' : ''}${op.warName || op.name}`.trim();
+                  const isSelected = value === label;
+                  return (
+                    <button
+                      key={op.id || label}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onChange(label);
+                        close();
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs text-left font-bold transition-all ${
+                        isSelected
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'
+                      }`}
+                    >
+                      <span className="font-extrabold tracking-wide">{label}</span>
+                      {isSelected && <Check size={14} className="shrink-0" />}
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>
-
-          {/* List */}
-          <div className="overflow-y-auto p-1.5 space-y-0.5" style={{ maxHeight: 220 }}>
-            {filteredOperators.length === 0 ? (
-              <div className="py-4 text-center text-slate-400 text-xs font-semibold">
-                Nenhum militar encontrado
-              </div>
-            ) : (
-              filteredOperators.map(op => {
-                const label = `${op.rank ? op.rank + ' ' : ''}${op.warName || op.name}`.trim();
-                const isSelected = value === label;
-                return (
-                  <button
-                    key={op.id || label}
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      onChange(label);
-                      setIsOpen(false);
-                      setSearch('');
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs text-left font-bold transition-all ${
-                      isSelected
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'
-                    }`}
-                  >
-                    <span className="font-extrabold tracking-wide">{label}</span>
-                    {isSelected && <Check size={14} className="shrink-0" />}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 };
 
