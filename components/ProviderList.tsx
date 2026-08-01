@@ -1,9 +1,10 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Provider, AttendanceRecord, MonthlyEvaluation } from '../types';
-import { Plus, ChevronRight, Search, Calendar, Clock, Target, Hourglass, Percent, Filter, ChevronLeft, ArrowDownAZ, AlertCircle, Users, LayoutDashboard, FileText, FileCheck, CornerDownLeft, ClipboardCheck } from 'lucide-react';
+import { Plus, ChevronRight, Search, Calendar, Clock, Target, Hourglass, Percent, Filter, ChevronLeft, ArrowDownAZ, AlertCircle, Users, LayoutDashboard, FileText, FileCheck, CornerDownLeft, ClipboardCheck, Printer, CheckSquare, Square } from 'lucide-react';
 import { formatDateBR, getLatestVisit, formatMinutesToHHMM, getDaysInactivity, formatInactivityMessage } from '../utils/timeUtils';
 import ReportOfficial from './ReportOfficial';
+import BatchBlankAttendanceSheet from './BatchBlankAttendanceSheet';
 
 interface Props {
   providers: Provider[];
@@ -41,6 +42,10 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
   const [sortOrder, setSortOrder] = useState<SortOption>('name-asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [evaluatedProviderIds, setEvaluatedProviderIds] = useState<Set<string>>(new Set());
+  
+  // Seleção em lote de prestadores para impressão de folhas em branco
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBatchPrintModal, setShowBatchPrintModal] = useState(false);
 
   useEffect(() => {
     // Load current month evaluations to show pending badges
@@ -135,6 +140,32 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  const toggleSelectProvider = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const isAllSelected = useMemo(() => {
+    if (filteredProviders.length === 0) return false;
+    return filteredProviders.every(p => selectedIds.has(p.id));
+  }, [filteredProviders, selectedIds]);
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredProviders.map(p => p.id)));
+    }
+  };
 
   const TabButton = ({ id, label, count, icon: Icon }: { id: typeof activeTab, label: string, count: number, icon: any }) => (
     <button 
@@ -283,10 +314,37 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
 
       {mainTab === 'providers' && (
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="flex px-4 py-3 gap-2 border-b border-slate-100 overflow-x-auto no-scrollbar">
-          <TabButton id="active" label="Ativos" count={counts.active} icon={Users} />
-          <TabButton id="completed" label="Finalizados" count={counts.completed} icon={FileCheck} />
-          <TabButton id="returned" label="Devolvidos" count={counts.returned} icon={CornerDownLeft} />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 py-3 gap-3 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <TabButton id="active" label="Ativos" count={counts.active} icon={Users} />
+            <TabButton id="completed" label="Finalizados" count={counts.completed} icon={FileCheck} />
+            <TabButton id="returned" label="Devolvidos" count={counts.returned} icon={CornerDownLeft} />
+          </div>
+
+          <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+            <button
+              onClick={toggleSelectAll}
+              className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors px-2 py-1 rounded-lg hover:bg-slate-100"
+              title="Marcar / Desmarcar Todos os Prestadores"
+            >
+              {isAllSelected ? (
+                <CheckSquare size={18} className="text-blue-600" />
+              ) : (
+                <Square size={18} className="text-slate-400" />
+              )}
+              <span>{isAllSelected ? 'Desmarcar Todos' : 'Selecionar Todos'}</span>
+            </button>
+
+            {selectedIds.size > 0 && (
+              <button
+                onClick={() => setShowBatchPrintModal(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider px-3.5 py-1.5 rounded-xl transition-all shadow-md shadow-blue-200 active:scale-95 animate-in fade-in"
+              >
+                <Printer size={15} />
+                <span>Imprimir Folhas em Branco ({selectedIds.size})</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="divide-y divide-slate-50">
@@ -316,7 +374,20 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
                     className="p-4 md:p-6 hover:bg-slate-50 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between group gap-4 animate-in fade-in duration-300"
                   >
                     <div className="flex gap-4 items-center flex-1">
-                      <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center text-blue-600 font-black text-xl shadow-sm group-hover:scale-110 transition-transform overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={(e) => toggleSelectProvider(provider.id, e)}
+                        className="p-1 rounded-lg hover:bg-slate-200/60 transition-colors text-slate-400 hover:text-blue-600 shrink-0"
+                        title={selectedIds.has(provider.id) ? "Desmarcar Prestador" : "Selecionar Prestador"}
+                      >
+                        {selectedIds.has(provider.id) ? (
+                          <CheckSquare size={22} className="text-blue-600 fill-blue-50" />
+                        ) : (
+                          <Square size={22} className="text-slate-300" />
+                        )}
+                      </button>
+
+                      <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center text-blue-600 font-black text-xl shadow-sm group-hover:scale-110 transition-transform overflow-hidden shrink-0">
                         {provider.profilePhoto ? (
                           <img src={provider.profilePhoto} alt={provider.name || 'Prestador'} className="w-full h-full object-cover" />
                         ) : (
@@ -447,6 +518,15 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
           )}
         </div>
       </div>
+      )}
+
+      {showBatchPrintModal && (
+        <BatchBlankAttendanceSheet
+          providers={providers.filter(p => selectedIds.has(p.id))}
+          initialMonth="Agosto"
+          initialYear={String(new Date().getFullYear())}
+          onClose={() => setShowBatchPrintModal(false)}
+        />
       )}
     </div>
   );
