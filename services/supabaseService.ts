@@ -99,21 +99,16 @@ export const deleteDocument = async (url: string) => {
   const publicId = extractPublicIdFromUrl(url);
   if (!publicId) return;
   
+  // Tenta realizar a limpeza de imagem antiga no Cloudinary (opcional)
   try {
-    // Dispara a exclusão de forma assíncrona (fire-and-forget)
-    supabase.functions.invoke('delete-cloudinary-image', {
+    const { error } = await supabase.functions.invoke('delete-cloudinary-image', {
       body: { publicId }
-    }).then(({ data, error }) => {
-      if (error) {
-        console.warn("Erro ao deletar imagem do Cloudinary via Edge Function:", error);
-      } else {
-        console.log("Imagem deletada do Cloudinary:", publicId, data);
-      }
-    }).catch(err => {
-      console.error("Falha ao invocar Edge Function de exclusão:", err);
     });
+    if (!error) {
+      console.log("[Cloudinary] Antiga imagem removida do storage:", publicId);
+    }
   } catch (err) {
-    console.error("Erro na exclusão do documento:", err);
+    // Ignora silenciosamente se a Edge Function opcional de exclusão não estiver ativa no Supabase
   }
 };
 
