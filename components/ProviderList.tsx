@@ -46,6 +46,7 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
   // Seleção em lote de prestadores para impressão de folhas em branco
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBatchPrintModal, setShowBatchPrintModal] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   useEffect(() => {
     // Load current month evaluations to show pending badges
@@ -322,27 +323,51 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-            <button
-              onClick={toggleSelectAll}
-              className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors px-2 py-1 rounded-lg hover:bg-slate-100"
-              title="Marcar / Desmarcar Todos os Prestadores"
-            >
-              {isAllSelected ? (
-                <CheckSquare size={18} className="text-blue-600" />
-              ) : (
-                <Square size={18} className="text-slate-400" />
-              )}
-              <span>{isAllSelected ? 'Desmarcar Todos' : 'Selecionar Todos'}</span>
-            </button>
-
-            {selectedIds.size > 0 && (
+            {!isSelectionMode ? (
               <button
-                onClick={() => setShowBatchPrintModal(true)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider px-3.5 py-1.5 rounded-xl transition-all shadow-md shadow-blue-200 active:scale-95 animate-in fade-in"
+                onClick={() => {
+                  setIsSelectionMode(true);
+                  setSelectedIds(new Set(filteredProviders.map(p => p.id)));
+                }}
+                className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs px-3.5 py-2 rounded-xl border border-blue-200 shadow-sm transition-all active:scale-95 whitespace-nowrap"
               >
-                <Printer size={15} />
-                <span>Imprimir Folhas em Branco ({selectedIds.size})</span>
+                <Printer size={16} />
+                <span>Folha de Frequência</span>
               </button>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2 animate-in fade-in duration-200">
+                <button
+                  onClick={toggleSelectAll}
+                  className="flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-slate-900 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-slate-200/60 bg-slate-100 border border-slate-200"
+                  title="Marcar / Desmarcar Todos os Prestadores"
+                >
+                  {isAllSelected ? (
+                    <CheckSquare size={16} className="text-blue-600" />
+                  ) : (
+                    <Square size={16} className="text-slate-400" />
+                  )}
+                  <span>{isAllSelected ? 'Desmarcar Todos' : 'Selecionar Todos'}</span>
+                </button>
+
+                <button
+                  onClick={() => setShowBatchPrintModal(true)}
+                  disabled={selectedIds.size === 0}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-black text-xs uppercase tracking-wider px-3.5 py-1.5 rounded-xl transition-all shadow-md shadow-blue-200 active:scale-95"
+                >
+                  <Printer size={15} />
+                  <span>Imprimir ({selectedIds.size})</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsSelectionMode(false);
+                    setSelectedIds(new Set());
+                  }}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 px-2 py-1"
+                >
+                  Cancelar
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -374,18 +399,20 @@ const ProviderList: React.FC<Props> = ({ providers, attendance, onSelect, onAdd,
                     className="p-4 md:p-6 hover:bg-slate-50 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between group gap-4 animate-in fade-in duration-300"
                   >
                     <div className="flex gap-4 items-center flex-1">
-                      <button
-                        type="button"
-                        onClick={(e) => toggleSelectProvider(provider.id, e)}
-                        className="p-1 rounded-lg hover:bg-slate-200/60 transition-colors text-slate-400 hover:text-blue-600 shrink-0"
-                        title={selectedIds.has(provider.id) ? "Desmarcar Prestador" : "Selecionar Prestador"}
-                      >
-                        {selectedIds.has(provider.id) ? (
-                          <CheckSquare size={22} className="text-blue-600 fill-blue-50" />
-                        ) : (
-                          <Square size={22} className="text-slate-300" />
-                        )}
-                      </button>
+                      {isSelectionMode && (
+                        <button
+                          type="button"
+                          onClick={(e) => toggleSelectProvider(provider.id, e)}
+                          className="p-1 rounded-lg hover:bg-slate-200/60 transition-colors text-slate-400 hover:text-blue-600 shrink-0"
+                          title={selectedIds.has(provider.id) ? "Desmarcar Prestador" : "Selecionar Prestador"}
+                        >
+                          {selectedIds.has(provider.id) ? (
+                            <CheckSquare size={22} className="text-blue-600 fill-blue-50" />
+                          ) : (
+                            <Square size={22} className="text-slate-300" />
+                          )}
+                        </button>
+                      )}
 
                       <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center text-blue-600 font-black text-xl shadow-sm group-hover:scale-110 transition-transform overflow-hidden shrink-0">
                         {provider.profilePhoto ? (
