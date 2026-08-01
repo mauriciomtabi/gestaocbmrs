@@ -4,7 +4,7 @@ import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { extractAttendanceFromFile } from '../services/geminiService';
 import { getAllProfiles } from '../services/supabaseService';
-import { Upload, Loader2, Check, X, FileText, AlertCircle, Save, AlertTriangle, Image as ImageIcon, Sparkles, Cpu, Calculator, Camera, UserCheck } from 'lucide-react';
+import { Upload, Loader2, Check, X, FileText, AlertCircle, Save, AlertTriangle, Image as ImageIcon, Sparkles, Cpu, Calculator, Camera, UserCheck, Search, ChevronDown } from 'lucide-react';
 import { AttendanceRecord, Operator } from '../types';
 import { calculateDuration, formatMinutesToHHMM } from '../utils/timeUtils';
 import * as pdfjs from 'pdfjs-dist';
@@ -30,6 +30,120 @@ const processingMessages = [
   "Validando integridade do documento...",
   "Finalizando processamento..."
 ];
+
+interface SearchableOperatorSelectProps {
+  value: string;
+  onChange: (val: string) => void;
+  systemOperators: Operator[];
+  isUnselected: boolean;
+}
+
+const SearchableOperatorSelect: React.FC<SearchableOperatorSelectProps> = ({
+  value,
+  onChange,
+  systemOperators,
+  isUnselected
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredOperators = systemOperators.filter(op => {
+    const label = `${op.rank ? op.rank + ' ' : ''}${op.warName || op.name}`.toLowerCase();
+    const fullName = (op.name || '').toLowerCase();
+    const s = search.toLowerCase().trim();
+    return label.includes(s) || fullName.includes(s);
+  });
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full px-3 py-2.5 rounded-xl text-xs font-black flex items-center justify-between transition-all cursor-pointer text-left ${
+          isUnselected 
+            ? 'border-2 border-red-500 bg-red-50 text-red-900 shadow-sm hover:bg-red-100/80' 
+            : 'border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 shadow-sm'
+        }`}
+      >
+        <span className="truncate">
+          {value || '-- SELECIONE O RESPONSÁVEL --'}
+        </span>
+        <ChevronDown size={16} className={`shrink-0 ml-1 transition-transform ${isOpen ? 'rotate-180 text-blue-600' : isUnselected ? 'text-red-500' : 'text-slate-400'}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 mt-1 p-2 bg-white rounded-2xl border border-slate-200 shadow-2xl z-[160] flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-100 max-h-64 overflow-hidden">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              autoFocus
+              placeholder="Digite para buscar militar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+            />
+            {search && (
+              <button 
+                type="button" 
+                onClick={() => setSearch('')} 
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          <div className="overflow-y-auto max-h-48 space-y-1 pr-1 custom-scrollbar">
+            {filteredOperators.length === 0 ? (
+              <div className="p-3 text-center text-slate-400 text-xs font-semibold">
+                Nenhum militar encontrado
+              </div>
+            ) : (
+              filteredOperators.map(op => {
+                const label = `${op.rank ? op.rank + ' ' : ''}${op.warName || op.name}`.trim();
+                const isSelected = value === label;
+
+                return (
+                  <button
+                    key={op.id || label}
+                    type="button"
+                    onClick={() => {
+                      onChange(label);
+                      setIsOpen(false);
+                      setSearch('');
+                    }}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs text-left font-bold transition-all ${
+                      isSelected 
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                        : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="font-extrabold">{label}</span>
+                    </div>
+                    {isSelected && <Check size={14} className="shrink-0 text-white" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existingRecords = [], onExtracted, onCancel }) => {
   const [loading, setLoading] = useState(false);
@@ -515,25 +629,12 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                               <span className="text-[8px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 uppercase tracking-tighter">Identificado</span>
                             )}
                           </div>
-                          <select 
-                            value={record.responsibleOperator || ''} 
-                            onChange={(e) => handleUpdateField(idx, 'responsibleOperator', e.target.value)}
-                            className={`w-full px-3 py-2 rounded-xl text-xs focus:ring-2 focus:outline-none cursor-pointer transition-all ${
-                              isUnselected 
-                                ? 'border-2 border-red-500 bg-red-50 text-red-900 font-extrabold focus:ring-red-400 shadow-sm' 
-                                : 'border border-slate-200 bg-white text-slate-800 font-bold focus:ring-blue-500'
-                            }`}
-                          >
-                            <option value="" disabled>-- SELECIONE O RESPONSÁVEL --</option>
-                            {systemOperators.map(op => {
-                              const val = `${op.rank ? op.rank + ' ' : ''}${op.warName || op.name}`.trim();
-                              return (
-                                <option key={op.id || val} value={val}>
-                                  {val}
-                                </option>
-                              );
-                            })}
-                          </select>
+                          <SearchableOperatorSelect
+                            value={record.responsibleOperator || ''}
+                            onChange={(val) => handleUpdateField(idx, 'responsibleOperator', val)}
+                            systemOperators={systemOperators}
+                            isUnselected={isUnselected}
+                          />
                         </div>
                       </div>
                       <button onClick={() => removeRecord(idx)} className="absolute top-4 right-2 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><X size={18} /></button>
