@@ -2,7 +2,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Provider, AttendanceRecord, AuditLog, MonthlyEvaluation } from '../types';
 import { formatMinutesToHHMM, formatDateBR, getDayOfWeekBR, getLatestVisit, calculateDuration, sanitizeObservations } from '../utils/timeUtils';
-import { ArrowLeft, Scan, Calendar, History, MapPin, Phone, Eye, Edit2, Trash2, X, Check, FileText, Download, Plus, Clock, LogOut, AlertCircle, Save, Upload, RefreshCw, File, ListFilter, ClipboardCheck, ShieldCheck, FileCheck, Edit3, Target, Gauge as GaugeIcon, ChevronLeft, ChevronRight, FileWarning, ZoomIn, ZoomOut, RotateCcw, ScanFace, Filter, Printer, ThumbsUp, ThumbsDown, Star, AlertTriangle, Loader2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Scan, Calendar, History, MapPin, Phone, Eye, Edit2, Trash2, X, Check, FileText, Download, Plus, Clock, LogOut, AlertCircle, Save, Upload, RefreshCw, File, ListFilter, ClipboardCheck, ShieldCheck, FileCheck, Edit3, Target, Gauge as GaugeIcon, ChevronLeft, ChevronRight, FileWarning, ZoomIn, ZoomOut, RotateCcw, ScanFace, Filter, Printer, ThumbsUp, ThumbsDown, Star, AlertTriangle, Loader2, MessageSquare, Camera } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import AttendanceSheetOCR from './AttendanceSheetOCR';
 import BlankAttendanceSheet from './BlankAttendanceSheet';
@@ -298,6 +298,67 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
   
   const returnFileInputRef = useRef<HTMLInputElement>(null);
   const justificationFileInputRef = useRef<HTMLInputElement>(null);
+  const profilePhotoFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDirectPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onUpdateProvider) return;
+
+    try {
+      const rawBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const optimized = await new Promise<string>((resolve) => {
+        const img = new Image();
+        img.src = rawBase64;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 800;
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxDim) {
+              height *= maxDim / width;
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width *= maxDim / height;
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = () => resolve(rawBase64);
+      });
+
+      const log = createAuditLog('FOTO_PERFIL', 'Foto de perfil atualizada manualmente');
+      onUpdateProvider({
+        ...provider,
+        profilePhoto: optimized,
+        history: [log, ...(provider.history || [])]
+      });
+
+      if (setNotification) {
+        setNotification('Foto do prestador atualizada com sucesso!', 'success');
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar foto:', err);
+      if (setNotification) {
+        setNotification('Erro ao processar imagem.', 'error');
+      }
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
 
   const [returnForm, setReturnForm] = useState({ reason: '', attachment: '', attachmentName: '', attachmentType: '' });
   const [reactivateForm, setReactivateForm] = useState({ reason: '' });
@@ -804,13 +865,32 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
         <div className="lg:col-span-7 space-y-6 flex flex-col">
           <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
             <div className={`p-6 md:p-8 text-white relative bg-gradient-to-br ${provider.status === 'active' ? 'from-blue-700 to-blue-900' : provider.status === 'returned' ? 'from-slate-700 to-slate-900' : 'from-green-700 to-green-900'} flex items-center gap-6`}>
-              <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2rem] border-4 border-white/20 shadow-2xl overflow-hidden bg-white/10 flex items-center justify-center shrink-0">
+              <div 
+                onClick={() => !isReadOnly && profilePhotoFileInputRef.current?.click()}
+                className={`w-24 h-24 md:w-32 md:h-32 rounded-[2rem] border-4 border-white/20 shadow-2xl overflow-hidden bg-white/10 flex items-center justify-center shrink-0 relative group ${!isReadOnly ? 'cursor-pointer' : ''}`}
+                title={!isReadOnly ? "Clique para alterar a foto do prestador" : "Foto do Prestador"}
+              >
                 {provider.profilePhoto ? (
-                  <img src={provider.profilePhoto} alt={provider.name || 'Prestador'} className="w-full h-full object-cover" />
+                  <img src={provider.profilePhoto} alt={provider.name || 'Prestador'} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                 ) : (
                   <span className="text-4xl md:text-5xl font-black">{(provider.name || '?').charAt(0)}</span>
                 )}
+
+                {!isReadOnly && (
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white backdrop-blur-[2px]">
+                    <Camera size={22} />
+                    <span className="text-[9px] font-black uppercase tracking-wider text-center px-1">Alterar Foto</span>
+                  </div>
+                )}
               </div>
+
+              <input 
+                type="file" 
+                ref={profilePhotoFileInputRef} 
+                accept="image/*" 
+                className="hidden" 
+                onChange={handleDirectPhotoUpload} 
+              />
               <div className="flex-1">
                 <h2 className="text-2xl md:text-3xl font-black tracking-tighter leading-tight">{provider.name || 'Sem Nome'}</h2>
                 <div className="flex flex-wrap gap-2 mt-3">

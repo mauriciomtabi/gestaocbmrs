@@ -146,7 +146,28 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
   const referralInputRef = useRef<HTMLInputElement>(null);
   const referralCameraInputRef = useRef<HTMLInputElement>(null);
   const identityInputRef = useRef<HTMLInputElement>(null);
+  const profilePhotoInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  const handleProfilePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const rawBase64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+      const optimized = await optimizeImage(rawBase64, 800, 0.85);
+      setFormData(prev => ({ ...prev, profilePhoto: optimized }));
+    } catch (err) {
+      console.error("Erro ao carregar foto de perfil:", err);
+      alert("Erro ao carregar foto.");
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
 
   const [referralPreview, setReferralPreview] = useState<string | null>(null);
   const [crop, setCrop] = useState<Crop>();
@@ -492,72 +513,86 @@ const ProviderModal: React.FC<Props> = ({ provider, onClose, onSubmit }) => {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-slate-50">
-            <div className="relative">
-              <label className={labelClasses}>Encaminhamento</label>
-              <button 
-                type="button" 
-                onClick={() => setShowReferralOptions(!showReferralOptions)}
-                disabled={loading || isSubmitting}
-                className={`w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl border-2 border-dashed transition-all ${formData.referralDoc ? 'border-green-200 bg-green-50 text-green-600' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100'} disabled:opacity-50 font-black text-[10px] uppercase`}
-              >
-                {formData.referralDoc ? <CheckCircle2 size={18} /> : <Upload size={18} />}
-                {formData.referralDoc ? 'Anexado' : 'Anexar'}
-              </button>
-              <input type="file" ref={referralInputRef} onChange={handleReferralChange} accept="image/*,application/pdf" className="hidden" />
-              <input type="file" ref={referralCameraInputRef} onChange={handleReferralChange} accept="image/*" capture={isIOS ? undefined : true} className="hidden" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-4 border-b border-slate-100">
+                <div className="relative">
+                  <label className={labelClasses}>Encaminhamento</label>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowReferralOptions(!showReferralOptions)}
+                    disabled={loading || isSubmitting}
+                    className={`w-full flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-dashed transition-all ${formData.referralDoc ? 'border-green-200 bg-green-50 text-green-600' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100'} disabled:opacity-50 font-black text-[10px] uppercase`}
+                  >
+                    {formData.referralDoc ? <CheckCircle2 size={16} /> : <Upload size={16} />}
+                    {formData.referralDoc ? 'Anexado' : 'Anexar'}
+                  </button>
+                  <input type="file" ref={referralInputRef} onChange={handleReferralChange} accept="image/*,application/pdf" className="hidden" />
+                  <input type="file" ref={referralCameraInputRef} onChange={handleReferralChange} accept="image/*" capture={isIOS ? undefined : true} className="hidden" />
 
-              {showReferralOptions && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowReferralOptions(false)} />
-                  <div className="absolute left-0 right-0 mt-2 p-2 bg-white rounded-2xl border border-slate-150 shadow-xl z-50 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        referralCameraInputRef.current?.click();
-                        setShowReferralOptions(false);
-                      }}
-                      className="w-full flex items-center gap-3 p-3 text-slate-700 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition-all font-bold text-[10px] uppercase text-left"
-                    >
-                      <Camera size={16} className="text-slate-500" />
-                      <span>Usar Câmera</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        referralInputRef.current?.click();
-                        setShowReferralOptions(false);
-                      }}
-                      className="w-full flex items-center gap-3 p-3 text-slate-700 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition-all font-bold text-[10px] uppercase text-left"
-                    >
-                      <Upload size={16} className="text-slate-500" />
-                      <span>Fazer Upload</span>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="relative">
-              <label className={labelClasses}>Documento de Identidade</label>
-              <button 
-                type="button" 
-                onClick={() => identityInputRef.current?.click()}
-                disabled={loading || isSubmitting}
-                className={`w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl border-2 border-dashed transition-all ${formData.identityDoc ? 'border-green-200 bg-green-50 text-green-600' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100'} disabled:opacity-50 font-black text-[10px] uppercase`}
-              >
-                {formData.identityDoc ? <CheckCircle2 size={18} /> : <Upload size={18} />}
-                {formData.identityDoc ? 'Anexada' : 'Anexar'}
-              </button>
-              <input type="file" ref={identityInputRef} onChange={handleIdentityChange} accept="image/*,application/pdf" className="hidden" />
-              
-              {formData.profilePhoto && (
-                <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full border-2 border-white shadow-md overflow-hidden bg-white z-10 animate-in zoom-in">
-                  <img src={formData.profilePhoto} alt="Rosto" className="w-full h-full object-cover" />
+                  {showReferralOptions && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowReferralOptions(false)} />
+                      <div className="absolute left-0 right-0 mt-2 p-2 bg-white rounded-2xl border border-slate-150 shadow-xl z-50 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            referralCameraInputRef.current?.click();
+                            setShowReferralOptions(false);
+                          }}
+                          className="w-full flex items-center gap-3 p-3 text-slate-700 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition-all font-bold text-[10px] uppercase text-left"
+                        >
+                          <Camera size={16} className="text-slate-500" />
+                          <span>Usar Câmera</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            referralInputRef.current?.click();
+                            setShowReferralOptions(false);
+                          }}
+                          className="w-full flex items-center gap-3 p-3 text-slate-700 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition-all font-bold text-[10px] uppercase text-left"
+                        >
+                          <Upload size={16} className="text-slate-500" />
+                          <span>Fazer Upload</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+
+                <div className="relative">
+                  <label className={labelClasses}>Identidade (RG)</label>
+                  <button 
+                    type="button" 
+                    onClick={() => identityInputRef.current?.click()}
+                    disabled={loading || isSubmitting}
+                    className={`w-full flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-dashed transition-all ${formData.identityDoc ? 'border-green-200 bg-green-50 text-green-600' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100'} disabled:opacity-50 font-black text-[10px] uppercase`}
+                  >
+                    {formData.identityDoc ? <CheckCircle2 size={16} /> : <Upload size={16} />}
+                    {formData.identityDoc ? 'Anexada' : 'Anexar'}
+                  </button>
+                  <input type="file" ref={identityInputRef} onChange={handleIdentityChange} accept="image/*,application/pdf" className="hidden" />
+                </div>
+
+                <div className="relative">
+                  <label className={labelClasses}>Foto de Perfil (3x4)</label>
+                  <button 
+                    type="button" 
+                    onClick={() => profilePhotoInputRef.current?.click()}
+                    disabled={loading || isSubmitting}
+                    className={`w-full flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-dashed transition-all ${formData.profilePhoto ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100'} disabled:opacity-50 font-black text-[10px] uppercase`}
+                  >
+                    {formData.profilePhoto ? <CheckCircle2 size={16} className="text-blue-600" /> : <Camera size={16} />}
+                    {formData.profilePhoto ? 'Foto Anexada' : 'Anexar Foto'}
+                  </button>
+                  <input type="file" ref={profilePhotoInputRef} onChange={handleProfilePhotoChange} accept="image/*" className="hidden" />
+                  
+                  {formData.profilePhoto && (
+                    <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full border-2 border-white shadow-md overflow-hidden bg-white z-10 animate-in zoom-in">
+                      <img src={formData.profilePhoto} alt="Rosto" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
+              </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="group">
