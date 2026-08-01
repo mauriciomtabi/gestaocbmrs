@@ -3,8 +3,9 @@ import React, { useState, useRef, useEffect, SyntheticEvent } from 'react';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { extractAttendanceFromFile } from '../services/geminiService';
-import { Upload, Loader2, Check, X, FileText, AlertCircle, Save, AlertTriangle, Image as ImageIcon, Sparkles, Cpu, Calculator, Camera } from 'lucide-react';
-import { AttendanceRecord } from '../types';
+import { getAllProfiles } from '../services/supabaseService';
+import { Upload, Loader2, Check, X, FileText, AlertCircle, Save, AlertTriangle, Image as ImageIcon, Sparkles, Cpu, Calculator, Camera, UserCheck } from 'lucide-react';
+import { AttendanceRecord, Operator } from '../types';
 import { calculateDuration, formatMinutesToHHMM } from '../utils/timeUtils';
 import * as pdfjs from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -44,6 +45,49 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  const [systemOperators, setSystemOperators] = useState<Operator[]>([]);
+
+  useEffect(() => {
+    getAllProfiles()
+      .then(ops => setSystemOperators(ops || []))
+      .catch(err => console.error("Erro ao carregar operados para o OCR:", err));
+  }, []);
+
+  const normalize = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+
+  const matchOperator = (rawText: string, ops: Operator[]): string => {
+    if (!rawText || !rawText.trim()) return '';
+    const normRaw = normalize(rawText);
+
+    for (const op of ops) {
+      const rankWarName = normalize(`${op.rank || ''} ${op.warName || ''}`);
+      const warName = normalize(op.warName || '');
+      const fullName = normalize(op.name || '');
+
+      if (warName && (normRaw.includes(warName) || warName.includes(normRaw))) {
+        return `${op.rank ? op.rank + ' ' : ''}${op.warName}`;
+      }
+      if (rankWarName && normRaw.includes(rankWarName)) {
+        return `${op.rank ? op.rank + ' ' : ''}${op.warName}`;
+      }
+      if (fullName && (normRaw.includes(fullName) || fullName.includes(normRaw))) {
+        return `${op.rank ? op.rank + ' ' : ''}${op.warName}`;
+      }
+    }
+
+    const words = normRaw.split(/\s+/).filter(w => w.length > 2 && !['SD', 'SGT', 'CB', '1º', '2º', '3º', 'CAP', 'TEN'].includes(w));
+    for (const word of words) {
+      for (const op of ops) {
+        const warName = normalize(op.warName || '');
+        if (warName && warName.includes(word)) {
+          return `${op.rank ? op.rank + ' ' : ''}${op.warName}`;
+        }
+      }
+    }
+
+    return rawText;
+  };
 
   // Efeito para alternar mensagens de processamento
   useEffect(() => {
@@ -166,16 +210,20 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
       const finalImageBase64 = await getCroppedImageBase64() || preview;
       const base64 = finalImageBase64.split(',')[1];
       const result = await extractAttendanceFromFile(base64, 'image/jpeg');
-      const records = result.records.map((r: any) => ({
-        id: Math.random().toString(36).substr(2, 9),
-        providerId,
-        date: r.date,
-        entryTime: r.entryTime,
-        exitTime: r.exitTime,
-        durationMinutes: calculateDuration(r.entryTime, r.exitTime),
-        attachmentData: finalImageBase64,
-        attachmentType: 'image/jpeg'
-      }));
+      const records = result.records.map((r: any) => {
+        const matchedOp = matchOperator(r.responsibleName || '', systemOperators);
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          providerId,
+          date: r.date,
+          entryTime: r.entryTime,
+          exitTime: r.exitTime,
+          responsibleOperator: matchedOp || r.responsibleName || '',
+          durationMinutes: calculateDuration(r.entryTime, r.exitTime),
+          attachmentData: finalImageBase64,
+          attachmentType: 'image/jpeg'
+        };
+      });
       setExtractedName(result.extractedProviderName);
       setExtractedData(records);
       if (result.monthlyEvaluation) {
@@ -451,6 +499,38 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                             <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Saída</label>
                             <input type="time" value={record.exitTime} onChange={(e) => handleUpdateField(idx, 'exitTime', e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm" />
                           </div>
+                        </div>
+
+                        <div className="w-full pt-1 border-t border-slate-200/60">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-1">
+                              <UserCheck size={12} className="text-blue-600" />
+                              <span>Militar Responsável (Folha)</span>
+                            </label>
+                            {record.responsibleOperator && (
+                              <span className="text-[8px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 uppercase tracking-tighter">Identificado</span>
+                            )}
+                          </div>
+                          <select 
+                            value={record.responsibleOperator || ''} 
+                            onChange={(e) => handleUpdateField(idx, 'responsibleOperator', e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          >
+                            <option value="">-- Selecionar Militar do Sistema --</option>
+                            {systemOperators.map(op => {
+                              const val = `${op.rank ? op.rank + ' ' : ''}${op.warName || op.name}`;
+                              return (
+                                <option key={op.id || val} value={val}>
+                                  {val} ({op.name})
+                                </option>
+                              );
+                            })}
+                            {record.responsibleOperator && !systemOperators.some(op => `${op.rank ? op.rank + ' ' : ''}${op.warName}` === record.responsibleOperator || op.warName === record.responsibleOperator) && (
+                              <option value={record.responsibleOperator}>
+                                {record.responsibleOperator} (Lido da folha)
+                              </option>
+                            )}
+                          </select>
                         </div>
                       </div>
                       <button onClick={() => removeRecord(idx)} className="absolute top-4 right-2 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><X size={18} /></button>

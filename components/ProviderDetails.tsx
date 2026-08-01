@@ -713,10 +713,11 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
       return;
     }
 
-    const updatedNewRecs = newRecs.map(r => {
+    const updatedNewRecs = newRecs.map((r: any) => {
+      const responsible = r.responsibleOperator || currentUser;
       const reasonObj = {
-        entryOperator: currentUser,
-        exitOperator: currentUser,
+        entryOperator: responsible,
+        exitOperator: responsible,
         ocr: true
       };
       return {

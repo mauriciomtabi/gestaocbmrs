@@ -90,12 +90,13 @@ export const extractAttendanceFromFile = async (base64Data: string, mimeType: st
     
     INSTRUÇÕES CRÍTICAS:
     1. Extraia o NOME COMPLETO do prestador que aparece no cabeçalho ou topo do documento.
-    2. Extraia os dados manuscritos das colunas 'Data', 'Chegada' (entrada) e 'Saída'.
-    3. Converta as datas para o formato ISO YYYY-MM-DD. Ex: 03/01/2026 vira 2026-01-03.
-    4. Garanta que os horários estejam no formato HH:mm (24h).
-    5. Ignore linhas em branco ou sem horários preenchidos.
-    6. Verifique se a seção de avaliação/perguntas comportamentais no rodapé do documento está preenchida/marcada (perguntas: Faltas no período, Apresentou bom comportamento, Cometeu atos indisciplinares, A qualidade do serviço prestado foi satisfatória). Se e somente se houver respostas marcadas (ex: Sim/Não com 'X' ou preenchidos), extraia as opções marcadas como booleanos em 'monthlyEvaluation'. Caso contrário, não inclua 'monthlyEvaluation'.
-    7. Retorne APENAS o JSON conforme o esquema definido.
+    2. Extraia os dados manuscritos das colunas 'Data', 'Chegada' (entrada), 'Saída' e 'Assinatura do responsável'.
+    3. Para a coluna 'Assinatura do responsável', extraia o texto manuscrito ou posto/nome de guerra do militar responsável preenchido em cada linha (ex: "SD JOSIEL", "SD NICHOLAS", "SD PENNA", "SD PINHEIRO", "SGT WOLF", "SD PELOTTO", "SD DOMINGOS", "SD MORAES", "SGT OLIVEIRA", etc.) no campo 'responsibleName'.
+    4. Converta as datas para o formato ISO YYYY-MM-DD. Ex: 03/01/2026 vira 2026-01-03.
+    5. Garanta que os horários estejam no formato HH:mm (24h).
+    6. Ignore linhas em branco ou sem horários preenchidos.
+    7. Verifique se a seção de avaliação/perguntas comportamentais no rodapé do documento está preenchida/marcada (perguntas: Faltas no período, Apresentou bom comportamento, Cometeu atos indisciplinares, A qualidade do serviço prestado foi satisfatória). Se e somente se houver respostas marcadas (ex: Sim/Não com 'X' ou preenchidos), extraia as opções marcadas como booleanos em 'monthlyEvaluation'. Caso contrário, não inclua 'monthlyEvaluation'.
+    8. Retorne APENAS o JSON conforme o esquema definido.
   `;
 
   try {
@@ -123,6 +124,7 @@ export const extractAttendanceFromFile = async (base64Data: string, mimeType: st
                   date: { type: Type.STRING, description: "Data no formato YYYY-MM-DD" },
                   entryTime: { type: Type.STRING, description: "Hora de chegada HH:mm" },
                   exitTime: { type: Type.STRING, description: "Hora de saída HH:mm" },
+                  responsibleName: { type: Type.STRING, description: "Texto manuscrito da coluna 'Assinatura do responsável' (ex: SD JOSIEL, SGT WOLF, SD NICHOLAS)" }
                 },
                 required: ["date", "entryTime", "exitTime"]
               }
