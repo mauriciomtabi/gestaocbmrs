@@ -69,7 +69,6 @@ const SearchableOperatorSelect: React.FC<SearchableOperatorSelectProps> = ({
       });
     }
     setIsOpen(true);
-    setTimeout(() => searchRef.current?.focus(), 60);
   };
 
   const filteredOperators = systemOperators.filter(op => {
