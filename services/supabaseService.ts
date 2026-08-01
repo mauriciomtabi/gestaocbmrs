@@ -60,15 +60,15 @@ export const uploadDocument = async (base64: string, path: string) => {
     
     if (!response.ok) {
       const errorData = await response.json();
-      console.warn("Falha no upload para o Cloudinary:", errorData);
-      return null;
+      console.warn("Falha no upload para o Cloudinary, usando fallback base64:", errorData);
+      return base64;
     }
     
     const data = await response.json();
-    return data.secure_url;
+    return data.secure_url || base64;
   } catch (error) {
-    console.error("Erro ao fazer upload para o Cloudinary:", error);
-    return null;
+    console.error("Erro ao fazer upload para o Cloudinary, usando fallback base64:", error);
+    return base64;
   }
 };
 
@@ -406,39 +406,40 @@ export const updateProvider = async (id: string, provider: Partial<Provider>) =>
   } catch (e) {}
 
   // Upload all base64 files to Cloudinary before saving to database
+  const ts = Date.now();
   if (providerForDb.identityDoc && providerForDb.identityDoc.startsWith('data:')) {
-    providerForDb.identityDoc = await uploadDocument(providerForDb.identityDoc, `providers/${id}/identity`);
+    providerForDb.identityDoc = await uploadDocument(providerForDb.identityDoc, `providers/${id}/identity_${ts}`);
     if (oldProvider?.identity_doc && oldProvider.identity_doc !== providerForDb.identityDoc) {
       deleteDocument(oldProvider.identity_doc);
     }
-  } else if (!providerForDb.identityDoc && oldProvider?.identity_doc) {
+  } else if (providerForDb.identityDoc === '' && oldProvider?.identity_doc) {
     deleteDocument(oldProvider.identity_doc);
   }
 
   if (providerForDb.referralDoc && providerForDb.referralDoc.startsWith('data:')) {
-    providerForDb.referralDoc = await uploadDocument(providerForDb.referralDoc, `providers/${id}/referral`);
+    providerForDb.referralDoc = await uploadDocument(providerForDb.referralDoc, `providers/${id}/referral_${ts}`);
     if (oldProvider?.referral_doc && oldProvider.referral_doc !== providerForDb.referralDoc) {
       deleteDocument(oldProvider.referral_doc);
     }
-  } else if (!providerForDb.referralDoc && oldProvider?.referral_doc) {
+  } else if (providerForDb.referralDoc === '' && oldProvider?.referral_doc) {
     deleteDocument(oldProvider.referral_doc);
   }
 
   if (providerForDb.profilePhoto && providerForDb.profilePhoto.startsWith('data:')) {
-    providerForDb.profilePhoto = await uploadDocument(providerForDb.profilePhoto, `providers/${id}/profile`);
+    providerForDb.profilePhoto = await uploadDocument(providerForDb.profilePhoto, `providers/${id}/profile_${ts}`);
     if (oldProvider?.profile_photo && oldProvider.profile_photo !== providerForDb.profilePhoto) {
       deleteDocument(oldProvider.profile_photo);
     }
-  } else if (!providerForDb.profilePhoto && oldProvider?.profile_photo) {
+  } else if (providerForDb.profilePhoto === '' && oldProvider?.profile_photo) {
     deleteDocument(oldProvider.profile_photo);
   }
 
   if (providerForDb.returnAttachment && providerForDb.returnAttachment.startsWith('data:')) {
-    providerForDb.returnAttachment = await uploadDocument(providerForDb.returnAttachment, `providers/${id}/return`);
+    providerForDb.returnAttachment = await uploadDocument(providerForDb.returnAttachment, `providers/${id}/return_${ts}`);
     if (oldProvider?.return_attachment && oldProvider.return_attachment !== providerForDb.returnAttachment) {
       deleteDocument(oldProvider.return_attachment);
     }
-  } else if (!providerForDb.returnAttachment && oldProvider?.return_attachment) {
+  } else if (providerForDb.returnAttachment === '' && oldProvider?.return_attachment) {
     deleteDocument(oldProvider.return_attachment);
   }
 

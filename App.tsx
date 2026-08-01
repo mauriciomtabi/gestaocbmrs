@@ -487,6 +487,7 @@ const App: React.FC = () => {
 
   const handleUpdateProvider = async (updatedProvider: Provider) => {
     try {
+      setProviders(prev => prev.map(p => p.id === updatedProvider.id ? updatedProvider : p));
       const { history, ...rest } = updatedProvider;
       await updateProvider(updatedProvider.id, rest);
       if (history && history.length > 0 && history[0].id.startsWith('temp-')) {
