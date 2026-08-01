@@ -129,7 +129,7 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
       )}
 
       {/* Cabeçalho */}
-      <div className="flex items-center gap-4 mb-6 frequency-sheet-header">
+      <div className="flex items-center gap-4 mb-3 frequency-sheet-header">
         <img 
           src="/brasao.png" 
           alt="Brasão Estado" 
@@ -141,13 +141,13 @@ export const AttendanceSheetPrint: React.FC<AttendanceSheetPrintProps> = ({
         </div>
       </div>
 
-      <div className="mb-4 leading-tight frequency-sheet-subheader">
+      <div className="mb-2 leading-tight frequency-sheet-subheader">
         <div>Comarca de Sapucaia do Sul – Vara de Execução Criminais</div>
         <div>Programa Prestação de Serviços à Comunidade (PSC)</div>
       </div>
 
       {/* Tabela Principal */}
-      <table className="w-full border-collapse mb-6 text-slate-900 frequency-table" style={{ border: '1px solid black' }}>
+      <table className="w-full border-collapse mb-3 text-slate-900 frequency-table" style={{ border: '1px solid black' }}>
         <tbody>
           {/* Título */}
           <tr>
@@ -766,7 +766,7 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, attendance = [], onCl
         }
         .print-page {
           margin: 0 !important;
-          padding: 1.5cm !important;
+          padding: 0.7cm 1.5cm 1.5cm 1.5cm !important;
           border: none !important;
           width: 210mm !important;
           height: 297mm !important;
@@ -844,7 +844,7 @@ const BlankAttendanceSheet: React.FC<Props> = ({ provider, attendance = [], onCl
         <div className="w-full py-8 md:py-8 overflow-visible print:p-0 print:py-0 print:border-none print:shadow-none print:bg-white flex justify-center items-start bg-slate-100">
           <div 
             id="blank-sheet-content" 
-            className="bg-white min-w-[21cm] max-w-[21cm] p-[1.5cm] md:p-[2cm] shadow-xl border border-slate-200 print-page print:border-none print:shadow-none print:m-0 print:p-[1cm] print:max-w-none print:w-full"
+            className="bg-white min-w-[21cm] max-w-[21cm] pt-[0.7cm] pb-[1.5cm] px-[1.5cm] md:pt-[0.7cm] md:pb-[2cm] md:px-[2cm] shadow-xl border border-slate-200 print-page print:border-none print:shadow-none print:m-0 print:pt-[0.7cm] print:pb-[1.5cm] print:px-[1.5cm] print:max-w-none print:w-full"
             style={{ fontFamily: 'Arial, sans-serif', fontSize: '11pt', color: '#000' }}
           >
             <AttendanceSheetPrint 
