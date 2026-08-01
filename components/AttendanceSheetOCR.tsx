@@ -202,6 +202,11 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
     return canvas.toDataURL('image/jpeg', 0.8);
   };
 
+  const applyGlobalResponsible = (opName: string) => {
+    if (!opName) return;
+    setExtractedData(prev => prev.map(r => ({ ...r, responsibleOperator: opName })));
+  };
+
   const handleProcess = async () => {
     if (!preview || !fileMeta) return;
     setLoading(true);
@@ -468,6 +473,34 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
                   </span>
                 </div>
               </div>
+
+              {systemOperators.length > 0 && (
+                <div className="bg-blue-50/70 p-3 rounded-2xl border border-blue-100 flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-black uppercase text-blue-900 flex items-center gap-1.5 shrink-0">
+                    <UserCheck size={14} className="text-blue-600" />
+                    Responsável em Massa:
+                  </span>
+                  <select 
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        applyGlobalResponsible(e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
+                    className="flex-1 px-3 py-1.5 rounded-xl border border-blue-200 bg-white text-slate-800 text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
+                  >
+                    <option value="">-- Aplicar Militar a TODAS as Linhas --</option>
+                    {systemOperators.map(op => {
+                      const val = `${op.rank ? op.rank + ' ' : ''}${op.warName || op.name}`;
+                      return (
+                        <option key={'global-' + (op.id || val)} value={val}>
+                          {val} ({op.name})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
 
               <div className="max-h-[40vh] overflow-y-auto space-y-3 pr-2">
                 {extractedData.map((record, idx) => {

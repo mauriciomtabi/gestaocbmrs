@@ -571,6 +571,19 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
     });
   };
 
+  const getOperatorFromReason = (reasonStr?: string): string => {
+    if (!reasonStr) return '-';
+    try {
+      const parsed = JSON.parse(reasonStr);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return parsed.entryOperator || parsed.exitOperator || '-';
+      }
+      return String(reasonStr);
+    } catch (e) {
+      return String(reasonStr || '-');
+    }
+  };
+
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -1202,10 +1215,11 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
               </div>
             ) : (
               <div className="bg-white">
-                <div className="hidden md:grid md:grid-cols-5 bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest px-8 py-4 border-b border-slate-100">
+                <div className="hidden md:grid md:grid-cols-6 bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest px-8 py-4 border-b border-slate-100">
                   <div className="text-center">Data</div>
                   <div className="text-center">Entrada</div>
                   <div className="text-center">Saída</div>
+                  <div className="text-center">Responsável</div>
                   <div className="text-center">Tempo</div>
                   <div className="text-right">Ações</div>
                 </div>
@@ -1216,7 +1230,7 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                       key={record.id} 
                       className={`p-5 md:px-8 md:py-4 hover:bg-slate-50/80 transition-colors animate-in fade-in duration-300 ${editingId === record.id ? 'bg-blue-50/50' : ''} ${record.type === 'justification' ? 'bg-amber-50/40 border-l-4 border-amber-400' : ''}`}
                     >
-                      <div className="flex items-center justify-between mb-4 md:mb-0 md:grid md:grid-cols-5 md:items-center">
+                      <div className="flex items-center justify-between mb-4 md:mb-0 md:grid md:grid-cols-6 md:items-center">
                         <div className="flex-1 md:text-center">
                           {editingId === record.id ? (
                             <input type="date" value={editForm.date} onChange={e => setEditForm({...editForm, date: e.target.value})} className={editInputClasses}/>
@@ -1252,6 +1266,12 @@ const ProviderDetails: React.FC<Props> = ({ provider, attendance, onBack, onUpda
                               </div>
                             </div>
                           )}
+                        </div>
+
+                        <div className="hidden md:flex justify-center text-center">
+                          <span className="text-[10px] font-bold text-slate-700 bg-slate-100/90 px-2.5 py-1 rounded-lg border border-slate-200 uppercase tracking-tight">
+                            {getOperatorFromReason(record.reason)}
+                          </span>
                         </div>
 
                         <div className="hidden md:flex justify-center">
