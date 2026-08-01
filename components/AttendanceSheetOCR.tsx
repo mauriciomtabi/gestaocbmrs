@@ -352,7 +352,7 @@ const AttendanceSheetOCR: React.FC<Props> = ({ providerId, providerName, existin
           date: r.date,
           entryTime: r.entryTime,
           exitTime: r.exitTime,
-          responsibleOperator: matchedOp || r.responsibleName || '',
+          responsibleOperator: matchedOp,
           durationMinutes: calculateDuration(r.entryTime, r.exitTime),
           attachmentData: finalImageBase64,
           attachmentType: 'image/jpeg'
